@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class SplashScreen7 extends StatelessWidget {
   const SplashScreen7({super.key});
@@ -45,15 +46,15 @@ class SplashScreen7 extends StatelessWidget {
                   ),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 left: 98,
                 top: 247,
                 child: SizedBox(
                   width: 195,
                   height: 195,
-                  child: Image(
-                    image: NetworkImage("https://picsum.photos/195/195"),
-                    fit: BoxFit.cover,
+                  child: SvgPicture.asset(
+                    'assets/images/logo.svg',
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

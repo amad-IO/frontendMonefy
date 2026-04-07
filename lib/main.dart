@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'core/app_routes.dart';
-import 'core/app_theme.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MonefyApp());
@@ -14,9 +13,7 @@ class MonefyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Monefy',
-      theme: AppTheme.theme,
-      initialRoute: AppRoutes.initial,
-      routes: AppRoutes.routes,
+      theme: AppTheme.lightTheme,
     );
   }
 }

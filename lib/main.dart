@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'ui/pages/splashscreen.dart'; // ✅ ini aja cukup
+import 'core/app_routes.dart';
+import 'core/app_theme.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MonefyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MonefyApp extends StatelessWidget {
+  const MonefyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: SplashScreen7(),
-        ),
-      ),
+      title: 'Monefy',
+      theme: AppTheme.theme,
+      initialRoute: AppRoutes.initial,
+      routes: AppRoutes.routes,
     );
   }
 }

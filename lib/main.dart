@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
-import 'package:monefy/ui/screens/dashboard.dart'; // 🔥 IMPORT
+import 'ui/pages/dashboard.dart';
 
 void main() {
   runApp(const MonefyApp());
@@ -15,8 +15,7 @@ class MonefyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Monefy',
       theme: AppTheme.lightTheme,
-
-      home: const DashboardPage(), // 🔥 INI WAJIB
+      home: const DashboardPage(),
     );
   }
 }

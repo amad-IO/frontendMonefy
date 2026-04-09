@@ -21,7 +21,7 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: true
-  image_path: "assets/images/moneyfy.svg"
+  image_path: "assets/images/moneyfy.svg "
 
 flutter:
   uses-material-design: true

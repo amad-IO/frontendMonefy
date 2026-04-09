@@ -17,13 +17,18 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/images/moneyfy.svg"
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logo2.png
-    - assets/icon/   # ← TAMBAH INI (SVG kamu)
+    - assets/images/
+    - assets/icon/   
 
   fonts:
     - family: Nunito

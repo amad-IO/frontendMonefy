@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:monefy/ui/widgets/navbar/custom_navbar.dart';
 import 'package:monefy/ui/widgets/transaction/transaction_item.dart';
 import 'package:monefy/theme/text_style.dart';
@@ -46,8 +47,8 @@ class DashboardPage extends StatelessWidget {
                       SizedBox(
                         width: 85,
                         height: 85,
-                        child: Image.asset(
-                          'assets/images/logo2.png',
+                        child: SvgPicture.asset(
+                          'assets/images/moneyfy.svg',
                           fit: BoxFit.contain,
                         ),
                       ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../theme/colors.dart' as theme;
+import '../../models/transaction_model.dart';
 import '../../theme/text_style.dart';
 import '../widgets/navbar/custom_navbar.dart';
+import '../widgets/history_section.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -12,42 +13,43 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int selectedIndex = 0;
+  late final List<TransactionModel> _transactions;
+
+  @override
+  void initState() {
+    super.initState();
+    _transactions = TransactionModel.dummyList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: theme.AppColors.backgroundWhite,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBody: true,
 
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // 🔥 HEADER
-              _buildHeader(),
+        bottom: false,
+        child: Column(
+          children: [
+            _buildHeader(),
 
-              // 🔥 BALANCE CARD
-              _buildBalanceCard(),
+            _buildBalanceCard(colorScheme),
 
-              // 🔥 QUICK ACCESS
-              _buildQuickAccess(),
+            _buildQuickAccess(),
 
-              // 🔥 LIST
-              ListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildTransaction("Food & Drink", "+Rp.500.000", true),
-                  _buildTransaction("Entertainment", "-Rp.200.000", false),
-                  _buildTransaction("Transport", "-Rp.100.000", false),
-                ],
+            Expanded(
+              child: HistorySection(
+                transactions: _transactions,
+                onFilterChanged: (filter) {},
+                onSeeAll: () {},
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
 
-      // 🔥 NAVBAR KAMU
       bottomNavigationBar: CustomNavbar(
         selectedIndex: selectedIndex,
         onItemTapped: (i) {
@@ -63,10 +65,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // ===========================
-  // COMPONENT
-  // ===========================
-
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -76,7 +74,12 @@ class _DashboardPageState extends State<DashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Hi, mochi!", style: AppTextStyle.heading.copyWith(color: theme.AppColors.primaryPurple)),
+              Text(
+                "Hi, mochi!",
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
               Text("How are you today?", style: AppTextStyle.caption),
             ],
           ),
@@ -86,27 +89,44 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildBalanceCard() {
+  Widget _buildBalanceCard(ColorScheme colorScheme) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: theme.AppColors.primaryGradient,
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.75),
+            colorScheme.primary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
-          Text("Total Balance", style: AppTextStyle.caption.copyWith(color: Colors.white)),
+          Text(
+            "Total Balance",
+            style: AppTextStyle.caption.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text("Rp. 3.000.000", style: AppTextStyle.heading.copyWith(color: Colors.white)),
+          Text(
+            "Rp. 3.000.000",
+            style: AppTextStyle.heading.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
 
           const SizedBox(height: 16),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _miniCard("Income", "Rp. 2.000.000"),
-              _miniCard("Expense", "Rp. 700.000"),
+              _miniCard(context, "Income", "Rp. 2.000.000"),
+              _miniCard(context, "Expense", "Rp. 700.000"),
             ],
           )
         ],
@@ -114,18 +134,31 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _miniCard(String title, String value) {
+  Widget _miniCard(BuildContext context, String title, String value) {
     return Container(
       width: 140,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Theme.of(context)
+            .colorScheme
+            .onPrimary
+            .withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
-          Text(title, style: AppTextStyle.caption.copyWith(color: Colors.white)),
-          Text(value, style: AppTextStyle.body.copyWith(color: Colors.white)),
+          Text(
+            title,
+            style: AppTextStyle.caption.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+          Text(
+            value,
+            style: AppTextStyle.body.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -152,36 +185,18 @@ class _DashboardPageState extends State<DashboardPage> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: theme.AppColors.primaryPurple.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
         ),
         const SizedBox(height: 6),
-        Text(title, style: AppTextStyle.caption.copyWith(color: theme.AppColors.primaryPurple)),
-      ],
-    );
-  }
-
-  Widget _buildTransaction(String title, String amount, bool isIncome) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: AppTextStyle.body),
-          Text(
-            amount,
-            style: AppTextStyle.body.copyWith(
-              color: isIncome ? theme.AppColors.success : theme.AppColors.error,
-            ),
+        Text(
+          title,
+          style: AppTextStyle.caption.copyWith(
+            color: Theme.of(context).colorScheme.primary,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

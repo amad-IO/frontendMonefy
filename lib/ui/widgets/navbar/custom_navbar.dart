@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../theme/colors.dart';
-import '../../../theme/text_style.dart';
 
 class CustomNavbar extends StatelessWidget {
   const CustomNavbar({
@@ -36,96 +35,96 @@ class CustomNavbar extends StatelessWidget {
     final double rowBottomPadding = (1.5 * scale) + bottomInset;
     final double navContentHeight =
       (requiredItemHeight + addLabelHeight + rowBottomPadding + (6 * scale));
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final Color addLabelColor = selectedIndex == 2
-        ? AppColors.primaryPurple
-        : AppColors.disabled;
+        ? colorScheme.primary
+        : colorScheme.onSurface.withValues(alpha: 0.45);
 
     return BottomAppBar(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.onPrimary,
       elevation: 8,
       notchMargin: 16,
       shape: const CircularNotchedRectangle(),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(50),
-          topRight: Radius.circular(50),
-        ),
-        child: SizedBox(
-          height: navContentHeight,
-          child: Stack(
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, rowBottomPadding),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildNavItem(
-                      index: 0,
-                      label: 'Home',
-                      asset: 'assets/icon/home.svg',
-                      scale: scale,
-                      iconSize: iconSize,
-                      labelSize: labelSize,
-                      activeIconScale: activeIconScale,
-                    ),
-                    SizedBox(width: 10 * scale),
-                    _buildNavItem(
-                      index: 1,
-                      label: 'History',
-                      asset: 'assets/icon/history.svg',
-                      scale: scale,
-                      iconSize: iconSize,
-                      labelSize: labelSize,
-                      activeIconScale: activeIconScale,
-                    ),
-                    SizedBox(width: 74 * scale),
-                    _buildNavItem(
-                      index: 3,
-                      label: 'Analytic',
-                      asset: 'assets/icon/Analytic.svg',
-                      scale: scale,
-                      iconSize: iconSize,
-                      labelSize: labelSize,
-                      activeIconScale: activeIconScale,
-                    ),
-                    SizedBox(width: 10 * scale),
-                    _buildNavItem(
-                      index: 4,
-                      label: 'Profile',
-                      asset: 'assets/icon/Profile.svg',
-                      scale: scale,
-                      iconSize: iconSize,
-                      labelSize: labelSize,
-                      activeIconScale: activeIconScale,
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 1 * scale + bottomInset,
-                child: Text(
-                  'Add',
-                  textAlign: TextAlign.center,
-                  textScaler: TextScaler.noScaling,
-                  style: TextStyle(
-                    color: addLabelColor,
-                    fontSize: addLabelSize,
-                    fontFamily: 'Nunito',
-                    fontWeight: FontWeight.w800,
-                    height: 1.0,
+      child: SizedBox(
+        height: navContentHeight,
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, rowBottomPadding),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildNavItem(
+                    context: context,
+                    index: 0,
+                    label: 'Home',
+                    asset: 'assets/icon/home.svg',
+                    scale: scale,
+                    iconSize: iconSize,
+                    labelSize: labelSize,
+                    activeIconScale: activeIconScale,
                   ),
+                  SizedBox(width: 10 * scale),
+                  _buildNavItem(
+                    context: context,
+                    index: 1,
+                    label: 'History',
+                    asset: 'assets/icon/history.svg',
+                    scale: scale,
+                    iconSize: iconSize,
+                    labelSize: labelSize,
+                    activeIconScale: activeIconScale,
+                  ),
+                  SizedBox(width: 74 * scale),
+                  _buildNavItem(
+                    context: context,
+                    index: 3,
+                    label: 'Analytic',
+                    asset: 'assets/icon/Analytic.svg',
+                    scale: scale,
+                    iconSize: iconSize,
+                    labelSize: labelSize,
+                    activeIconScale: activeIconScale,
+                  ),
+                  SizedBox(width: 10 * scale),
+                  _buildNavItem(
+                    context: context,
+                    index: 4,
+                    label: 'Profile',
+                    asset: 'assets/icon/Profile.svg',
+                    scale: scale,
+                    iconSize: iconSize,
+                    labelSize: labelSize,
+                    activeIconScale: activeIconScale,
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 1 * scale + bottomInset,
+              child: Text(
+                'Add',
+                textAlign: TextAlign.center,
+                textScaler: TextScaler.noScaling,
+                style: (textTheme.bodySmall ?? const TextStyle()).copyWith(
+                  color: addLabelColor,
+                  fontSize: addLabelSize,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required int index,
     required String label,
     required String asset,
@@ -134,10 +133,12 @@ class CustomNavbar extends StatelessWidget {
     required double labelSize,
     required double activeIconScale,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final bool isActive = selectedIndex == index;
     final Color itemColor = isActive
-        ? AppColors.primaryPurple
-        : AppColors.disabled;
+      ? colorScheme.primary
+      : colorScheme.onSurface.withValues(alpha: 0.45);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -215,8 +216,7 @@ class CustomNavbar extends StatelessWidget {
                   child: AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOut,
-                    style: (isActive ? AppTextStyle.navbarActive : AppTextStyle.navbar)
-                        .copyWith(
+                    style: (textTheme.bodySmall ?? const TextStyle()).copyWith(
                       fontSize: labelFontSize,
                       fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
                       color: itemColor,
@@ -260,7 +260,10 @@ class CustomAddFab extends StatelessWidget {
           'assets/icon/add.svg',
           width: 30,
           height: 30,
-          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(
+            Theme.of(context).colorScheme.onPrimary,
+            BlendMode.srcIn,
+          ),
         ),
       ),
     );

@@ -19,20 +19,22 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: theme.AppColors.backgroundWhite,
 
       body: SafeArea(
-        child: Column(
-          children: [
-            // 🔥 HEADER
-            _buildHeader(),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // 🔥 HEADER
+              _buildHeader(),
 
-            // 🔥 BALANCE CARD
-            _buildBalanceCard(),
+              // 🔥 BALANCE CARD
+              _buildBalanceCard(),
 
-            // 🔥 QUICK ACCESS
-            _buildQuickAccess(),
+              // 🔥 QUICK ACCESS
+              _buildQuickAccess(),
 
-            // 🔥 LIST
-            Expanded(
-              child: ListView(
+              // 🔥 LIST
+              ListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: [
                   _buildTransaction("Food & Drink", "+Rp.500.000", true),
@@ -40,8 +42,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   _buildTransaction("Transport", "-Rp.100.000", false),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
 
@@ -117,7 +119,7 @@ class _DashboardPageState extends State<DashboardPage> {
       width: 140,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -150,7 +152,7 @@ class _DashboardPageState extends State<DashboardPage> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: theme.AppColors.primaryPurple.withOpacity(0.1),
+            color: theme.AppColors.primaryPurple.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
         ),

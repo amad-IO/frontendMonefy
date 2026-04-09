@@ -10,15 +10,15 @@ class AppTheme {
     fontFamily: 'Nunito',
 
     // BACKGROUND
-    scaffoldBackgroundColor: AppColors.background,
+    scaffoldBackgroundColor: AppColors.backgroundWhite,
 
     // PRIMARY COLOR
-    primaryColor: AppColors.primary,
+    primaryColor: AppColors.primaryPurple,
 
     // OLOR SCHEME (Material 3)
     colorScheme: ColorScheme.light(
-      primary: AppColors.primary,
-      secondary: AppColors.primary,
+      primary: AppColors.primaryPurple,
+      secondary: AppColors.primaryPurple,
       surface: AppColors.surface,
       error: AppColors.error,
       onPrimary: Colors.white,
@@ -36,7 +36,7 @@ class AppTheme {
     // BUTTON THEME
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.primaryPurple,
         foregroundColor: Colors.white,
         textStyle: AppTextStyle.button,
         shape: RoundedRectangleBorder(
@@ -47,7 +47,7 @@ class AppTheme {
 
     // APPBAR THEME
     appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundWhite,
       elevation: 0,
       titleTextStyle: AppTextStyle.title,
       iconTheme: IconThemeData(color: AppColors.textPrimary),

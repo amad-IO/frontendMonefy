@@ -41,4 +41,19 @@ class AppTextStyle {
     fontWeight: FontWeight.w600,
     color: Colors.white,
   );
+
+ //khusus navbar
+  static const navbar = TextStyle(
+  fontFamily: 'Nunito',
+  fontSize: 14,
+  fontWeight: FontWeight.w700,
+  color: AppColors.textSecondary,
+);
+
+static const navbarActive = TextStyle(
+  fontFamily: 'Nunito',
+  fontSize: 14,
+  fontWeight: FontWeight.w800,
+  color: AppColors.primaryPurple,
+);
 }

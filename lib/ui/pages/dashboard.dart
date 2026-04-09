@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/colors.dart' as theme;
 import '../../theme/text_style.dart';
-import '../../widgets/navbar/custom_navbar.dart';
+import '../widgets/navbar/custom_navbar.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});

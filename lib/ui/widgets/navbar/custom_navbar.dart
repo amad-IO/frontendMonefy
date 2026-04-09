@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../theme/colors.dart';
-import '../../theme/text_style.dart';
+import '../../../theme/colors.dart';
+import '../../../theme/text_style.dart';
 
 class CustomNavbar extends StatelessWidget {
   const CustomNavbar({

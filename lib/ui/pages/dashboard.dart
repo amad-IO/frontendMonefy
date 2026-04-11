@@ -3,6 +3,7 @@ import '../../models/summary_model.dart';
 import '../../models/transaction_model.dart';
 import '../../theme/text_style.dart';
 import '../widgets/navbar/navbar.dart';
+import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
 
@@ -26,7 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFEDE8F8),
       extendBody: true,
 
       body: SafeArea(
@@ -39,7 +40,19 @@ class _DashboardPageState extends State<DashboardPage> {
               summary: SummaryModel.dummy(), // sementara, ganti dengan data API nanti
             ),
 
-            _buildQuickAccess(),
+            const SizedBox(height: 12),
+
+            QuickAccess(
+              onBillsTap: () {
+                // TODO: Navigator.push ke Bills page
+              },
+              onAddWalletTap: () {
+                // TODO: Navigator.push ke Add Wallet page
+              },
+              onSavingTap: () {
+                // TODO: Navigator.push ke Saving page
+              },
+            ),
 
             Expanded(
               child: HistorySection(
@@ -88,42 +101,6 @@ class _DashboardPageState extends State<DashboardPage> {
           const CircleAvatar(radius: 24),
         ],
       ),
-    );
-  }
-
-  Widget _buildQuickAccess() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _quickItem("Bills"),
-          _quickItem("Add wallet"),
-          _quickItem("Saving"),
-        ],
-      ),
-    );
-  }
-
-  Widget _quickItem(String title) {
-    return Column(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          title,
-          style: AppTextStyle.caption.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ],
     );
   }
 }

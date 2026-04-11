@@ -41,89 +41,101 @@ class CustomNavbar extends StatelessWidget {
         ? colorScheme.primary
         : colorScheme.onSurface.withValues(alpha: 0.45);
 
-    return BottomAppBar(
-      color: Theme.of(context).colorScheme.onPrimary,
-      elevation: 8,
-      notchMargin: 16,
-      shape: const CircularNotchedRectangle(),
-      child: SizedBox(
-        height: navContentHeight,
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, rowBottomPadding),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(
-                    context: context,
-                    index: 0,
-                    label: 'Home',
-                    asset: 'assets/icon/home.svg',
-                    scale: scale,
-                    iconSize: iconSize,
-                    labelSize: labelSize,
-                    activeIconScale: activeIconScale,
-                  ),
-                  SizedBox(width: 10 * scale),
-                  Transform.translate(
-                    offset: Offset(-6 * scale, 0),
-                    child: _buildNavItem(
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.09),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: BottomAppBar(
+        color: Theme.of(context).colorScheme.onPrimary,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        notchMargin: 16,
+        shape: const CircularNotchedRectangle(),
+        child: SizedBox(
+          height: navContentHeight,
+          child: Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, rowBottomPadding),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildNavItem(
                       context: context,
-                      index: 1,
-                      label: 'History',
-                      asset: 'assets/icon/history.svg',
+                      index: 0,
+                      label: 'Home',
+                      asset: 'assets/icon/home.svg',
                       scale: scale,
                       iconSize: iconSize,
                       labelSize: labelSize,
                       activeIconScale: activeIconScale,
                     ),
-                  ),
-                  SizedBox(width: 74 * scale),
-                  Transform.translate(
-                    offset: Offset(6 * scale, 0),
-                    child: _buildNavItem(
+                    SizedBox(width: 10 * scale),
+                    Transform.translate(
+                      offset: Offset(-6 * scale, 0),
+                      child: _buildNavItem(
+                        context: context,
+                        index: 1,
+                        label: 'History',
+                        asset: 'assets/icon/history.svg',
+                        scale: scale,
+                        iconSize: iconSize,
+                        labelSize: labelSize,
+                        activeIconScale: activeIconScale,
+                      ),
+                    ),
+                    SizedBox(width: 74 * scale),
+                    Transform.translate(
+                      offset: Offset(6 * scale, 0),
+                      child: _buildNavItem(
+                        context: context,
+                        index: 3,
+                        label: 'Analytic',
+                        asset: 'assets/icon/Analytic.svg',
+                        scale: scale,
+                        iconSize: iconSize,
+                        labelSize: labelSize,
+                        activeIconScale: activeIconScale,
+                      ),
+                    ),
+                    SizedBox(width: 10 * scale),
+                    _buildNavItem(
                       context: context,
-                      index: 3,
-                      label: 'Analytic',
-                      asset: 'assets/icon/Analytic.svg',
+                      index: 4,
+                      label: 'Profile',
+                      asset: 'assets/icon/Profile.svg',
                       scale: scale,
                       iconSize: iconSize,
                       labelSize: labelSize,
                       activeIconScale: activeIconScale,
                     ),
-                  ),
-                  SizedBox(width: 10 * scale),
-                  _buildNavItem(
-                    context: context,
-                    index: 4,
-                    label: 'Profile',
-                    asset: 'assets/icon/Profile.svg',
-                    scale: scale,
-                    iconSize: iconSize,
-                    labelSize: labelSize,
-                    activeIconScale: activeIconScale,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 1 * scale + bottomInset,
-              child: Text(
-                'Add',
-                textAlign: TextAlign.center,
-                textScaler: TextScaler.noScaling,
-                style: (textTheme.bodySmall ?? const TextStyle()).copyWith(
-                  color: addLabelColor,
-                  fontSize: addLabelSize,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
+                  ],
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 1 * scale + bottomInset,
+                child: Text(
+                  'Add',
+                  textAlign: TextAlign.center,
+                  textScaler: TextScaler.noScaling,
+                  style: (textTheme.bodySmall ?? const TextStyle()).copyWith(
+                    color: addLabelColor,
+                    fontSize: addLabelSize,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -256,19 +268,31 @@ class CustomAddFab extends StatelessWidget {
     return SizedBox(
       width: 70,
       height: 70,
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        backgroundColor: AppColors.primaryPurple,
-        elevation: 8,
-        highlightElevation: 8,
-        shape: const CircleBorder(),
-        child: SvgPicture.asset(
-          'assets/icon/add.svg',
-          width: 30,
-          height: 30,
-          colorFilter: ColorFilter.mode(
-            Theme.of(context).colorScheme.onPrimary,
-            BlendMode.srcIn,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: onPressed,
+          backgroundColor: AppColors.primaryPurple,
+          elevation: 0,
+          highlightElevation: 0,
+          shape: const CircleBorder(),
+          child: SvgPicture.asset(
+            'assets/icon/add.svg',
+            width: 30,
+            height: 30,
+            colorFilter: ColorFilter.mode(
+              Theme.of(context).colorScheme.onPrimary,
+              BlendMode.srcIn,
+            ),
           ),
         ),
       ),

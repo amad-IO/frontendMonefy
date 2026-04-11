@@ -9,6 +9,8 @@ class AppColors {
   static const backgroundWhite = Color(0xFFF1F1F1);
   static const white2 = Color(0xFFF6F7FB); 
   static const surface = Color(0xFFF2F2F2);
+  static const panelWhite = Color(0xFFFFFFFF);
+  static const panelShadow = Color(0x14000000);
   static const background = backgroundWhite; //alias
 
   // TEXT

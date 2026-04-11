@@ -11,6 +11,8 @@ class AppTheme {
 
     // BACKGROUND
     scaffoldBackgroundColor: AppColors.backgroundWhite,
+    cardColor: AppColors.panelWhite,
+    shadowColor: AppColors.panelShadow,
 
     // PRIMARY COLOR
     primaryColor: AppColors.primaryPurple,

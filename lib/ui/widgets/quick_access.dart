@@ -43,9 +43,10 @@ class QuickAccess extends StatelessWidget {
             'Quick Access',
             style: AppTextStyle.title.copyWith(
               color: accentColor,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

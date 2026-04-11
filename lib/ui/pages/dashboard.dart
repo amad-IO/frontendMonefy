@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../models/summary_model.dart';
 import '../../models/transaction_model.dart';
 import '../../models/user_model.dart';
+import '../../theme/colors.dart';
 import '../../theme/text_style.dart';
 import '../widgets/navbar/navbar.dart';
 import '../widgets/quick_access.dart';
@@ -33,7 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEDE8F8),
+      backgroundColor: AppColors.dashboardPurple,
       extendBody: true,
 
       body: SafeArea(
@@ -100,10 +101,26 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
 
-          SvgPicture.asset(
-            'assets/images/moneyfy.svg',
-            width: 48,
-            height: 48,
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  spreadRadius: 0.5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: SvgPicture.asset(
+              'assets/images/moneyfy.svg',
+              width: 50,
+              height: 50,
+            ),
           ),
         ],
       ),

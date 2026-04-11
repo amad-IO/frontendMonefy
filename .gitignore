@@ -1,3 +1,7 @@
+# =============================================
+# .gitignore — Monefy Flutter Mobile App
+# =============================================
+
 # Miscellaneous
 *.class
 *.log
@@ -12,34 +16,65 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# =============================================
+# IDE — IntelliJ / Android Studio
+# =============================================
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# =============================================
+# IDE — VS Code
+# =============================================
+.vscode/
 
-# Flutter/Dart/Pub related
+# =============================================
+# Flutter / Dart / Pub
+# =============================================
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+.packages
 
-# Symbolication related
-app.*.symbols
+# =============================================
+# Platform yang TIDAK dipakai (mobile only)
+# =============================================
+/web/
+/macos/
+/linux/
+/windows/
 
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# =============================================
+# Android build artifacts
+# =============================================
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+/android/local.properties
+*.apk
+*.aab
+
+# =============================================
+# Symbolication & Obfuscation
+# =============================================
+app.*.symbols
+app.*.map.json
+
+# =============================================
+# OS generated files
+# =============================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.tmp
+*.bak
+*.swp
+*~

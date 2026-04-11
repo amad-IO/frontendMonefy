@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../models/summary_model.dart';
 import '../../models/transaction_model.dart';
 import '../../theme/text_style.dart';
 import '../widgets/navbar/custom_navbar.dart';
 import '../widgets/history_section.dart';
+import '../widgets/summary_card.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -23,8 +25,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBody: true,
@@ -35,7 +35,9 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             _buildHeader(),
 
-            _buildBalanceCard(colorScheme),
+            SummaryCard(
+              summary: SummaryModel.dummy(), // sementara, ganti dengan data API nanti
+            ),
 
             _buildQuickAccess(),
 
@@ -84,81 +86,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
           const CircleAvatar(radius: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceCard(ColorScheme colorScheme) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withValues(alpha: 0.75),
-            colorScheme.primary,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Text(
-            "Total Balance",
-            style: AppTextStyle.caption.copyWith(
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Rp. 3.000.000",
-            style: AppTextStyle.heading.copyWith(
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _miniCard(context, "Income", "Rp. 2.000.000"),
-              _miniCard(context, "Expense", "Rp. 700.000"),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _miniCard(BuildContext context, String title, String value) {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .onPrimary
-            .withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: AppTextStyle.caption.copyWith(
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
-          Text(
-            value,
-            style: AppTextStyle.body.copyWith(
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
         ],
       ),
     );

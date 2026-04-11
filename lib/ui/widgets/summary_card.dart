@@ -6,7 +6,6 @@ import '../../theme/colors.dart';
 import '../../theme/text_style.dart';
 
 class SummaryCard extends StatefulWidget {
-  /// Data ringkasan saldo.
   final SummaryModel summary;
 
   const SummaryCard({
@@ -47,8 +46,6 @@ class _SummaryCardState extends State<SummaryCard>
       _controller.reverse();
     }
   }
-
-  /// Ubah angka ke format Rupiah.
   String _formatRupiah(double amount) {
     final formatter = NumberFormat('#,##0', 'id_ID');
     return 'Rp. ${formatter.format(amount)},00';
@@ -57,8 +54,6 @@ class _SummaryCardState extends State<SummaryCard>
   String _maskedOrReal(double amount) {
     return _isHidden ? '••••••••' : _formatRupiah(amount);
   }
-
-  /// Label periode ringkasan.
   String get _filterLabel {
     switch (widget.summary.filterLabel) {
       case 'day':
@@ -86,7 +81,6 @@ class _SummaryCardState extends State<SummaryCard>
       ),
       child: Stack(
         children: [
-          // Dekorasi latar.
           Positioned(
             top: -40,
             right: -40,
@@ -191,8 +185,6 @@ class _SummaryCardState extends State<SummaryCard>
     );
   }
 }
-
-// Kartu kecil untuk income/expense.
 class _GlassSubCard extends StatelessWidget {
   final String label;
   final String filterLabel;
@@ -219,7 +211,6 @@ class _GlassSubCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
-        // Efek blur tipis.
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

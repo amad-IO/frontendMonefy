@@ -2,8 +2,6 @@ class SummaryModel {
   final double totalBalance;
   final double totalIncome;
   final double totalExpense;
-
-  /// Pilihan: day | week | month | year
   final String filterLabel;
 
   SummaryModel({
@@ -21,8 +19,6 @@ class SummaryModel {
       filterLabel: filterLabel,
     );
   }
-
-  /// Data dummy untuk tampilan awal.
   static SummaryModel dummy() {
     return SummaryModel(
       totalBalance: 3000000,

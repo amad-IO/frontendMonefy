@@ -1,5 +1,4 @@
 
-
 class UserModel {
   final String username;
 
@@ -13,13 +12,6 @@ class UserModel {
       username: json['username'] ?? 'User',
     );
   }
-
-  /// ─────────────────────────────────────────────a
-  /// dari response API login di:
-  /// lib/ui/pages/dashboard.dart → initState()
-  /// Contoh nanti:
-  ///   final user = UserModel.fromJson(responseJson);
-  /// ─────────────────────────────────────────────
   static UserModel dummy() {
     return UserModel(
       username: 'Mochi',

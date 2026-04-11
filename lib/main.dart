@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'theme/app_theme.dart';
-import 'ui/pages/dashboard.dart';
+import 'ui/pages/main_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +20,7 @@ class MonefyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Monefy',
       theme: AppTheme.lightTheme,
-      home: const DashboardPage(),
+      home: const MainPage(),
     );
   }
 }

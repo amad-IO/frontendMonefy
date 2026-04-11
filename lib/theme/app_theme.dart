@@ -5,19 +5,11 @@ import 'text_style.dart';
 class AppTheme {
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-
-    // FONT
     fontFamily: 'Nunito',
-
-    // BACKGROUND
     scaffoldBackgroundColor: AppColors.backgroundWhite,
     cardColor: AppColors.panelWhite,
     shadowColor: AppColors.panelShadow,
-
-    // PRIMARY COLOR
     primaryColor: AppColors.primaryPurple,
-
-    // OLOR SCHEME (Material 3)
     colorScheme: ColorScheme.light(
       primary: AppColors.primaryPurple,
       secondary: AppColors.primaryPurple,
@@ -26,16 +18,12 @@ class AppTheme {
       onPrimary: Colors.white,
       onSurface: AppColors.textPrimary,
     ),
-
-    // TEXT THEME
     textTheme: const TextTheme(
       headlineMedium: AppTextStyle.heading,
       titleMedium: AppTextStyle.title,
       bodyMedium: AppTextStyle.body,
       bodySmall: AppTextStyle.caption,
     ),
-
-    // BUTTON THEME
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryPurple,
@@ -46,8 +34,6 @@ class AppTheme {
         ),
       ),
     ),
-
-    // APPBAR THEME
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.backgroundWhite,
       elevation: 0,

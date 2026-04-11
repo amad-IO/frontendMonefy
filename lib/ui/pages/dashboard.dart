@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/summary_model.dart';
 import '../../models/transaction_model.dart';
 import '../../theme/text_style.dart';
-import '../widgets/navbar/custom_navbar.dart';
+import '../widgets/navbar/navbar.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
 

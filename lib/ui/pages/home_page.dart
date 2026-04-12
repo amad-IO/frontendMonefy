@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:monefy/ui/pages/main_page.dart';
 import '../../models/summary_model.dart';
 import '../../models/transaction_model.dart';
 import '../../models/user_model.dart';
@@ -9,9 +10,12 @@ import '../../theme/text_style.dart';
 import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
+import 'bills_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function(int)? onNavigate;
+
+  const HomePage({super.key, this.onNavigate});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -45,11 +49,12 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             QuickAccess(
               onBillsTap: () {
+                widget.onNavigate?.call(2); //pindah ke BillsPage
               },
               onAddWalletTap: () {
+                widget.onNavigate?.call(3); //ke AddWalletPage
               },
-              onSavingTap: () {
-              },
+              onSavingTap: () {},
             ),
             Expanded(
               child: HistorySection(

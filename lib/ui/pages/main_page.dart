@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/navbar/navbar.dart';
 import 'home_page.dart';
 import 'history_page.dart';
+import 'add_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -15,12 +16,12 @@ class _MainPageState extends State<MainPage> {
   static const Duration _pageTransitionDuration = Duration(milliseconds: 520);
   int _selectedIndex = 0;
   late final PageController _pageController;
-  final List<Widget> _pages = const [
-    HomePage(),
-    HistoryPage(),
-    _PlaceholderPage(label: 'Add'),        // TODO: ganti dengan AddPage()
-    _PlaceholderPage(label: 'Analytic'),   // TODO: ganti dengan AnalyticPage()
-    _PlaceholderPage(label: 'Profile'),    // TODO: ganti dengan ProfilePage()
+  late final List<Widget> _pages = [
+    const HomePage(),
+    HistoryPage(onBack: () => _onItemTapped(0)),
+    const _PlaceholderPage(label: 'Add'),        // TODO: ganti dengan AddPage()
+    const _PlaceholderPage(label: 'Analytic'),   // TODO: ganti dengan AnalyticPage()
+    const _PlaceholderPage(label: 'Profile'),    // TODO: ganti dengan ProfilePage()
   ];
 
   @override
@@ -35,7 +36,20 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
+  void _showAddOverlay() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const AddPage(),
+    );
+  }
+
   void _onItemTapped(int index) {
+    if (index == 2) {
+      _showAddOverlay();
+      return;
+    }
     if (_selectedIndex == index) return;
 
     setState(() => _selectedIndex = index);
@@ -68,7 +82,7 @@ class _MainPageState extends State<MainPage> {
       ),
 
       floatingActionButton: CustomAddFab(
-        onPressed: () => _onItemTapped(2),
+        onPressed: _showAddOverlay,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );

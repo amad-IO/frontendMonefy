@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/bills_input.dart';
 import '../widgets/navbar/navbar.dart';
+import 'main_page.dart';
 
 class BillsPage extends StatefulWidget {
   const BillsPage({super.key});
@@ -10,19 +11,21 @@ class BillsPage extends StatefulWidget {
 }
 
 class _BillsPageState extends State<BillsPage> {
-  int _selectedIndex = 1; // posisi Bills / History
+  int _selectedIndex = 1;
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    // TODO: tambahkan navigasi kalau mau pindah page
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainPage(initialIndex: index),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF1F1F1),
 
       body: SafeArea(
@@ -35,7 +38,6 @@ class _BillsPageState extends State<BillsPage> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // tombol back di kiri
                   Align(
                     alignment: Alignment.centerLeft,
                     child: IconButton(
@@ -45,8 +47,6 @@ class _BillsPageState extends State<BillsPage> {
                       },
                     ),
                   ),
-
-                  // title di tengah
                   const Text(
                     "Bills",
                     style: TextStyle(
@@ -89,9 +89,14 @@ class _BillsPageState extends State<BillsPage> {
               label: "Amount",
               hint: "e.g., 100000",
             ),
+
+            // INI PENTING BANGET
+            const SizedBox(height: 100), // biar gak ketutup navbar
           ],
         ),
       ),
     );
   }
 }
+
+

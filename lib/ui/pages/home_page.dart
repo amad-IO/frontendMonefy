@@ -10,6 +10,7 @@ import '../../theme/text_style.dart';
 import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
+import 'add_wallet_page.dart';
 import 'bills_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -49,10 +50,23 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             QuickAccess(
               onBillsTap: () {
-                widget.onNavigate?.call(2); //pindah ke BillsPage
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MainPage(
+                      initialIndex: 5, // index Bills
+                      extraPage: const BillsPage(),
+                    ),
+                  ),
+                );
               },
               onAddWalletTap: () {
-                widget.onNavigate?.call(3); //ke AddWalletPage
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MainPage(initialIndex: 2),
+                  ),
+                );
               },
               onSavingTap: () {},
             ),

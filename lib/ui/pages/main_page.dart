@@ -8,7 +8,14 @@ import 'home_page.dart';
 import 'history_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int initialIndex;
+  final Widget? extraPage;
+
+  const MainPage({
+    super.key,
+    this.initialIndex = 0,
+    this.extraPage,
+  });
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -19,21 +26,26 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
   late final PageController _pageController;
   List<Widget> _buildPages() {
-    return [
-      HomePage(onNavigate: _onItemTapped),
-      HistoryPage(),
-      BillsPage(),
-      AddWalletPage(),
-      ProfilePage(),
-      _PlaceholderPage(label: 'Add'),
-      _PlaceholderPage(label: 'Analytic'),
-      _PlaceholderPage(label: 'Profile'),
+    final pages = [
+      HomePage(onNavigate: _onItemTapped), // 0
+      HistoryPage(),                      // 1
+      AddWalletPage(),                    // 2
+      _PlaceholderPage(label: 'Analytic'),                   // 3
+      ProfilePage(),                      // 4
     ];
-  }
 
+    // halaman tambahan (Bills)
+    if (widget.extraPage != null) {
+      pages.add(widget.extraPage!); // jadi index terakhir
+    }
+
+    return pages;
+  }
+  @override
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _selectedIndex);
   }
 

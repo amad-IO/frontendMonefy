@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:monefy/ui/pages/main_page.dart';
+import 'package:monefy/ui/pages/saving_page.dart';
 import '../../models/summary_model.dart';
 import '../../models/transaction_model.dart';
 import '../../models/user_model.dart';
@@ -9,9 +11,13 @@ import '../../theme/text_style.dart';
 import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
+import 'add_wallet_page.dart';
+import 'bills_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function(int)? onNavigate;
+
+  const HomePage({super.key, this.onNavigate});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -45,10 +51,34 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             QuickAccess(
               onBillsTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MainPage(
+                      initialIndex: 5, // index Bills
+                      extraPage: const BillsPage(),
+                    ),
+                  ),
+                );
               },
               onAddWalletTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MainPage(initialIndex: 2),
+                  ),
+                );
               },
               onSavingTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MainPage(
+                      initialIndex: 5,
+                      extraPage: const SavingPage(),
+                    ),
+                  ),
+                );
               },
             ),
             Expanded(

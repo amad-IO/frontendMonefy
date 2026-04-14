@@ -73,115 +73,146 @@ class _SummaryCardState extends State<SummaryCard>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -40,
-            right: -40,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colorScheme.onPrimary.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -30,
-            left: -20,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colorScheme.onPrimary.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 360;
 
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -40,
+                right: -40,
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colorScheme.onPrimary.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -30,
+                left: -20,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colorScheme.onPrimary.withValues(alpha: 0.06),
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: EdgeInsets.all(isCompact ? 16 : 22),
+                child: Column(
                   children: [
-                    Text(
-                      'Total Balance',
-                      style: AppTextStyle.caption.copyWith(
-                        color: colorScheme.onPrimary.withValues(alpha: 0.85),
-                        fontSize: 13,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Total Balance',
+                          style: AppTextStyle.caption.copyWith(
+                            color: colorScheme.onPrimary.withValues(alpha: 0.85),
+                            fontSize: isCompact ? 12 : 13,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: _toggleVisibility,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 250),
+                            child: Icon(
+                              _isHidden
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              key: ValueKey(_isHidden),
+                              color: colorScheme.onPrimary.withValues(alpha: 0.85),
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: _toggleVisibility,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: Icon(
-                          _isHidden
-                              ? Icons.visibility_off_rounded
-                              : Icons.visibility_rounded,
+
+                    const SizedBox(height: 8),
+
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _maskedOrReal(widget.summary.totalBalance),
                           key: ValueKey(_isHidden),
-                          color: colorScheme.onPrimary.withValues(alpha: 0.85),
-                          size: 18,
+                          maxLines: 1,
+                          style: AppTextStyle.heading.copyWith(
+                            color: colorScheme.onPrimary,
+                            fontSize: isCompact ? 22 : 26,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
+
+                    const SizedBox(height: 20),
+
+                    if (isCompact)
+                      Column(
+                        children: [
+                          _GlassSubCard(
+                            label: 'Income',
+                            filterLabel: _filterLabel,
+                            amount: _maskedOrReal(widget.summary.totalIncome),
+                            isIncome: true,
+                            isCompact: true,
+                          ),
+                          const SizedBox(height: 10),
+                          _GlassSubCard(
+                            label: 'Expense',
+                            filterLabel: _filterLabel,
+                            amount: _maskedOrReal(widget.summary.totalExpense),
+                            isIncome: false,
+                            isCompact: true,
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _GlassSubCard(
+                              label: 'Income',
+                              filterLabel: _filterLabel,
+                              amount: _maskedOrReal(widget.summary.totalIncome),
+                              isIncome: true,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _GlassSubCard(
+                              label: 'Expense',
+                              filterLabel: _filterLabel,
+                              amount: _maskedOrReal(widget.summary.totalExpense),
+                              isIncome: false,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
-
-                const SizedBox(height: 8),
-
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: Text(
-                    _maskedOrReal(widget.summary.totalBalance),
-                    key: ValueKey(_isHidden),
-                    style: AppTextStyle.heading.copyWith(
-                      color: colorScheme.onPrimary,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _GlassSubCard(
-                        label: 'Income',
-                        filterLabel: _filterLabel,
-                        amount: _maskedOrReal(widget.summary.totalIncome),
-                        isIncome: true,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _GlassSubCard(
-                        label: 'Expense',
-                        filterLabel: _filterLabel,
-                        amount: _maskedOrReal(widget.summary.totalExpense),
-                        isIncome: false,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -190,12 +221,14 @@ class _GlassSubCard extends StatelessWidget {
   final String filterLabel;
   final String amount;
   final bool isIncome;
+  final bool isCompact;
 
   const _GlassSubCard({
     required this.label,
     required this.filterLabel,
     required this.amount,
     required this.isIncome,
+    this.isCompact = false,
   });
 
   Color get _arrowColor =>
@@ -213,7 +246,11 @@ class _GlassSubCard extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 12 : 14,
+            vertical: isCompact ? 10 : 12,
+          ),
           decoration: BoxDecoration(
             color: colorScheme.onPrimary.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(16),
@@ -241,19 +278,26 @@ class _GlassSubCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: AppTextStyle.caption.copyWith(
-                      color: colorScheme.onPrimary.withValues(alpha: 0.85),
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    filterLabel,
-                    style: AppTextStyle.caption.copyWith(
-                      color: colorScheme.onPrimary.withValues(alpha: 0.5),
-                      fontSize: 10,
+                  Expanded(
+                    child: Wrap(
+                      spacing: 3,
+                      runSpacing: 0,
+                      children: [
+                        Text(
+                          label,
+                          style: AppTextStyle.caption.copyWith(
+                            color: colorScheme.onPrimary.withValues(alpha: 0.85),
+                            fontSize: isCompact ? 10 : 11,
+                          ),
+                        ),
+                        Text(
+                          filterLabel,
+                          style: AppTextStyle.caption.copyWith(
+                            color: colorScheme.onPrimary.withValues(alpha: 0.5),
+                            fontSize: isCompact ? 9 : 10,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -268,9 +312,10 @@ class _GlassSubCard extends StatelessWidget {
                   child: Text(
                     amount,
                     key: ValueKey(amount),
+                    maxLines: 1,
                     style: AppTextStyle.title.copyWith(
                       color: colorScheme.onPrimary,
-                      fontSize: 13,
+                      fontSize: isCompact ? 12 : 13,
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,

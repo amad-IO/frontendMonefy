@@ -119,7 +119,7 @@ class _HistorySectionState extends State<HistorySection> {
                                 fontWeight:
                                     isActive ? FontWeight.w800 : FontWeight.w700,
                               ),
-                              child: Text(_filterLabels[filter]!),
+                              child: Text(_filterLabels[filter] ?? 'All'),
                             ),
                           ),
                         ),

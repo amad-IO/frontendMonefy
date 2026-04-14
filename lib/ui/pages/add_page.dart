@@ -1,9 +1,12 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction_model.dart';
 import '../../theme/colors.dart';
 import '../../theme/text_style.dart';
+import '../widgets/numpad.dart';
+import '../components/filter_expanse.dart';
 
 class AddPage extends StatefulWidget {
   const AddPage({super.key});
@@ -14,68 +17,59 @@ class AddPage extends StatefulWidget {
 
 class _AddPageState extends State<AddPage> {
   TransactionType _type = TransactionType.income;
-  String _amountString = '0';
-  int _selectedCategoryIndex = -1;
   String? _selectedWallet;
+  final TextEditingController _amountController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
 
   static const List<String> _wallets = ['Gopay', 'ShopeePay', 'BCA', 'Cash'];
 
-  static final List<_CategoryItem> _categories = [
-    _CategoryItem('Entertainment', Icons.tv_rounded),
-    _CategoryItem('Food & Drink', Icons.restaurant_rounded),
-    _CategoryItem('Transportation', Icons.directions_car_rounded),
-    _CategoryItem('Shop', Icons.shopping_cart_rounded),
-    _CategoryItem('More', Icons.more_horiz_rounded),
-  ];
-
   // ── Amount formatting ──
 
   String get _formattedAmount {
-    String toParse = _amountString;
-    if (toParse.endsWith('.')) {
-      toParse = toParse.substring(0, toParse.length - 1);
-    }
+    final toParse = _amountController.text.trim();
     final amount = double.tryParse(toParse) ?? 0;
     final formatter = NumberFormat('#,##0', 'id_ID');
     return 'Rp. ${formatter.format(amount)}';
   }
 
-  // ── Numpad logic ──
+  void _onNumPadKeyTap(String key) {
+    final current = _amountController.text;
 
-  void _onKeyTap(String key) {
-    setState(() {
-      if (_amountString == '0' && key != '.') {
-        _amountString = key;
-      } else if (key == '.') {
-        if (!_amountString.contains('.')) {
-          _amountString += '.';
-        }
-      } else if (key == '000') {
-        if (_amountString != '0' && !_amountString.contains('.')) {
-          _amountString += '000';
-        }
+    if (key == '.') {
+      if (current.contains('.')) return;
+      final next = current.isEmpty ? '0.' : '$current.';
+      setState(() => _amountController.text = next);
+      return;
+    }
+
+    if (key == '000') {
+      if (current.isEmpty) {
+        setState(() => _amountController.text = '0');
       } else {
-        if (_amountString.length < 15) {
-          _amountString += key;
-        }
+        setState(() => _amountController.text = '$current$key');
       }
-    });
-    FocusScope.of(context).unfocus();
+      return;
+    }
+
+    if (current == '0') {
+      setState(() => _amountController.text = key);
+      return;
+    }
+
+    setState(() => _amountController.text = '$current$key');
   }
 
-  void _onBackspace() {
+  void _onNumPadBackspace() {
+    final current = _amountController.text;
+    if (current.isEmpty) return;
+
     setState(() {
-      if (_amountString.length > 1) {
-        _amountString = _amountString.substring(0, _amountString.length - 1);
-      } else {
-        _amountString = '0';
-      }
+      _amountController.text = current.substring(0, current.length - 1);
     });
   }
 
   void _onConfirm() {
-    final amount = double.tryParse(_amountString) ?? 0;
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (amount <= 0) return;
 
     Navigator.of(context).pop();
@@ -95,566 +89,496 @@ class _AddPageState extends State<AddPage> {
 
   @override
   void dispose() {
+    _amountController.dispose();
     _titleController.dispose();
     super.dispose();
   }
 
   // ── Build ──
+  //
+  // Figma reference frame  : 390 × 673
+  //   gradient zone         : 0 → 194   (29 %)
+  //   content area          : 194 → 673  (71 %, height 479)
+  //     category padding‑top: 134
+  //     input row           : 28
+  //     gap                 : 36
+  //     numpad              : 218
+  //     bottom padding      : 63
+  //
+  // All positions below are derived from those values
+  // and scaled via sx / sy so the layout adapts to any screen.
 
   @override
   Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      heightFactor: 0.80,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: const ShapeDecoration(
-          gradient: AppColors.primaryGradient,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(25),
-              topRight: Radius.circular(25),
-              bottomLeft: Radius.circular(50),
-              bottomRight: Radius.circular(50),
-            ),
-          ),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // ≈29% gradient, ≈71% content (matching Figma 194/479 of 673)
-            final totalH = constraints.maxHeight;
-            final gradientH = totalH * 0.29;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
 
-            return Stack(
+    return FractionallySizedBox(
+      heightFactor: 0.86,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double w = constraints.maxWidth;
+          final double h = constraints.maxHeight;
+
+          // Scale factors from Figma (390 × 673)
+          final double sx = w / 390;
+          final double sy = h / 673;
+
+          return Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: const ShapeDecoration(
+              gradient: AppColors.primaryGradient,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(25),
+                  topRight: Radius.circular(25),
+                  bottomLeft: Radius.circular(0),
+                  bottomRight: Radius.circular(0),
+                ),
+              ),
+            ),
+            child: Stack(
               children: [
                 // ── Decorative circles ──
                 Positioned(
-                  right: -40,
-                  top: -46,
+                  left: 268 * sx,
+                  top: -46 * sy,
                   child: Container(
-                    width: 168,
-                    height: 168,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.white2.withValues(alpha: 0.05),
+                    width: 168 * sx,
+                    height: 168 * sy,
+                    decoration: const ShapeDecoration(
+                      color: Color(0x0CF6F7FB),
+                      shape: OvalBorder(),
                     ),
                   ),
                 ),
                 Positioned(
-                  left: -56,
-                  top: 89,
+                  left: -56 * sx,
+                  top: 89 * sy,
                   child: Container(
-                    width: 168,
-                    height: 168,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.white2.withValues(alpha: 0.05),
+                    width: 168 * sx,
+                    height: 168 * sy,
+                    decoration: const ShapeDecoration(
+                      color: Color(0x0CF6F7FB),
+                      shape: OvalBorder(),
                     ),
                   ),
                 ),
 
-                // ── Gradient content (top 29%) ──
+                // ── Back button (glass) ──
+                Positioned(
+                  left: 28 * sx,
+                  top: 23 * sy,
+                  child: _GlassCircleButton(
+                    size: 42,
+                    sx: sx,
+                    sy: sy,
+                    onTap: () => Navigator.of(context).pop(),
+                    child: SvgPicture.asset(
+                      'assets/icon/back.svg',
+                      width: 22 * sx,
+                      height: 22 * sy,
+                      colorFilter: const ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Income toggle (glass) ──
+                Positioned(
+                  left: 117 * sx,
+                  top: 28 * sy,
+                  child: _buildToggleButton(
+                      'Income', TransactionType.income, sx, sy),
+                ),
+
+                // ── Expense toggle (glass) ──
+                Positioned(
+                  left: 218 * sx,
+                  top: 28 * sy,
+                  child: _buildToggleButton(
+                      'Expense', TransactionType.expense, sx, sy),
+                ),
+
+                // ── Mic button (glass) ──
+                Positioned(
+                  left: 335 * sx,
+                  top: 25 * sy,
+                  child: _GlassCircleButton(
+                    size: 40,
+                    sx: sx,
+                    sy: sy,
+                    child: Icon(Icons.mic_rounded,
+                        color: Colors.white, size: 22 * sx),
+                  ),
+                ),
+
+                // ── Amount text ──
+                Positioned(
+                  left: 61 * sx,
+                  top: 78 * sy,
+                  right: 72 * sx,
+                  child: FittedBox(
+                    alignment: Alignment.centerLeft,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _formattedAmount,
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: const Color(0xFFF1F1F1),
+                        fontSize: 43 * sy,
+                        fontFamily: 'Nunito',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Camera button (glass) ──
+                Positioned(
+                  left: 332 * sx,
+                  top: 87 * sy,
+                  child: _GlassCircleButton(
+                    size: 40,
+                    sx: sx,
+                    sy: sy,
+                    child: Icon(Icons.camera_alt_rounded,
+                        color: Colors.white, size: 22 * sx),
+                  ),
+                ),
+
+                // ── Content area (F1F1F1) ──
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: 0,
-                  height: gradientH,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 16, 0),
-                    child: Column(
-                      children: [
-                        // Top bar: back, toggle, mic
-                        Row(
-                          children: [
-                            _buildCircleButton(
-                              onTap: () => Navigator.of(context).pop(),
-                              size: 42,
-                              opacity: 0.05,
-                              child: SvgPicture.asset(
-                                'assets/icon/back.svg',
-                                width: 22,
-                                height: 22,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            _buildTypeToggle(),
-                            const Spacer(),
-                            _buildCircleButton(
-                              size: 40,
-                              opacity: 0.1,
-                              child: const Icon(
-                                Icons.mic_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const Spacer(),
-
-                        // Amount + camera
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8, bottom: 16),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    _formattedAmount,
-                                    style: const TextStyle(
-                                      fontFamily: 'Nunito',
-                                      fontSize: 43,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.backgroundWhite,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              _buildCircleButton(
-                                size: 40,
-                                opacity: 0.1,
-                                child: const Icon(
-                                  Icons.camera_alt_rounded,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ── Content area (bottom 71%) ──
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: gradientH,
+                  top: 194 * sy,
                   bottom: 0,
                   child: Container(
                     clipBehavior: Clip.antiAlias,
-                    decoration: const BoxDecoration(
-                      color: AppColors.backgroundWhite,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                        bottomLeft: Radius.circular(50),
-                        bottomRight: Radius.circular(50),
+                    decoration: const ShapeDecoration(
+                      color: Color(0xFFF1F1F1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                          bottomLeft: Radius.circular(0),
+                          bottomRight: Radius.circular(0),
+                        ),
                       ),
                     ),
                     child: Column(
                       children: [
-                        // ── Category icons ──
+                        SizedBox(height: 134 * sy),
+
+                        // ── Input row (Add Title + Choose Wallet) ──
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                          child: _buildCategoryRow(),
+                          padding: EdgeInsets.symmetric(horizontal: 30 * sx),
+                          child: SizedBox(
+                            height: 40 * sy,
+                            child: _buildInputRow(sx, sy),
+                          ),
                         ),
+                        SizedBox(height: 24 * sy),
 
-                        // ── Title + Wallet ──
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: _buildInputRow(),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // ── Numpad ──
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(30, 0, 30, 56),
-                            child: _buildNumpad(),
+                            padding: EdgeInsets.only(
+                              left: 30 * sx,
+                              right: 30 * sx,
+                              bottom: safeBottom + (12 * sy),
+                            ),
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 218 * sy,
+                                child: NumPad(
+                                  onKeyTap: _onNumPadKeyTap,
+                                  onBackspace: _onNumPadBackspace,
+                                  onConfirm: _onConfirm,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+
+                // ── Category icons (floating in the content top‑padding zone) ──
+                Positioned(
+                  left: 20 * sx,
+                  right: 20 * sx,
+                  top: (194 + 24) * sy,
+                  child: FilterExpanse(
+                    sx: sx,
+                    sy: sy,
+                    onCategorySelected: (cat) {
+                      // print("Category Selected: $cat");
+                    },
+                  ),
+                ),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  // ── Reusable circle button (back, mic, camera) ──
+  // ── Toggle button (Income / Expense) ──
 
-  Widget _buildCircleButton({
-    VoidCallback? onTap,
-    required double size,
-    required double opacity,
-    required Widget child,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: opacity),
-        ),
-        child: Center(child: child),
-      ),
-    );
-  }
+  // ── Glass circle helper ──
 
-  // ── Income / Expense toggle ──
+  // ── Toggle button (Income / Expense) — glass ──
 
-  Widget _buildTypeToggle() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildToggleButton('Income', TransactionType.income),
-        const SizedBox(width: 8),
-        _buildToggleButton('Expense', TransactionType.expense),
-      ],
-    );
-  }
-
-  Widget _buildToggleButton(String label, TransactionType type) {
+  Widget _buildToggleButton(
+      String label, TransactionType type, double sx, double sy) {
     final isActive = _type == type;
+
+    final child = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 86 * sx,
+      height: 32 * sy,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppColors.dashboardPurple
+            : Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          width: isActive ? 1.0 : 0.5,
+          color: isActive
+              ? AppColors.dashboardPurple
+              : Colors.white.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isActive
+              ? AppColors.primaryPurple
+              : const Color(0xFFF6F7FB),
+          fontSize: 16.87 * sy,
+          fontFamily: 'Nunito',
+          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
+    );
+
     return GestureDetector(
       onTap: () => setState(() => _type = type),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 86,
-        height: 32,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isActive ? Colors.white : AppColors.disabled,
-            width: isActive ? 1.0 : 0.21,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontSize: 16,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            color: AppColors.white2,
-          ),
-        ),
-      ),
+      child: isActive
+          ? child
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: child,
+              ),
+            ),
     );
   }
 
   // ── Category row ──
 
-  Widget _buildCategoryRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: List.generate(_categories.length, (index) {
-        final cat = _categories[index];
-        final isSelected = _selectedCategoryIndex == index;
 
-        return GestureDetector(
-          onTap: () => setState(() => _selectedCategoryIndex = index),
-          child: SizedBox(
-            width: 64,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  cat.icon,
-                  size: 28,
-                  color: isSelected
-                      ? AppColors.primaryPurple
-                      : AppColors.textSecondary,
+
+  // ── Input row ──
+
+  Widget _buildInputRow(double sx, double sy) {
+    return Row(
+      children: [
+        // Add Title
+        Expanded(
+          child: Container(
+            height: double.infinity,
+            padding: EdgeInsets.only(
+                top: 9 * sy, left: 12 * sx, bottom: 9 * sy),
+            decoration: ShapeDecoration(
+              color: const Color(0xFFF6F7FB),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              shadows: const [
+                BoxShadow(
+                  color: Color(0x0C000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  cat.name,
-                  style: AppTextStyle.caption.copyWith(
-                    fontSize: 10,
-                    color: isSelected
-                        ? AppColors.primaryPurple
-                        : AppColors.textSecondary,
-                    fontWeight:
-                        isSelected ? FontWeight.w700 : FontWeight.w400,
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.description_outlined,
+                    size: 16 * sx, color: AppColors.disabled),
+                SizedBox(width: 8 * sx),
+                Expanded(
+                  child: TextField(
+                    controller: _titleController,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 13.5 * sy,
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Add Title',
+                      hintStyle: TextStyle(
+                        color: const Color(0xFFB2B2B2),
+                        fontSize: 13.5 * sy,
+                        fontFamily: 'Nunito',
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-        );
-      }),
-    );
-  }
+        ),
 
-  // ── Title + Wallet inputs ──
+        SizedBox(width: 21 * sx),
 
-  Widget _buildInputRow() {
-    return SizedBox(
-      height: 28,
-      child: Row(
-        children: [
-          // Add Title
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.white2,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _titleController,
+        // Choose Wallet
+        PopupMenuButton<String>(
+          onSelected: (value) => setState(() => _selectedWallet = value),
+          offset: Offset(0, 42 * sy),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          itemBuilder: (context) => _wallets.map((w) {
+            return PopupMenuItem<String>(
+              value: w,
+              child: Text(
+                w,
                 style: const TextStyle(
                   fontFamily: 'Nunito',
-                  fontSize: 12,
+                  fontSize: 13,
                   color: AppColors.textPrimary,
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'Add Title',
-                  hintStyle: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 12,
-                    color: AppColors.disabled,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.description_outlined,
-                    size: 14,
-                    color: AppColors.disabled,
-                  ),
-                  prefixIconConstraints: BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 28,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(top: 6, bottom: 5),
-                  isDense: true,
-                ),
               ),
-            ),
-          ),
-
-          const SizedBox(width: 21),
-
-          // Choose Wallet
-          PopupMenuButton<String>(
-            onSelected: (value) => setState(() => _selectedWallet = value),
-            offset: const Offset(0, 30),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            itemBuilder: (context) => _wallets.map((w) {
-              return PopupMenuItem<String>(
-                value: w,
-                child: Text(
-                  w,
-                  style: const TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
-                  ),
+            );
+          }).toList(),
+          child: Container(
+            width: 100 * sx,
+            height: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 4 * sx),
+            decoration: ShapeDecoration(
+              color: const Color(0xFFF6F7FB),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              shadows: const [
+                BoxShadow(
+                  color: Color(0x0C000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
                 ),
-              );
-            }).toList(),
-            child: Container(
-              width: 100,
-              decoration: BoxDecoration(
-                color: AppColors.white2,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Center(
+              ],
+            ),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
                   _selectedWallet ?? 'Choose Wallet',
+                  maxLines: 1,
                   style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 12,
                     color: _selectedWallet != null
                         ? AppColors.textPrimary
-                        : AppColors.disabled,
+                        : const Color(0xFFB2B2B2),
+                    fontSize: 13.5 * sy,
+                    fontFamily: 'Nunito',
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ── Numpad ──
-
-  Widget _buildNumpad() {
-    const double gap = 11;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availH = constraints.maxHeight;
-        final btnH = (availH - 3 * gap) / 4;
-        final confirmH = 2 * btnH + gap;
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left 3 columns
-            Expanded(
-              flex: 3,
-              child: Column(
-                children: [
-                  SizedBox(height: btnH, child: _numRow(['1', '2', '3'], gap)),
-                  const SizedBox(height: gap),
-                  SizedBox(height: btnH, child: _numRow(['4', '5', '6'], gap)),
-                  const SizedBox(height: gap),
-                  SizedBox(height: btnH, child: _numRow(['7', '8', '9'], gap)),
-                  const SizedBox(height: gap),
-                  SizedBox(
-                      height: btnH, child: _numRow(['.', '0', '000'], gap)),
-                ],
-              ),
-            ),
-            const SizedBox(width: gap),
-            // Right column
-            Expanded(
-              flex: 1,
-              child: Column(
-                children: [
-                  // ⌫ Backspace
-                  SizedBox(
-                    height: btnH,
-                    child: _specialKey(
-                      child: Icon(Icons.backspace_outlined,
-                          color: AppColors.error, size: 22),
-                      color: AppColors.error.withValues(alpha: 0.15),
-                      onTap: _onBackspace,
-                    ),
-                  ),
-                  const SizedBox(height: gap),
-                  // Empty slot
-                  SizedBox(
-                    height: btnH,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white2,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 15,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: gap),
-                  // ✓ Confirm (tall — rows 3‑4)
-                  SizedBox(
-                    height: confirmH,
-                    child: _specialKey(
-                      child: Icon(Icons.check_rounded,
-                          color: AppColors.success, size: 28),
-                      color: AppColors.success.withValues(alpha: 0.25),
-                      onTap: _onConfirm,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _numRow(List<String> keys, double gap) {
-    return Row(
-      children: List.generate(keys.length * 2 - 1, (i) {
-        if (i.isOdd) return SizedBox(width: gap);
-        return Expanded(child: _numKey(keys[i ~/ 2]));
-      }),
-    );
-  }
-
-  Widget _numKey(String key) {
-    return GestureDetector(
-      onTap: () => _onKeyTap(key),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white2,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
-        child: Center(
-          child: Text(
-            key,
-            style: const TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 25,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF111111),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _specialKey({
-    required Widget child,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(child: child),
-      ),
+      ],
     );
   }
 }
 
-class _CategoryItem {
-  final String name;
-  final IconData icon;
-  const _CategoryItem(this.name, this.icon);
+
+
+class _GlassCircleButton extends StatefulWidget {
+  final double size;
+  final double sx;
+  final double sy;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  const _GlassCircleButton({
+    required this.size,
+    required this.sx,
+    required this.sy,
+    this.onTap,
+    required this.child,
+  });
+
+  @override
+  State<_GlassCircleButton> createState() => _GlassCircleButtonState();
+}
+
+class _GlassCircleButtonState extends State<_GlassCircleButton> {
+  bool _pressed = false;
+
+  void _handleTapDown(TapDownDetails _) {
+    setState(() => _pressed = true);
+  }
+
+  void _handleTapUp(TapUpDetails _) {
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (mounted) setState(() => _pressed = false);
+    });
+  }
+
+  void _handleTapCancel() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) setState(() => _pressed = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final w = widget.size * widget.sx;
+    final h = widget.size * widget.sy;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      child: AnimatedScale(
+        scale: _pressed ? 0.88 : 1.0,
+        duration: Duration(milliseconds: _pressed ? 40 : 150),
+        curve: Curves.easeOut,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(w),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: w,
+              height: h,
+              decoration: BoxDecoration(
+                color: _pressed
+                    ? AppColors.dashboardPurple.withValues(alpha: 0.7)
+                    : Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _pressed
+                      ? AppColors.primaryPurple.withValues(alpha: 0.5)
+                      : Colors.white.withValues(alpha: 0.3),
+                  width: _pressed ? 1.5 : 0.8,
+                ),
+              ),
+              child: Center(child: widget.child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

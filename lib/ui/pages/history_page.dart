@@ -239,7 +239,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                             ? FontWeight.w800
                                             : FontWeight.w700,
                                       ),
-                                      child: Text(_filterLabels[filter]!),
+                                      child: Text(_filterLabels[filter] ?? 'All'),
                                     ),
                                   ),
                                 ),

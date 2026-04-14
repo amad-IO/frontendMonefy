@@ -71,7 +71,7 @@ class CardHistory extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction.category,
+                  transaction.category.isEmpty ? 'Unknown' : transaction.category,
                   style: (Theme.of(context).textTheme.titleMedium ??
                           const TextStyle())
                       .copyWith(fontSize: 14),
@@ -100,7 +100,7 @@ class CardHistory extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                transaction.walletName,
+                  transaction.walletName.isEmpty ? 'Unknown Wallet' : transaction.walletName,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

@@ -11,7 +11,6 @@ import '../../theme/text_style.dart';
 import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
-import 'add_wallet_page.dart';
 import 'bills_page.dart';
 
 class HomePage extends StatefulWidget {

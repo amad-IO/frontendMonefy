@@ -6,7 +6,14 @@ import 'history_page.dart';
 import 'add_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int initialIndex;
+  final Widget? extraPage;
+
+  const MainPage({
+    super.key,
+    this.initialIndex = 0,
+    this.extraPage,
+  });
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -14,20 +21,33 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   static const Duration _pageTransitionDuration = Duration(milliseconds: 520);
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   late final PageController _pageController;
-  late final List<Widget> _pages = [
-    const HomePage(),
-    HistoryPage(onBack: () => _onItemTapped(0)),
-    const _PlaceholderPage(label: 'Add'),        // TODO: ganti dengan AddPage()
-    const _PlaceholderPage(label: 'Analytic'),   // TODO: ganti dengan AnalyticPage()
-    const _PlaceholderPage(label: 'Profile'),    // TODO: ganti dengan ProfilePage()
-  ];
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _pages = [
+      const HomePage(),
+      HistoryPage(onBack: () => _onItemTapped(0)),
+      const _PlaceholderPage(label: 'Add'),      // FAB opens AddPage sheet.
+      const _PlaceholderPage(label: 'Analytic'),
+      const _PlaceholderPage(label: 'Profile'),
+    ];
+
+    if (widget.extraPage != null) {
+      _pages.add(widget.extraPage!);
+    }
+
+    final maxIndex = _pages.length - 1;
+    _selectedIndex = widget.initialIndex.clamp(0, maxIndex);
     _pageController = PageController(initialPage: _selectedIndex);
+
+    // Open the add bottom sheet when requested via initial index.
+    if (widget.initialIndex == 2) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showAddOverlay());
+    }
   }
 
   @override

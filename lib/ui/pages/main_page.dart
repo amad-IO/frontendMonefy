@@ -4,6 +4,7 @@ import '../widgets/navbar/navbar.dart';
 import 'home_page.dart';
 import 'history_page.dart';
 import 'add_page.dart';
+import 'profile_page.dart';
 
 class MainPage extends StatefulWidget {
   final int initialIndex;
@@ -33,7 +34,7 @@ class _MainPageState extends State<MainPage> {
       HistoryPage(onBack: () => _onItemTapped(0)),
       const _PlaceholderPage(label: 'Add'),      // FAB opens AddPage sheet.
       const _PlaceholderPage(label: 'Analytic'),
-      const _PlaceholderPage(label: 'Profile'),
+      const ProfilePage(),
     ];
 
     if (widget.extraPage != null) {
@@ -84,6 +85,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
+      resizeToAvoidBottomInset: false,
 
       body: PageView(
         controller: _pageController,

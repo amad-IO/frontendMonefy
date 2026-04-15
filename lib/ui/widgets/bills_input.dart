@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BillsInput extends StatelessWidget {
   final String label;
   final String hint;
+  final bool isNumber;
+  final bool isTextOnly;
 
   const BillsInput({
     super.key,
     required this.label,
     required this.hint,
+    this.isNumber = false,
+    this.isTextOnly = false,
   });
 
   @override
@@ -22,7 +27,36 @@ class BillsInput extends StatelessWidget {
             style: const TextStyle(fontSize: 12),
           ),
           const SizedBox(height: 6),
-          TextField(
+          TextFormField(
+            keyboardType:
+            isNumber ? TextInputType.number : TextInputType.text,
+
+            inputFormatters: [
+              if (isNumber)
+                FilteringTextInputFormatter.digitsOnly,
+              if (isTextOnly)
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'[a-zA-Z\s,]'),
+                ),
+            ],
+
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return '$label tidak boleh kosong';
+              }
+
+              if (isTextOnly && RegExp(r'[0-9]').hasMatch(value)) {
+                return 'Tidak boleh mengandung angka';
+              }
+
+              if (isNumber &&
+                  !RegExp(r'^[0-9]+$').hasMatch(value)) {
+                return 'Harus berupa angka';
+              }
+
+              return null;
+            },
+
             decoration: InputDecoration(
               hintText: hint,
               filled: true,

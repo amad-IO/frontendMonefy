@@ -5,6 +5,7 @@ import 'home_page.dart';
 import 'history_page.dart';
 import 'add_page.dart';
 import 'profile_page.dart';
+import 'analytic_page.dart';
 
 class MainPage extends StatefulWidget {
   final int initialIndex;
@@ -33,7 +34,7 @@ class _MainPageState extends State<MainPage> {
       const HomePage(),
       HistoryPage(onBack: () => _onItemTapped(0)),
       const _PlaceholderPage(label: 'Add'),      // FAB opens AddPage sheet.
-      const _PlaceholderPage(label: 'Analytic'),
+      AnalyticPage(onBack: () => _onItemTapped(0)),
       const ProfilePage(),
     ];
 

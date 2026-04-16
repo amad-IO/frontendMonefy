@@ -17,6 +17,7 @@ class AddPage extends StatefulWidget {
 
 class _AddPageState extends State<AddPage> {
   TransactionType _type = TransactionType.income;
+  String? _selectedCategory;
   String? _selectedWallet;
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
@@ -146,7 +147,7 @@ class _AddPageState extends State<AddPage> {
                     width: 168 * sx,
                     height: 168 * sy,
                     decoration: const ShapeDecoration(
-                      color: Color(0x0CF6F7FB),
+                      color: AppColors.decorativeCircle,
                       shape: OvalBorder(),
                     ),
                   ),
@@ -158,7 +159,7 @@ class _AddPageState extends State<AddPage> {
                     width: 168 * sx,
                     height: 168 * sy,
                     decoration: const ShapeDecoration(
-                      color: Color(0x0CF6F7FB),
+                      color: AppColors.decorativeCircle,
                       shape: OvalBorder(),
                     ),
                   ),
@@ -187,30 +188,30 @@ class _AddPageState extends State<AddPage> {
 
                 // ── Income toggle (glass) ──
                 Positioned(
-                  left: 117 * sx,
-                  top: 28 * sy,
+                  left: 105 * sx,
+                  top: 24 * sy,
                   child: _buildToggleButton(
                       'Income', TransactionType.income, sx, sy),
                 ),
 
                 // ── Expense toggle (glass) ──
                 Positioned(
-                  left: 218 * sx,
-                  top: 28 * sy,
+                  left: 235 * sx,
+                  top: 24 * sy,
                   child: _buildToggleButton(
                       'Expense', TransactionType.expense, sx, sy),
                 ),
 
-                // ── Mic button (glass) ──
+                // ── Mic button (glass, bottom-right) ──
                 Positioned(
-                  left: 335 * sx,
-                  top: 25 * sy,
+                  left: 330 * sx,
+                  top: 60 * sy,
                   child: _GlassCircleButton(
-                    size: 40,
+                    size: 52,
                     sx: sx,
                     sy: sy,
                     child: Icon(Icons.mic_rounded,
-                        color: Colors.white, size: 22 * sx),
+                        color: Colors.white, size: 26 * sx),
                   ),
                 ),
 
@@ -226,7 +227,7 @@ class _AddPageState extends State<AddPage> {
                       _formattedAmount,
                       maxLines: 1,
                       style: TextStyle(
-                        color: const Color(0xFFF1F1F1),
+                        color: AppColors.backgroundWhite,
                         fontSize: 43 * sy,
                         fontFamily: 'Nunito',
                         fontWeight: FontWeight.w700,
@@ -235,16 +236,16 @@ class _AddPageState extends State<AddPage> {
                   ),
                 ),
 
-                // ── Camera button (glass) ──
+                // ── Camera button (glass, bottom-right) ──
                 Positioned(
-                  left: 332 * sx,
-                  top: 87 * sy,
+                  left: 330 * sx,
+                  top: 125 * sy,
                   child: _GlassCircleButton(
-                    size: 40,
+                    size: 52,
                     sx: sx,
                     sy: sy,
                     child: Icon(Icons.camera_alt_rounded,
-                        color: Colors.white, size: 22 * sx),
+                        color: Colors.white, size: 26 * sx),
                   ),
                 ),
 
@@ -257,7 +258,7 @@ class _AddPageState extends State<AddPage> {
                   child: Container(
                     clipBehavior: Clip.antiAlias,
                     decoration: const ShapeDecoration(
-                      color: Color(0xFFF1F1F1),
+                      color: AppColors.backgroundWhite,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(30),
@@ -307,19 +308,20 @@ class _AddPageState extends State<AddPage> {
                   ),
                 ),
 
-                // ── Category icons (floating in the content top‑padding zone) ──
-                Positioned(
-                  left: 20 * sx,
-                  right: 20 * sx,
-                  top: (194 + 24) * sy,
-                  child: FilterExpanse(
-                    sx: sx,
-                    sy: sy,
-                    onCategorySelected: (cat) {
-                      // print("Category Selected: $cat");
-                    },
+                // ── Category icons (only visible for Expense) ──
+                if (_type == TransactionType.expense)
+                  Positioned(
+                    left: 20 * sx,
+                    right: 20 * sx,
+                    top: (194 + 24) * sy,
+                    child: FilterExpanse(
+                      sx: sx,
+                      sy: sy,
+                      onCategorySelected: (cat) {
+                        setState(() => _selectedCategory = cat);
+                      },
+                    ),
                   ),
-                ),
               ],
             ),
           );
@@ -338,16 +340,21 @@ class _AddPageState extends State<AddPage> {
       String label, TransactionType type, double sx, double sy) {
     final isActive = _type == type;
 
+    final isIncome = type == TransactionType.income;
+    final arrowIcon = isIncome
+        ? Icons.arrow_downward_rounded
+        : Icons.arrow_upward_rounded;
+
     final child = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      width: 86 * sx,
-      height: 32 * sy,
+      width: 100 * sx,
+      height: 40 * sy,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: isActive
             ? AppColors.dashboardPurple
             : Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           width: isActive ? 1.0 : 0.5,
           color: isActive
@@ -355,25 +362,45 @@ class _AddPageState extends State<AddPage> {
               : Colors.white.withValues(alpha: 0.2),
         ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isActive
-              ? AppColors.primaryPurple
-              : const Color(0xFFF6F7FB),
-          fontSize: 16.87 * sy,
-          fontFamily: 'Nunito',
-          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            arrowIcon,
+            color: isActive ? AppColors.primaryPurple : AppColors.white2,
+            size: 16 * sy,
+          ),
+          SizedBox(width: 4 * sx),
+          Text(
+            label,
+            style: TextStyle(
+              color: isActive
+                  ? AppColors.primaryPurple
+                  : AppColors.white2,
+              fontSize: 14 * sy,
+              fontFamily: 'Nunito',
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
 
     return GestureDetector(
-      onTap: () => setState(() => _type = type),
+      onTap: () {
+        setState(() {
+          _type = type;
+          if (type == TransactionType.income) {
+            _selectedCategory = null;
+            _titleController.clear();
+          }
+        });
+      },
       child: isActive
           ? child
           : ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(18),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: child,
@@ -393,17 +420,25 @@ class _AddPageState extends State<AddPage> {
       children: [
         // Add Title
         Expanded(
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             height: double.infinity,
             padding: EdgeInsets.only(
                 top: 9 * sy, left: 12 * sx, bottom: 9 * sy),
-            decoration: ShapeDecoration(
-              color: const Color(0xFFF6F7FB),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              shadows: const [
+            decoration: BoxDecoration(
+              color: _selectedCategory == 'More'
+                  ? AppColors.dashboardPurple.withValues(alpha: 0.3)
+                  : AppColors.white2,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _selectedCategory == 'More'
+                    ? AppColors.primaryPurple
+                    : Colors.transparent,
+                width: 1.2,
+              ),
+              boxShadow: const [
                 BoxShadow(
-                  color: Color(0x0C000000),
+                  color: AppColors.lightShadow,
                   blurRadius: 10,
                   offset: Offset(0, 4),
                 ),
@@ -412,20 +447,28 @@ class _AddPageState extends State<AddPage> {
             child: Row(
               children: [
                 Icon(Icons.description_outlined,
-                    size: 16 * sx, color: AppColors.disabled),
+                    size: 16 * sx,
+                    color: _selectedCategory == 'More'
+                        ? AppColors.primaryPurple
+                        : AppColors.disabled),
                 SizedBox(width: 8 * sx),
                 Expanded(
                   child: TextField(
                     controller: _titleController,
+                    enabled: _selectedCategory == 'More',
                     style: TextStyle(
                       fontFamily: 'Nunito',
                       fontSize: 13.5 * sy,
-                      color: AppColors.textPrimary,
+                      color: _selectedCategory == 'More'
+                          ? AppColors.textPrimary
+                          : AppColors.disabled,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Add Title',
                       hintStyle: TextStyle(
-                        color: const Color(0xFFB2B2B2),
+                        color: _selectedCategory == 'More'
+                            ? AppColors.primaryPurple.withValues(alpha: 0.5)
+                            : AppColors.disabled,
                         fontSize: 13.5 * sy,
                         fontFamily: 'Nunito',
                       ),
@@ -467,12 +510,12 @@ class _AddPageState extends State<AddPage> {
             height: double.infinity,
             padding: EdgeInsets.symmetric(horizontal: 4 * sx),
             decoration: ShapeDecoration(
-              color: const Color(0xFFF6F7FB),
+              color: AppColors.white2,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
               shadows: const [
                 BoxShadow(
-                  color: Color(0x0C000000),
+                  color: AppColors.lightShadow,
                   blurRadius: 10,
                   offset: Offset(0, 4),
                 ),
@@ -487,7 +530,7 @@ class _AddPageState extends State<AddPage> {
                   style: TextStyle(
                     color: _selectedWallet != null
                         ? AppColors.textPrimary
-                        : const Color(0xFFB2B2B2),
+                        : AppColors.disabled,
                     fontSize: 13.5 * sy,
                     fontFamily: 'Nunito',
                   ),

@@ -68,7 +68,7 @@ class _FilterExpanseState extends State<FilterExpanse> {
                     decoration: ShapeDecoration(
                       color: isSelected
                           ? AppColors.dashboardPurple
-                          : const Color(0xFFF6F7FB),
+                          : AppColors.white2,
                       shape: OvalBorder(
                         side: BorderSide(
                           color: isSelected
@@ -79,7 +79,7 @@ class _FilterExpanseState extends State<FilterExpanse> {
                       ),
                       shadows: const [
                         BoxShadow(
-                          color: Color(0x0F000000),
+                          color: AppColors.subtleShadow,
                           blurRadius: 8,
                           offset: Offset(0, 2),
                         ),
@@ -104,7 +104,7 @@ class _FilterExpanseState extends State<FilterExpanse> {
                     cat.name,
                     style: AppTextStyle.caption.copyWith(
                       fontSize: 10 * sx,
-                      color: const Color(0xFF1E1E1E),
+                      color: AppColors.textPrimary,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.w600,
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 
 class NumPad extends StatelessWidget {
   final ValueChanged<String>? onKeyTap;
@@ -40,8 +41,8 @@ class NumPad extends StatelessWidget {
             child: _KeyButton(
               width: buttonWidth,
               height: buttonHeight,
-              backgroundColor: const Color(0xFFF7F7FD),
-              shadowColor: const Color(0x14000000),
+              backgroundColor: AppColors.numpadButton,
+              shadowColor: AppColors.panelShadow,
               borderRadius: radius,
               onTap: onKeyTap == null ? null : () => onKeyTap!(label),
               child: Text(
@@ -50,7 +51,7 @@ class NumPad extends StatelessWidget {
                   fontFamily: 'Nunito',
                   fontSize: label == '000' ? 16 * sx : 17 * sx,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1A1A),
+                  color: AppColors.numpadText,
                 ),
               ),
             ),
@@ -74,7 +75,7 @@ class NumPad extends StatelessWidget {
               width: width,
               height: height,
               backgroundColor: backgroundColor,
-              shadowColor: const Color(0x14000000),
+              shadowColor: AppColors.panelShadow,
               borderRadius: radius,
               onTap: onTap,
               child: Icon(
@@ -100,8 +101,8 @@ class NumPad extends StatelessWidget {
                 top: 0,
                 width: specialWidth,
                 height: buttonHeight,
-                backgroundColor: const Color(0xFFF7D9E0),
-                iconColor: const Color(0xFFFF335A),
+                backgroundColor: AppColors.numpadDeleteBg,
+                iconColor: AppColors.numpadDeleteIcon,
                 icon: Icons.backspace_outlined,
                 onTap: onBackspace,
               ),
@@ -117,11 +118,11 @@ class NumPad extends StatelessWidget {
                   width: specialWidth,
                   height: buttonHeight,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7FD),
+                    color: AppColors.numpadButton,
                     borderRadius: BorderRadius.circular(radius),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x14000000),
+                        color: AppColors.panelShadow,
                         blurRadius: 18,
                         offset: Offset(0, 5),
                       ),
@@ -139,8 +140,8 @@ class NumPad extends StatelessWidget {
                 top: (buttonHeight + gapY) * 2,
                 width: specialWidth,
                 height: specialHeight,
-                backgroundColor: const Color(0xB9CDEFD5),
-                iconColor: const Color(0xFF2ECC71),
+                backgroundColor: AppColors.numpadConfirmBg,
+                iconColor: AppColors.numpadConfirmIcon,
                 icon: Icons.check_rounded,
                 onTap: onConfirm,
               ),
@@ -182,8 +183,8 @@ class _KeyButton extends StatefulWidget {
 class _KeyButtonState extends State<_KeyButton> {
   bool _pressed = false;
 
-  static const _pressedColor = Color(0xFFD5CEF5); // dashboardPurple
-  static const _pressedBorder = Color(0xFF694EDA); // primaryPurple
+  static const _pressedColor = AppColors.dashboardPurple;
+  static const _pressedBorder = AppColors.primaryPurple;
 
   void _handleTapDown(TapDownDetails _) {
     setState(() => _pressed = true);
@@ -224,7 +225,7 @@ class _KeyButtonState extends State<_KeyButton> {
             boxShadow: [
               BoxShadow(
                 color: _pressed
-                    ? const Color(0x33694EDA)
+                    ? AppColors.primaryPurple.withValues(alpha: 0.2)
                     : widget.shadowColor,
                 blurRadius: _pressed ? 6 : 18,
                 offset: const Offset(0, 5),

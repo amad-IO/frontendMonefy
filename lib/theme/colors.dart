@@ -23,4 +23,19 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // Numpad
+  static const numpadButton = Color(0xFFF7F7FD);
+  static const numpadDeleteBg = Color(0xFFF7D9E0);
+  static const numpadDeleteIcon = Color(0xFFFF335A);
+  static const numpadConfirmBg = Color(0xB9CDEFD5);
+  static const numpadConfirmIcon = Color(0xFF2ECC71);
+  static const numpadText = Color(0xFF1A1A1A);
+
+  // Shadows
+  static const lightShadow = Color(0x0C000000);
+  static const subtleShadow = Color(0x0F000000);
+
+  // Decorative
+  static const decorativeCircle = Color(0x0CF6F7FB);
 }

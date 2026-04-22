@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'providers/transaction_provider.dart';
 import 'theme/app_theme.dart';
 import 'ui/pages/main_page.dart';
 
@@ -16,11 +18,14 @@ class MonefyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Monefy',
-      theme: AppTheme.lightTheme,
-      home: const MainPage(),
+    return ChangeNotifierProvider(
+      create: (_) => TransactionProvider(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Monefy',
+        theme: AppTheme.lightTheme,
+        home: const MainPage(),
+      ),
     );
   }
 }

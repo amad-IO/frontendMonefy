@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import '../../models/transaction_model.dart';
+import '../../providers/transaction_provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/text_style.dart';
 import '../widgets/card_history.dart';
@@ -19,7 +21,6 @@ class _HistoryPageState extends State<HistoryPage> {
   TransactionFilter _activeFilter = TransactionFilter.day;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  late List<TransactionModel> _allTransactions;
 
   static const Map<TransactionFilter, String> _filterLabels = {
     TransactionFilter.day: 'Day',
@@ -32,7 +33,6 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   void initState() {
     super.initState();
-    _allTransactions = TransactionModel.dummyList();
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.toLowerCase());
     });
@@ -48,12 +48,8 @@ class _HistoryPageState extends State<HistoryPage> {
     setState(() => _activeFilter = filter);
   }
 
-  List<TransactionModel> get _filteredTransactions {
-    if (_searchQuery.isEmpty) return _allTransactions;
-    return _allTransactions.where((t) {
-      return t.category.toLowerCase().contains(_searchQuery) ||
-          t.walletName.toLowerCase().contains(_searchQuery);
-    }).toList();
+  List<TransactionModel> _getFilteredTransactions(TransactionProvider provider) {
+    return provider.getFiltered(_activeFilter, query: _searchQuery);
   }
 
   Alignment _alignmentForFilter(TransactionFilter filter) {
@@ -67,7 +63,8 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final mediaBottom = MediaQuery.of(context).padding.bottom;
-    final filtered = _filteredTransactions;
+    final provider = context.watch<TransactionProvider>();
+    final filtered = _getFilteredTransactions(provider);
 
     return Scaffold(
       // ── Layer 1: Purple background ──

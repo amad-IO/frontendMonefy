@@ -1,12 +1,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'package:monefy/ui/pages/main_page.dart';
 import 'package:monefy/ui/pages/saving_page.dart';
 import 'package:monefy/ui/pages/add_wallet_page.dart';
-import '../../models/summary_model.dart';
-import '../../models/transaction_model.dart';
 import '../../models/user_model.dart';
+import '../../providers/transaction_provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/text_style.dart';
 import '../widgets/quick_access.dart';
@@ -24,18 +24,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final List<TransactionModel> _transactions;
   late final UserModel _user;
 
   @override
   void initState() {
     super.initState();
-    _transactions = TransactionModel.dummyList();
     _user = UserModel.dummy();
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TransactionProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.dashboardPurple,
       extendBody: true,
@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             _buildHeader(),
             SummaryCard(
-              summary: SummaryModel.dummy(),
+              summary: provider.summary,
             ),
 
             const SizedBox(height: 12),
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: HistorySection(
-                transactions: _transactions,
+                transactions: provider.transactions,
                 onFilterChanged: (filter) {
                 },
                 onSeeAll: () {

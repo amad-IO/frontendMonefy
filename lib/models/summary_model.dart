@@ -19,12 +19,4 @@ class SummaryModel {
       filterLabel: filterLabel,
     );
   }
-  static SummaryModel dummy() {
-    return SummaryModel(
-      totalBalance: 3000000,
-      totalIncome: 2000000,
-      totalExpense: 700000,
-      filterLabel: 'month',
-    );
-  }
-}
+}

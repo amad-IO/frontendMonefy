@@ -1,12 +1,16 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/transaction_model.dart';
+import '../../providers/transaction_provider.dart';
 import '../../theme/colors.dart';
-import '../../theme/text_style.dart';
 import '../components/numpad.dart';
 import '../components/filter_expanse.dart';
+import '../components/filter_income.dart';
+import '../components/wallet_selector_popup.dart';
 
 class AddPage extends StatefulWidget {
   const AddPage({super.key});
@@ -15,14 +19,38 @@ class AddPage extends StatefulWidget {
   State<AddPage> createState() => _AddPageState();
 }
 
-class _AddPageState extends State<AddPage> {
+class _AddPageState extends State<AddPage>
+    with SingleTickerProviderStateMixin {
   TransactionType _type = TransactionType.income;
   String? _selectedCategory;
   String? _selectedWallet;
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
 
-  static const List<String> _wallets = ['Gopay', 'ShopeePay', 'BCA', 'Cash'];
+  // ── Wallet shake animation ──
+  late final AnimationController _walletShakeController;
+  bool _walletError = false;
+
+  static final List<WalletOption> _wallets = [
+    WalletOption(name: 'Gopay', icon: Icons.account_balance_wallet_rounded, balance: 500000),
+    WalletOption(name: 'ShopeePay', icon: Icons.shopping_bag_rounded, balance: 250000),
+    WalletOption(name: 'BCA', icon: Icons.account_balance_rounded, balance: 1500000),
+    WalletOption(name: 'Cash', icon: Icons.payments_rounded, balance: 300000),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _walletShakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _walletShakeController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _walletShakeController.reset();
+      }
+    });
+  }
 
   // ── Amount formatting ──
 
@@ -73,6 +101,71 @@ class _AddPageState extends State<AddPage> {
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (amount <= 0) return;
 
+    // ── Validate wallet selection ──
+    if (_selectedWallet == null) {
+      setState(() => _walletError = true);
+      _walletShakeController.forward(from: 0);
+
+      // Auto-clear error highlight after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _walletError = false);
+      });
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Pilih penyimpanan terlebih dahulu!',
+                  style: TextStyle(
+                      fontFamily: 'Nunito', fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // ── Determine category ──
+    String category;
+    if (_type == TransactionType.expense) {
+      category = _selectedCategory ?? 'Expense';
+      // If "More" was selected, use the title
+      if (category == 'More' && _titleController.text.trim().isNotEmpty) {
+        category = _titleController.text.trim();
+      }
+    } else {
+      category = _selectedCategory ?? 'Income';
+      if (category == 'More' && _titleController.text.trim().isNotEmpty) {
+        category = _titleController.text.trim();
+      }
+    }
+
+    // ── Create transaction and save to provider ──
+    final transaction = TransactionModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      category: category,
+      amount: amount,
+      date: DateTime.now(),
+      walletName: _selectedWallet!,
+      type: _type,
+    );
+
+    context.read<TransactionProvider>().addTransaction(transaction);
+
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -90,6 +183,7 @@ class _AddPageState extends State<AddPage> {
 
   @override
   void dispose() {
+    _walletShakeController.dispose();
     _amountController.dispose();
     _titleController.dispose();
     super.dispose();
@@ -308,20 +402,27 @@ class _AddPageState extends State<AddPage> {
                   ),
                 ),
 
-                // ── Category icons (only visible for Expense) ──
-                if (_type == TransactionType.expense)
-                  Positioned(
-                    left: 20 * sx,
-                    right: 20 * sx,
-                    top: (194 + 24) * sy,
-                    child: FilterExpanse(
-                      sx: sx,
-                      sy: sy,
-                      onCategorySelected: (cat) {
-                        setState(() => _selectedCategory = cat);
-                      },
-                    ),
-                  ),
+                // ── Category icons ──
+                Positioned(
+                  left: 20 * sx,
+                  right: 20 * sx,
+                  top: (194 + 24) * sy,
+                  child: _type == TransactionType.expense
+                      ? FilterExpanse(
+                          sx: sx,
+                          sy: sy,
+                          onCategorySelected: (cat) {
+                            setState(() => _selectedCategory = cat);
+                          },
+                        )
+                      : FilterIncome(
+                          sx: sx,
+                          sy: sy,
+                          onCategorySelected: (cat) {
+                            setState(() => _selectedCategory = cat);
+                          },
+                        ),
+                ),
               ],
             ),
           );
@@ -391,10 +492,8 @@ class _AddPageState extends State<AddPage> {
       onTap: () {
         setState(() {
           _type = type;
-          if (type == TransactionType.income) {
-            _selectedCategory = null;
-            _titleController.clear();
-          }
+          _selectedCategory = null;
+          _titleController.clear();
         });
       },
       child: isActive
@@ -485,54 +584,79 @@ class _AddPageState extends State<AddPage> {
 
         SizedBox(width: 21 * sx),
 
-        // Choose Wallet
-        PopupMenuButton<String>(
-          onSelected: (value) => setState(() => _selectedWallet = value),
-          offset: Offset(0, 42 * sy),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          itemBuilder: (context) => _wallets.map((w) {
-            return PopupMenuItem<String>(
-              value: w,
-              child: Text(
-                w,
-                style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 13,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+        // Select Wallet — wrapped with shake animation
+        AnimatedBuilder(
+          animation: _walletShakeController,
+          builder: (context, child) {
+            // Sine-based shake: oscillates 3× across 500 ms
+            final double shake = _walletShakeController.value == 0
+                ? 0
+                : math.sin(_walletShakeController.value * math.pi * 6) *
+                    4 *
+                    (1 - _walletShakeController.value);
+            return Transform.translate(
+              offset: Offset(shake, 0),
+              child: child,
             );
-          }).toList(),
-          child: Container(
-            width: 100 * sx,
-            height: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 4 * sx),
-            decoration: ShapeDecoration(
-              color: AppColors.white2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              shadows: const [
-                BoxShadow(
-                  color: AppColors.lightShadow,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
+          },
+          child: GestureDetector(
+            onTap: () async {
+              final selected = await WalletSelectorPopup.show(
+                context: context,
+                wallets: _wallets,
+                selectedWallet: _selectedWallet,
+              );
+              if (selected != null && mounted) {
+                setState(() {
+                  _selectedWallet = selected;
+                  _walletError = false;
+                });
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 100 * sx,
+              height: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 4 * sx),
+              decoration: BoxDecoration(
+                color: _walletError
+                    ? AppColors.error.withValues(alpha: 0.08)
+                    : AppColors.white2,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _walletError
+                      ? AppColors.error
+                      : _selectedWallet != null
+                          ? AppColors.primaryPurple.withValues(alpha: 0.3)
+                          : Colors.transparent,
+                  width: _walletError ? 1.5 : (_selectedWallet != null ? 1 : 0),
                 ),
-              ],
-            ),
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  _selectedWallet ?? 'Choose Wallet',
-                  maxLines: 1,
-                  style: TextStyle(
-                    color: _selectedWallet != null
-                        ? AppColors.textPrimary
-                        : AppColors.disabled,
-                    fontSize: 13.5 * sy,
-                    fontFamily: 'Nunito',
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.lightShadow,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _selectedWallet ?? 'Select Wallet',
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: _walletError
+                          ? AppColors.error
+                          : _selectedWallet != null
+                              ? AppColors.primaryPurple
+                              : AppColors.disabled,
+                      fontSize: 13.5 * sy,
+                      fontFamily: 'Nunito',
+                      fontWeight: _walletError || _selectedWallet != null
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
                   ),
                 ),
               ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 
-import '../../models/analytic_model.dart';
+import '../../providers/transaction_provider.dart';
 import '../../theme/colors.dart';
 import '../../theme/text_style.dart';
 import '../widgets/analytic/analytic_filter_tabs.dart';
@@ -25,46 +26,26 @@ class AnalyticPage extends StatefulWidget {
 class _AnalyticPageState extends State<AnalyticPage> {
   // ── State ──────────────────────────────────────────────────
   int _filterIndex = 1; // default: Monthly
-  DateTime _currentMonth = DateTime(2026, 4); // April 2026
+  DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
   bool _isExpenseSelected = true;
-
-  // ─────────────────────────────────────────────────────────────
-  // TODO: REPLACE WITH API CALL — Ganti _data dengan pemanggilan
-  // API backend. Contoh:
-  //   late Future<AnalyticSummary> _dataFuture;
-  //   @override void initState() {
-  //     super.initState();
-  //     _dataFuture = AnalyticSummary.fetchFromApi(_currentMonth);
-  //   }
-  // Lalu gunakan FutureBuilder di body.
-  // Hapus dummy() setelah API tersedia.
-  // ─────────────────────────────────────────────────────────────
-  late AnalyticSummary _data;
-
-  @override
-  void initState() {
-    super.initState();
-    _data = AnalyticSummary.dummy();
-  }
 
   void _goToPreviousMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
-      // TODO: REPLACE WITH API CALL — reload data for new month
-      // _dataFuture = AnalyticSummary.fetchFromApi(_currentMonth);
     });
   }
 
   void _goToNextMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-      // TODO: REPLACE WITH API CALL — reload data for new month
-      // _dataFuture = AnalyticSummary.fetchFromApi(_currentMonth);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TransactionProvider>();
+    final data = provider.getAnalytics(_currentMonth);
+
     return Scaffold(
       backgroundColor: AppColors.dashboardPurple,
       extendBody: true,
@@ -147,7 +128,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
 
                     // 3. Expense alert card
                     ExpenseAlertCard(
-                      changePercent: _data.expenseChangePercent,
+                      changePercent: data.expenseChangePercent,
                     ),
 
                     const SizedBox(height: 16),
@@ -164,33 +145,33 @@ class _AnalyticPageState extends State<AnalyticPage> {
                     // 5. Donut chart
                     DonutChartCard(
                       totalAmount: _isExpenseSelected
-                          ? _data.totalExpense
-                          : _data.totalIncome,
-                      categories: _data.categories,
+                          ? data.totalExpense
+                          : data.totalIncome,
+                      categories: data.categories,
                     ),
 
                     const SizedBox(height: 16),
 
                     // 6. Category breakdown
                     CategoryBreakdownList(
-                      categories: _data.categories,
+                      categories: data.categories,
                     ),
 
                     const SizedBox(height: 24),
 
                     // 7. Daily overview
                     DailyOverviewCard(
-                      dailyData: _data.dailyData,
-                      avgIncome: _data.avgIncome,
-                      avgExpense: _data.avgExpense,
-                      avgSaving: _data.avgSaving,
+                      dailyData: data.dailyData,
+                      avgIncome: data.avgIncome,
+                      avgExpense: data.avgExpense,
+                      avgSaving: data.avgSaving,
                     ),
 
                     const SizedBox(height: 16),
 
                     // 8. Monthly comparison
                     MonthlyComparisonCard(
-                      data: _data.monthlyComparison,
+                      data: data.monthlyComparison,
                     ),
 
                     const SizedBox(height: 24),

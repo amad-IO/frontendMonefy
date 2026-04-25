@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../theme/colors.dart';
 
-/// Filter tabs: Weekly · Monthly · Yearly · Custom Range
+/// Enum untuk periode filter analytics.
+/// Index-nya sesuai urutan tab di UI.
+enum AnalyticPeriod {
+  weekly,  // 0
+  monthly, // 1
+  yearly,  // 2
+}
+
+/// Filter tabs: Weekly · Monthly · Yearly
 class AnalyticFilterTabs extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onChanged;
 
-  static const List<String> _labels = ['Weekly', 'Monthly', 'Yearly', 'Custom Range'];
+  static const List<String> _labels = ['Weekly', 'Monthly', 'Yearly'];
 
   const AnalyticFilterTabs({
     super.key,
@@ -69,7 +77,7 @@ class AnalyticFilterTabs extends StatelessWidget {
                         duration: const Duration(milliseconds: 200),
                         style: TextStyle(
                           fontFamily: 'Nunito',
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
                           color: isActive ? Colors.white : AppColors.textSecondary,
                         ),

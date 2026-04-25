@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../theme/colors.dart';
+import 'analytic_filter_tabs.dart';
 
-/// Month selector: ← April 2026 → with date range subtitle
-class MonthSelector extends StatelessWidget {
-  final DateTime currentMonth;
+/// Period selector yang berubah label-nya sesuai [AnalyticPeriod]:
+///   • Weekly  → "Week 1, Apr 2026  (21 Apr - 27 Apr)"
+///   • Monthly → "April 2026  (1 Apr - 30 Apr)"
+///   • Yearly  → "2026  (1 Jan - 31 Dec)"
+class PeriodSelector extends StatelessWidget {
+  final AnalyticPeriod period;
+  final DateTime anchorDate;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
 
-  const MonthSelector({
+  const PeriodSelector({
     super.key,
-    required this.currentMonth,
+    required this.period,
+    required this.anchorDate,
     required this.onPrevious,
     required this.onNext,
   });
 
   @override
   Widget build(BuildContext context) {
-    final monthName = DateFormat('MMMM yyyy').format(currentMonth);
-    final firstDay = DateTime(currentMonth.year, currentMonth.month, 1);
-    final lastDay = DateTime(currentMonth.year, currentMonth.month + 1, 0);
-    final rangeText =
-        '(${DateFormat('d MMM').format(firstDay)} - ${DateFormat('d MMM').format(lastDay)})';
+    final (title, subtitle) = _buildLabels();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -48,11 +50,11 @@ class MonthSelector extends StatelessWidget {
 
           const SizedBox(width: 16),
 
-          // Month + range
+          // Title + subtitle
           Column(
             children: [
               Text(
-                monthName,
+                title,
                 style: const TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 18,
@@ -62,7 +64,7 @@ class MonthSelector extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                rangeText,
+                subtitle,
                 style: const TextStyle(
                   fontFamily: 'Nunito',
                   fontSize: 12,
@@ -94,5 +96,35 @@ class MonthSelector extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Menghasilkan (title, subtitle) sesuai period.
+  (String, String) _buildLabels() {
+    switch (period) {
+      case AnalyticPeriod.weekly:
+        final weekStart = anchorDate.subtract(
+          Duration(days: anchorDate.weekday - 1),
+        );
+        final weekEnd = weekStart.add(const Duration(days: 6));
+        // Hitung minggu ke berapa dalam bulan
+        final weekNum = ((weekStart.day - 1) / 7).floor() + 1;
+        final title = 'Week $weekNum, ${DateFormat('MMM yyyy').format(weekStart)}';
+        final sub =
+            '(${DateFormat('d MMM').format(weekStart)} - ${DateFormat('d MMM').format(weekEnd)})';
+        return (title, sub);
+
+      case AnalyticPeriod.monthly:
+        final firstDay = DateTime(anchorDate.year, anchorDate.month, 1);
+        final lastDay = DateTime(anchorDate.year, anchorDate.month + 1, 0);
+        final title = DateFormat('MMMM yyyy').format(anchorDate);
+        final sub =
+            '(${DateFormat('d MMM').format(firstDay)} - ${DateFormat('d MMM').format(lastDay)})';
+        return (title, sub);
+
+      case AnalyticPeriod.yearly:
+        final title = '${anchorDate.year}';
+        final sub = '(1 Jan - 31 Dec)';
+        return (title, sub);
+    }
   }
 }

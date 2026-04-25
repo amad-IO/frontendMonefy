@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
-import '../../../models/analytic_model.dart';
+import '../../../models/analytic/analytic_models.dart';
+import '../../../utils/currency_formatter.dart';
 import '../../../theme/colors.dart';
+import 'analytic_card_wrapper.dart';
+import 'analytic_filter_tabs.dart';
 
-/// Daily overview section with line chart + daily averages
+/// ══════════════════════════════════════════════════════════════
+/// Overview card yang berubah sesuai [AnalyticPeriod]:
+///
+///   • Weekly  → "Weekly Overview"  — 7 bar (M, T, W, T, F, S, S)
+///   • Monthly → "Daily Overview"   — 28-31 bar, scrollable
+///   • Yearly  → "Monthly Overview" — 12 bar (Jan - Dec)
+///
+/// Chart menggunakan grouped bar chart (Income, Expense, Goals).
+/// ══════════════════════════════════════════════════════════════
 class DailyOverviewCard extends StatelessWidget {
+  final AnalyticPeriod period;
   final List<DailyDataPoint> dailyData;
   final double avgIncome;
   final double avgExpense;
@@ -13,113 +24,321 @@ class DailyOverviewCard extends StatelessWidget {
 
   const DailyOverviewCard({
     super.key,
+    required this.period,
     required this.dailyData,
     required this.avgIncome,
     required this.avgExpense,
     required this.avgSaving,
   });
 
+  // ── Warna bar ────────────────────────────────────────────
+  static const _incomeColor = Color(0xFF4CAF50);
+  static const _expenseColor = Color(0xFFE53935);
+  static final _savingColor = AppColors.primaryPurple;
+
+  // ── Title sesuai period ──────────────────────────────────
+  String get _title {
+    switch (period) {
+      case AnalyticPeriod.weekly:
+        return 'Weekly Overview';
+      case AnalyticPeriod.monthly:
+        return 'Daily Overview';
+      case AnalyticPeriod.yearly:
+        return 'Monthly Overview';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp',
-      decimalDigits: 0,
-    );
+    return AnalyticCardWrapper(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header: Title + Averages ──────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _title,
+                style: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1C1C1E),
+                ),
+              ),
+              const Spacer(),
+              // Averages (di kanan atas)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _avgText('Avg Inc:', avgIncome, _incomeColor),
+                  _avgText('Avg Exp:', avgExpense, _expenseColor),
+                  _avgText('Avg Sav:', avgSaving, _savingColor),
+                ],
+              ),
+            ],
+          ),
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+          const SizedBox(height: 16),
+
+          // ── Chart ────────────────────────────────────────
+          _buildChartArea(),
+
+          const SizedBox(height: 12),
+
+          // ── Legend ───────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _legendDot(_incomeColor, 'Income'),
+              const SizedBox(width: 20),
+              _legendDot(_expenseColor, 'Expense'),
+              const SizedBox(width: 20),
+              _legendDot(_savingColor, 'Goals'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  Chart area — scrollable untuk monthly
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildChartArea() {
+    final barData = _prepareBarData();
+    final maxY = _getMaxY(barData);
+
+    // Lebar chart: monthly butuh scroll, yang lain tidak
+    final double chartWidth;
+    switch (period) {
+      case AnalyticPeriod.weekly:
+        chartWidth = double.infinity; // fit container
+        break;
+      case AnalyticPeriod.monthly:
+        // Setiap group 28px lebar, minimal 30 hari
+        chartWidth = (barData.length * 28.0).clamp(300, 900);
+        break;
+      case AnalyticPeriod.yearly:
+        chartWidth = double.infinity; // fit container
+        break;
+    }
+
+    final chart = SizedBox(
+      height: 180,
+      width: chartWidth == double.infinity ? null : chartWidth,
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: maxY,
+          barTouchData: BarTouchData(enabled: false),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: maxY > 0 ? maxY / 4 : 25,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: const Color(0xFFF0F0F0),
+              strokeWidth: 1,
+              dashArray: [5, 5],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            const Text(
-              'Daily Overview',
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1C1C1E),
+          ),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: _getBottomLabel,
+                reservedSize: 28,
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            // Line chart
-            SizedBox(
-              height: 180,
-              child: LineChart(_buildChart()),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _legendDot(const Color(0xFF4CAF50), 'Income'),
-                const SizedBox(width: 20),
-                _legendDot(const Color(0xFFE53935), 'Expense'),
-                const SizedBox(width: 20),
-                _legendDot(AppColors.primaryPurple, 'Goals'),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Averages
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Avg Inc: ${formatter.format(avgIncome)}',
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF4CAF50),
-                      ),
-                    ),
-                    Text(
-                      'Avg Exp: ${formatter.format(avgExpense)}',
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFE53935),
-                      ),
-                    ),
-                    Text(
-                      'Avg Sav: ${formatter.format(avgSaving)}',
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryPurple,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+          ),
+          barGroups: barData,
         ),
+      ),
+    );
+
+    // Monthly → scrollable horizontal
+    if (period == AnalyticPeriod.monthly) {
+      return SizedBox(
+        height: 180,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: chart,
+        ),
+      );
+    }
+
+    return chart;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  Prepare bar data sesuai period
+  // ═══════════════════════════════════════════════════════════
+
+  List<BarChartGroupData> _prepareBarData() {
+    switch (period) {
+      case AnalyticPeriod.weekly:
+        return _weeklyBars();
+      case AnalyticPeriod.monthly:
+        return _monthlyBars();
+      case AnalyticPeriod.yearly:
+        return _yearlyBars();
+    }
+  }
+
+  /// Weekly: 7 bar (Senin - Minggu)
+  List<BarChartGroupData> _weeklyBars() {
+    // dailyData sudah berisi 7 hari (atau kurang jika belum lengkap)
+    return List.generate(7, (i) {
+      double inc = 0, exp = 0, sav = 0;
+      if (i < dailyData.length) {
+        inc = dailyData[i].income;
+        exp = dailyData[i].expense;
+        sav = dailyData[i].saving.clamp(0.0, double.infinity).toDouble();
+      }
+      return _makeGroup(i, inc, exp, sav);
+    });
+  }
+
+  /// Monthly: 1 bar per tanggal
+  List<BarChartGroupData> _monthlyBars() {
+    return List.generate(dailyData.length, (i) {
+      return _makeGroup(
+        i,
+        dailyData[i].income,
+        dailyData[i].expense,
+        dailyData[i].saving.clamp(0.0, double.infinity).toDouble(),
+      );
+    });
+  }
+
+  /// Yearly: 12 bar (Jan - Dec), aggregate dailyData per bulan
+  List<BarChartGroupData> _yearlyBars() {
+    // Aggregate by month (1-12)
+    final Map<int, double> monthIncome = {};
+    final Map<int, double> monthExpense = {};
+    for (final d in dailyData) {
+      final m = d.date.month;
+      monthIncome[m] = (monthIncome[m] ?? 0) + d.income;
+      monthExpense[m] = (monthExpense[m] ?? 0) + d.expense;
+    }
+
+    return List.generate(12, (i) {
+      final month = i + 1;
+      final inc = monthIncome[month] ?? 0;
+      final exp = monthExpense[month] ?? 0;
+      final sav = (inc - exp).clamp(0.0, double.infinity).toDouble();
+      return _makeGroup(i, inc, exp, sav);
+    });
+  }
+
+  /// Helper: buat satu group bar (income + expense + saving)
+  BarChartGroupData _makeGroup(int x, double inc, double exp, double sav) {
+    const barWidth = 5.0;
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: inc,
+          color: _incomeColor,
+          width: barWidth,
+          borderRadius: BorderRadius.circular(2),
+        ),
+        BarChartRodData(
+          toY: exp,
+          color: _expenseColor,
+          width: barWidth,
+          borderRadius: BorderRadius.circular(2),
+        ),
+        BarChartRodData(
+          toY: sav,
+          color: _savingColor,
+          width: barWidth,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ],
+    );
+  }
+
+  double _getMaxY(List<BarChartGroupData> groups) {
+    double max = 0;
+    for (final g in groups) {
+      for (final rod in g.barRods) {
+        if (rod.toY > max) max = rod.toY;
+      }
+    }
+    return max > 0 ? max * 1.2 : 100;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  X-axis labels
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _getBottomLabel(double value, TitleMeta meta) {
+    final idx = value.toInt();
+    String text;
+
+    switch (period) {
+      case AnalyticPeriod.weekly:
+        const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+        text = idx >= 0 && idx < days.length ? days[idx] : '';
+        break;
+
+      case AnalyticPeriod.monthly:
+        // Tampilkan tanggal
+        if (idx >= 0 && idx < dailyData.length) {
+          text = '${dailyData[idx].date.day}';
+        } else {
+          text = '';
+        }
+        break;
+
+      case AnalyticPeriod.yearly:
+        const months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        ];
+        text = idx >= 0 && idx < months.length ? months[idx] : '';
+        break;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontFamily: 'Nunito',
+          fontSize: 10,
+          color: Color(0xFF9E9E9E),
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  Small UI helpers
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _avgText(String label, double value, Color color) {
+    return Text(
+      '$label ${rupiahFormatter.format(value)}',
+      style: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: color,
       ),
     );
   }
@@ -143,105 +362,6 @@ class DailyOverviewCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  LineChartData _buildChart() {
-    if (dailyData.isEmpty) {
-      return LineChartData(lineBarsData: []);
-    }
-
-    // Normalize data for chart
-    final maxVal = dailyData.fold<double>(0, (prev, e) {
-      final m = [e.income, e.expense, e.saving]
-          .reduce((a, b) => a > b ? a : b);
-      return m > prev ? m : prev;
-    });
-    final double maxY = maxVal > 0 ? maxVal * 1.2 : 100.0;
-
-    return LineChartData(
-      gridData: FlGridData(
-        show: true,
-        horizontalInterval: maxY / 4,
-        drawVerticalLine: false,
-        getDrawingHorizontalLine: (value) => FlLine(
-          color: const Color(0xFFEEEEEE),
-          strokeWidth: 1,
-        ),
-      ),
-      titlesData: FlTitlesData(
-        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            interval: (dailyData.length / 6).ceilToDouble().clamp(1, 7),
-            getTitlesWidget: (value, meta) {
-              final idx = value.toInt();
-              if (idx < 0 || idx >= dailyData.length) {
-                return const SizedBox.shrink();
-              }
-              return Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  '${dailyData[idx].date.day}',
-                  style: const TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 10,
-                    color: Color(0xFF9E9E9E),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-      borderData: FlBorderData(show: false),
-      minX: 0,
-      maxX: (dailyData.length - 1).toDouble(),
-      minY: 0,
-      maxY: maxY,
-      lineBarsData: [
-        // Income line
-        _buildLine(
-          dailyData.map((e) => e.income).toList(),
-          const Color(0xFF4CAF50),
-        ),
-        // Expense line (dashed)
-        _buildLine(
-          dailyData.map((e) => e.expense).toList(),
-          const Color(0xFFE53935),
-          isDashed: true,
-        ),
-        // Saving line
-        _buildLine(
-          dailyData.map((e) => e.saving).toList(),
-          AppColors.primaryPurple,
-        ),
-      ],
-      lineTouchData: LineTouchData(enabled: false),
-    );
-  }
-
-  LineChartBarData _buildLine(
-    List<double> values,
-    Color color, {
-    bool isDashed = false,
-  }) {
-    return LineChartBarData(
-      spots: List.generate(
-        values.length,
-        (i) => FlSpot(i.toDouble(), values[i]),
-      ),
-      isCurved: true,
-      curveSmoothness: 0.3,
-      color: color,
-      barWidth: 2,
-      isStrokeCapRound: true,
-      dotData: const FlDotData(show: false),
-      dashArray: isDashed ? [6, 4] : null,
-      belowBarData: BarAreaData(show: false),
     );
   }
 }

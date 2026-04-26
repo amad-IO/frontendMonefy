@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../theme/colors.dart';
+import '../../core/theme/app_colors.dart';
 
 class InputAddWallet extends StatelessWidget {
   final String label;

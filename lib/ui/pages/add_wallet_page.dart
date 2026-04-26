@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../widgets/input_add_wallet.dart';
 
 class AddWalletPage extends StatelessWidget {

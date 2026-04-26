@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/colors.dart';
+import '../../core/theme/app_colors.dart';
 
 class SavingCard extends StatelessWidget {
   const SavingCard({super.key});

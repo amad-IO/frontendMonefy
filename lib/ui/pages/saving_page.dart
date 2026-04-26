@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../widgets/saving_card.dart';
 import '../widgets/saving_list.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../theme/colors.dart';
-import '../../../utils/sentiment_helper.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/sentiment_helper.dart';
 
 /// Alert card showing change percentage from last period.
 ///

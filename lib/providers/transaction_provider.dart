@@ -1,7 +1,7 @@
-import '../models/transaction_model.dart';
-import '../models/summary_model.dart';
-import '../models/analytic/analytic_models.dart';
-import 'analytics_calculator.dart';
+import '../data/models/transaction_model.dart';
+import '../data/models/summary_model.dart';
+import '../data/models/analytic/analytic_models.dart';
+import '../data/services/analytics_calculator.dart';
 import 'package:flutter/material.dart';
 
 /// Centralized state manager for all transactions.

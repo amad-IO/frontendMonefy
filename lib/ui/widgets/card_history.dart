@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/transaction_model.dart';
-import '../../theme/colors.dart';
+import '../../data/models/transaction_model.dart';
+import '../../core/theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
 class CardHistory extends StatelessWidget {

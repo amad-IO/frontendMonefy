@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/summary_model.dart';
-import '../../theme/colors.dart';
-import '../../theme/text_style.dart';
+import '../../data/models/summary_model.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
 
 class SummaryCard extends StatefulWidget {
   final SummaryModel summary;

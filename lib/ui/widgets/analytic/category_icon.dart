@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../models/analytic/category_breakdown.dart';
+import '../../../data/models/analytic/category_breakdown.dart';
 
 /// ══════════════════════════════════════════════════════════════
 /// Reusable icon widget untuk kategori transaksi.

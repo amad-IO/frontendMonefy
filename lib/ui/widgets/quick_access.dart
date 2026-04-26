@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../theme/text_style.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_colors.dart';
 
 class QuickAccess extends StatelessWidget {
   final VoidCallback? onBillsTap;
@@ -41,7 +42,7 @@ class QuickAccess extends StatelessWidget {
           Text(
             'Quick Access',
             style: AppTextStyle.title.copyWith(
-              color: accentColor,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.w900,
             ),
           ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../theme/colors.dart';
+import '../../core/theme/app_colors.dart';
 
 /// Data model for a wallet option in the selector.
 class WalletOption {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/colors.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// Enum untuk periode filter analytics.
 /// Index-nya sesuai urutan tab di UI.

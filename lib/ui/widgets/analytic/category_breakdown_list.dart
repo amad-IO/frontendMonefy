@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../models/analytic/analytic_models.dart';
-import '../../../utils/currency_formatter.dart';
-import '../../../theme/colors.dart';
+import '../../../data/models/analytic/analytic_models.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/theme/app_colors.dart';
 import 'analytic_card_wrapper.dart';
 import 'category_icon.dart';
 

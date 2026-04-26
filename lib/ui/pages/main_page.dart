@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import '../../theme/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../widgets/navbar/navbar.dart';
 import 'home_page.dart';
 import 'history_page.dart';

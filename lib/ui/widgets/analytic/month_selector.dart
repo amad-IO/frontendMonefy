@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../theme/colors.dart';
+import '../../../core/theme/app_colors.dart';
 import 'analytic_filter_tabs.dart';
 
 /// Period selector yang berubah label-nya sesuai [AnalyticPeriod]:

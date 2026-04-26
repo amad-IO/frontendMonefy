@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../models/analytic/analytic_models.dart';
-import '../../../utils/currency_formatter.dart';
-import '../../../theme/colors.dart';
+import '../../../data/models/analytic/analytic_models.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/theme/app_colors.dart';
 import 'analytic_card_wrapper.dart';
 
 /// Donut chart with total in center + legend on the right

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/colors.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// Toggle between Income and Expense views
 class IncomeExpenseToggle extends StatelessWidget {

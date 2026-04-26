@@ -3,8 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/transaction_provider.dart';
-import '../../theme/colors.dart';
-import '../../theme/text_style.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../widgets/analytic/analytic_filter_tabs.dart';
 import '../widgets/analytic/month_selector.dart';
 import '../widgets/analytic/expense_alert_card.dart';

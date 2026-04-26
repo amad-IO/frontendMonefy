@@ -3,7 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
-import 'theme/app_theme.dart';
+import 'core/theme/app_theme.dart';
 import 'ui/pages/main_page.dart';
 
 Future<void> main() async {

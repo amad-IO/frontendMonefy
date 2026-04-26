@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/transaction_model.dart';
+import '../../data/models/transaction_model.dart';
 import 'card_history.dart';
 
 class HistorySection extends StatefulWidget {

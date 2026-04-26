@@ -64,11 +64,11 @@ class IncomeExpenseToggle extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: isExpenseSelected
-                      ? const Color(0xFFFDE8EC)
+                      ? AppColors.expenseRedBg
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   border: isExpenseSelected
-                      ? Border.all(color: const Color(0xFFE53935), width: 1.5)
+                      ? Border.all(color: AppColors.expenseRed, width: 1.5)
                       : Border.all(color: Colors.grey.shade300),
                 ),
                 child: Center(
@@ -79,7 +79,7 @@ class IncomeExpenseToggle extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isExpenseSelected
-                          ? const Color(0xFFE53935)
+                          ? AppColors.expenseRed
                           : AppColors.textSecondary,
                     ),
                   ),

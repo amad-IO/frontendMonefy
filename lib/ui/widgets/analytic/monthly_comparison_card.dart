@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../models/analytic/analytic_models.dart';
 import '../../../utils/currency_formatter.dart';
 import '../../../utils/sentiment_helper.dart';
+import '../../../theme/colors.dart';
 import 'analytic_card_wrapper.dart';
 
 /// Period comparison card with area chart + daily avg & projected total.
@@ -47,7 +48,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                   fontFamily: 'Nunito',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1C1C1E),
+                  color: AppColors.textPrimary,
                 ),
               ),
 
@@ -87,7 +88,7 @@ class MonthlyComparisonCard extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Nunito',
               fontSize: 12,
-              color: Color(0xFF9E9E9E),
+              color: AppColors.disabled,
             ),
           ),
 
@@ -113,7 +114,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'Nunito',
                         fontSize: 12,
-                        color: Color(0xFF9E9E9E),
+                        color: AppColors.disabled,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -123,7 +124,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                         fontFamily: 'Nunito',
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1C1C1E),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -134,7 +135,7 @@ class MonthlyComparisonCard extends StatelessWidget {
               Container(
                 width: 1,
                 height: 40,
-                color: const Color(0xFFEEEEEE),
+                color: AppColors.divider,
               ),
 
               Expanded(
@@ -148,7 +149,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Nunito',
                           fontSize: 12,
-                          color: Color(0xFF9E9E9E),
+                          color: AppColors.disabled,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -158,7 +159,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                           fontFamily: 'Nunito',
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1C1C1E),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -184,7 +185,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 11,
-                    color: Color(0xFF9E9E9E),
+                    color: AppColors.disabled,
                   ),
                 ),
               ),
@@ -212,7 +213,7 @@ class MonthlyComparisonCard extends StatelessWidget {
         drawVerticalLine: false,
         horizontalInterval: maxY / 4,
         getDrawingHorizontalLine: (value) => FlLine(
-          color: const Color(0xFFF5F5F5),
+          color: AppColors.neutralBg,
           strokeWidth: 1,
         ),
       ),
@@ -234,7 +235,7 @@ class MonthlyComparisonCard extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 10,
-                    color: Color(0xFF9E9E9E),
+                    color: AppColors.disabled,
                   ),
                 ),
               );
@@ -253,16 +254,16 @@ class MonthlyComparisonCard extends StatelessWidget {
           isCurved: false,
           // Merah untuk expense, hijau untuk income
           color: isExpense
-              ? const Color(0xFFE53935)
-              : const Color(0xFF4CAF50),
+              ? AppColors.expenseRed
+              : AppColors.incomeGreen,
           barWidth: 2.5,
           isStrokeCapRound: true,
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
             color: isExpense
-                ? const Color(0xFFE53935).withValues(alpha: 0.12)
-                : const Color(0xFF4CAF50).withValues(alpha: 0.12),
+                ? AppColors.expenseRed.withValues(alpha: 0.12)
+                : AppColors.incomeGreen.withValues(alpha: 0.12),
           ),
         ),
       ],

@@ -8,7 +8,7 @@ import '../../models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
 import '../../theme/colors.dart';
 import '../components/numpad.dart';
-import '../components/filter_expanse.dart';
+import '../components/filter_expense.dart';
 import '../components/filter_income.dart';
 import '../components/wallet_selector_popup.dart';
 

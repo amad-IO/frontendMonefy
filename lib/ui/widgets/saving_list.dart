@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 
 class SavingList extends StatelessWidget {
   const SavingList({super.key});
@@ -37,7 +38,7 @@ class SavingList extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.panelWhite,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -56,11 +57,11 @@ class SavingList extends StatelessWidget {
             height: 50,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF694EDA),
+              color: AppColors.primaryPurple,
             ),
             child: const Icon(
               Icons.attach_money,
-              color: Colors.white,
+              color: AppColors.panelWhite,
               size: 28,
             ),
           ),
@@ -70,7 +71,7 @@ class SavingList extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF694EDA),
+              color: AppColors.primaryPurple,
               fontWeight: FontWeight.bold,
               fontSize: 16,
             ),
@@ -87,7 +88,7 @@ class SavingList extends StatelessWidget {
 
           const Text(
             "of 1.000.000 saving",
-            style: TextStyle(fontSize: 10, color: Colors.grey),
+            style: TextStyle(fontSize: 10, color: AppColors.disabled),
           ),
         ],
       ),
@@ -97,14 +98,14 @@ class SavingList extends StatelessWidget {
   Widget _buildCreateCard() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFD2D4D6),
+        color: AppColors.cardMuted,
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add, size: 30, color: Color(0xFF694EDA)),
+            Icon(Icons.add, size: 30, color: AppColors.primaryPurple),
             SizedBox(height: 8),
             Text("Create saving"),
           ],

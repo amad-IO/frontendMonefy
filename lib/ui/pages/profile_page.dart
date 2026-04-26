@@ -98,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.panelWhite,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: ClipRRect(
@@ -113,7 +113,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   'assets/images/kontur.svg',
                   fit: BoxFit.cover,
                   colorFilter: const ColorFilter.mode(
-                    Color(0xFFA68EF0),
+                    AppColors.decorativePurple,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -230,7 +230,7 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 32,
               height: 32,
               decoration: const BoxDecoration(
-                color: Color(0xFF111111),
+                color: AppColors.badgeDark,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -279,7 +279,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF6FD),
+                  color: AppColors.menuItemBg,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 alignment: Alignment.centerLeft,
@@ -289,7 +289,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     fontFamily: 'Nunito',
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF525252),
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ),
@@ -313,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Container(
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFFFF2452),
+            color: AppColors.error,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -335,7 +335,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   fontFamily: 'Nunito',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFF6F7FB),
+                  color: AppColors.white2,
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/colors.dart';
 import '../../../utils/sentiment_helper.dart';
 
 /// Alert card showing change percentage from last period.
@@ -28,8 +29,8 @@ class ExpenseAlertCard extends StatelessWidget {
     // ── Case 1: Tidak ada data periode lalu ──────────────────
     if (changePercent.isInfinite) {
       return _buildCard(
-        bgColor: const Color(0xFFE3F2FD),
-        textColor: const Color(0xFF1565C0),
+        bgColor: AppColors.infoBg,
+        textColor: AppColors.infoText,
         icon: Icons.info_outline_rounded,
         label: 'First period with $typeLabel — no previous data to compare.',
       );
@@ -38,8 +39,8 @@ class ExpenseAlertCard extends StatelessWidget {
     // ── Case 2: Tidak ada perubahan (0%) ─────────────────────
     if (changePercent == 0.0) {
       return _buildCard(
-        bgColor: const Color(0xFFF5F5F5),
-        textColor: const Color(0xFF757575),
+        bgColor: AppColors.neutralBg,
+        textColor: AppColors.neutralText,
         icon: Icons.remove_circle_outline_rounded,
         label: 'No $typeLabel change from last period.',
       );

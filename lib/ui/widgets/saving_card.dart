@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 
 class SavingCard extends StatelessWidget {
   const SavingCard({super.key});
@@ -10,7 +11,7 @@ class SavingCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F7FB),
+        color: AppColors.white2,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
@@ -26,7 +27,7 @@ class SavingCard extends StatelessWidget {
           Text(
             'Total Saving',
             style: TextStyle(
-              color: Color(0xFF694EDA),
+              color: AppColors.primaryPurple,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -35,7 +36,7 @@ class SavingCard extends StatelessWidget {
           Text(
             'Rp. 5.000.000,00',
             style: TextStyle(
-              color: Color(0xFF694EDA),
+              color: AppColors.primaryPurple,
               fontSize: 26,
               fontWeight: FontWeight.bold,
             ),

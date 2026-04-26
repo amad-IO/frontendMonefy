@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 import '../widgets/saving_card.dart';
 import '../widgets/saving_list.dart';
 
@@ -8,7 +9,7 @@ class SavingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: AppColors.backgroundWhite,
 
       body: SafeArea(
         child: Column(
@@ -34,7 +35,7 @@ class SavingPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF694EDA),
+                      color: AppColors.primaryPurple,
                     ),
                   ),
                 ],

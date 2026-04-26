@@ -32,8 +32,8 @@ class DailyOverviewCard extends StatelessWidget {
   });
 
   // ── Warna bar ────────────────────────────────────────────
-  static const _incomeColor = Color(0xFF4CAF50);
-  static const _expenseColor = Color(0xFFE53935);
+  static const _incomeColor = AppColors.incomeGreen;
+  static const _expenseColor = AppColors.expenseRed;
   static final _savingColor = AppColors.primaryPurple;
 
   // ── Title sesuai period ──────────────────────────────────
@@ -64,7 +64,7 @@ class DailyOverviewCard extends StatelessWidget {
                   fontFamily: 'Nunito',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1C1C1E),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -139,7 +139,7 @@ class DailyOverviewCard extends StatelessWidget {
             drawVerticalLine: false,
             horizontalInterval: maxY > 0 ? maxY / 4 : 25,
             getDrawingHorizontalLine: (value) => FlLine(
-              color: const Color(0xFFF0F0F0),
+              color: AppColors.gridLine,
               strokeWidth: 1,
               dashArray: [5, 5],
             ),
@@ -321,7 +321,7 @@ class DailyOverviewCard extends StatelessWidget {
         style: const TextStyle(
           fontFamily: 'Nunito',
           fontSize: 10,
-          color: Color(0xFF9E9E9E),
+          color: AppColors.disabled,
         ),
       ),
     );
@@ -358,7 +358,7 @@ class DailyOverviewCard extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Nunito',
             fontSize: 12,
-            color: Color(0xFF525252),
+            color: AppColors.textTertiary,
           ),
         ),
       ],

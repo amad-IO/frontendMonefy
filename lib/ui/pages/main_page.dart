@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 import '../widgets/navbar/navbar.dart';
 import 'home_page.dart';
 import 'history_page.dart';
@@ -118,7 +119,7 @@ class _PlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: AppColors.backgroundWhite,
       body: Center(
         child: Text(
           '$label Page\n(coming soon)',
@@ -126,7 +127,7 @@ class _PlaceholderPage extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Nunito',
             fontSize: 16,
-            color: Color(0xFF6D6D6D),
+            color: AppColors.textSecondary,
           ),
         ),
       ),

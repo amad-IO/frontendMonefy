@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../theme/text_style.dart';
-import '../pages/bills_page.dart';
 
 class QuickAccess extends StatelessWidget {
   final VoidCallback? onBillsTap;

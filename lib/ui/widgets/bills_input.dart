@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/colors.dart';
 
 class BillsInput extends StatelessWidget {
   final String label;
@@ -60,7 +61,7 @@ class BillsInput extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               filled: true,
-              fillColor: const Color(0xFFF6F7FB),
+              fillColor: AppColors.white2,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide.none,

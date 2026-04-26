@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../models/analytic/analytic_models.dart';
 import '../../../utils/currency_formatter.dart';
+import '../../../theme/colors.dart';
 import 'analytic_card_wrapper.dart';
 
 /// Donut chart with total in center + legend on the right
@@ -48,7 +49,7 @@ class DonutChartCard extends StatelessWidget {
                       style: const TextStyle(
                         fontFamily: 'Nunito',
                         fontSize: 11,
-                        color: Color(0xFF9E9E9E),
+                        color: AppColors.disabled,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -58,7 +59,7 @@ class DonutChartCard extends StatelessWidget {
                         fontFamily: 'Nunito',
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1C1C1E),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -94,7 +95,7 @@ class DonutChartCard extends StatelessWidget {
                           style: const TextStyle(
                             fontFamily: 'Nunito',
                             fontSize: 12,
-                            color: Color(0xFF525252),
+                            color: AppColors.textTertiary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -105,7 +106,7 @@ class DonutChartCard extends StatelessWidget {
                           fontFamily: 'Nunito',
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF525252),
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -124,7 +125,7 @@ class DonutChartCard extends StatelessWidget {
       return [
         PieChartSectionData(
           value: 1,
-          color: const Color(0xFFE0E0E0),
+          color: AppColors.chartEmpty,
           radius: 22,
           title: '',
           showTitle: false,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 import '../widgets/input_add_wallet.dart';
 
 class AddWalletPage extends StatelessWidget {
@@ -9,7 +10,7 @@ class AddWalletPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: AppColors.backgroundWhite,
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -35,7 +36,7 @@ class AddWalletPage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF694EDA),
+                          color: AppColors.primaryPurple,
                         ),
                       ),
                     ),
@@ -50,7 +51,7 @@ class AddWalletPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF694EDA),
+                    color: AppColors.primaryPurple,
                   ),
                 ),
 
@@ -82,7 +83,7 @@ class AddWalletPage extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF694EDA),
+                      backgroundColor: AppColors.primaryPurple,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

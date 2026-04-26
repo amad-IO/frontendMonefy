@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/analytic/analytic_models.dart';
 import '../../../utils/currency_formatter.dart';
+import '../../../theme/colors.dart';
 import 'analytic_card_wrapper.dart';
 import 'category_icon.dart';
 
@@ -39,7 +40,7 @@ class CategoryBreakdownList extends StatelessWidget {
                           fontFamily: 'Nunito',
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1C1C1E),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -48,7 +49,7 @@ class CategoryBreakdownList extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: cat.percentage / 100,
-                          backgroundColor: const Color(0xFFEEEEEE),
+                          backgroundColor: AppColors.divider,
                           valueColor: AlwaysStoppedAnimation(cat.color),
                           minHeight: 6,
                         ),
@@ -77,7 +78,7 @@ class CategoryBreakdownList extends StatelessWidget {
                       style: const TextStyle(
                         fontFamily: 'Nunito',
                         fontSize: 11,
-                        color: Color(0xFF9E9E9E),
+                        color: AppColors.disabled,
                       ),
                     ),
                   ],

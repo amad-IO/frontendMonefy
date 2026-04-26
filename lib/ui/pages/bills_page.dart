@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/colors.dart';
 import '../widgets/bills_input.dart';
 
 class BillsPage extends StatefulWidget {
@@ -14,7 +15,7 @@ class _BillsPageState extends State<BillsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: AppColors.backgroundWhite,
 
       body: SafeArea(
         child: SingleChildScrollView(
@@ -24,7 +25,7 @@ class _BillsPageState extends State<BillsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🔥 HEADER
+                //  HEADER
                 Row(
                   children: [
                     IconButton(
@@ -40,7 +41,7 @@ class _BillsPageState extends State<BillsPage> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF694EDA),
+                          color: AppColors.primaryPurple,
                         ),
                       ),
                     ),
@@ -55,7 +56,7 @@ class _BillsPageState extends State<BillsPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF694EDA),
+                    color: AppColors.primaryPurple,
                   ),
                 ),
 
@@ -84,7 +85,7 @@ class _BillsPageState extends State<BillsPage> {
 
                 const SizedBox(height: 24),
 
-                // 🔥 BUTTON SIMPAN
+                //  BUTTON SIMPAN
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -94,7 +95,7 @@ class _BillsPageState extends State<BillsPage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF694EDA),
+                      backgroundColor: AppColors.primaryPurple,
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'ui/pages/main_page.dart';
+import 'ui/pages/login_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,7 @@ class MonefyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Monefy',
         theme: AppTheme.lightTheme,
-        home: const MainPage(),
+        home: LoginPage(),
       ),
     );
   }

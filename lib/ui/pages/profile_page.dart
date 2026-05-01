@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../widgets/confirm_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -308,7 +309,18 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsets.symmetric(horizontal: 48),
       child: GestureDetector(
         onTap: () {
-          // TODO: handle logout
+          ConfirmDialog.show(
+            context: context,
+            icon: Icons.help_rounded,
+            title: 'Log out of your account?',
+            description:
+                "Are you sure you want to log out of Monefy?\nYou'll need to sign in again to access your savings and track your finances.",
+            confirmLabel: 'Log Out',
+            confirmColor: AppColors.error,
+            onConfirm: () {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          );
         },
         child: Container(
           height: 56,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../data/models/transaction_model.dart';
 import '../../core/theme/app_colors.dart';
-import 'package:intl/intl.dart';
+import 'transaction_detail_sheet.dart';
 
 class CardHistory extends StatelessWidget {
   final TransactionModel transaction;
@@ -25,87 +26,97 @@ class CardHistory extends StatelessWidget {
       ? AppColors.success
       : AppColors.error;
 
-    IconData get _historyIcon => transaction.type == TransactionType.income
+  IconData get _historyIcon => transaction.type == TransactionType.income
       ? Icons.arrow_downward_rounded
       : Icons.arrow_upward_rounded;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => TransactionDetailSheet.show(
+        context: context,
+        transaction: transaction,
       ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: _amountColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _historyIcon,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  size: 20,
-                ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Icon lingkaran
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _amountColor,
+                shape: BoxShape.circle,
               ),
-            ],
-          ),
-          const SizedBox(width: 12),
+              child: Icon(
+                _historyIcon,
+                color: Theme.of(context).colorScheme.onPrimary,
+                size: 20,
+              ),
+            ),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 12),
+
+            // Kategori + tanggal
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.category.isEmpty
+                        ? 'Unknown'
+                        : transaction.category,
+                    style: (Theme.of(context).textTheme.titleMedium ??
+                            const TextStyle())
+                        .copyWith(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formattedDate,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+
+            // Nominal + wallet
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  transaction.category.isEmpty ? 'Unknown' : transaction.category,
+                  _formattedAmount,
                   style: (Theme.of(context).textTheme.titleMedium ??
                           const TextStyle())
-                      .copyWith(fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
+                      .copyWith(
+                    fontSize: 13,
+                    color: _amountColor,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _formattedDate,
+                  transaction.walletName.isEmpty
+                      ? 'Unknown Wallet'
+                      : transaction.walletName,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
-          ),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                _formattedAmount,
-                style: (Theme.of(context).textTheme.titleMedium ??
-                        const TextStyle())
-                    .copyWith(
-                  fontSize: 13,
-                  color: _amountColor,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                  transaction.walletName.isEmpty ? 'Unknown Wallet' : transaction.walletName,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

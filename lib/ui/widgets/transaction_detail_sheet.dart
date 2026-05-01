@@ -1,16 +1,16 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../../data/models/transaction_model.dart';
-import '../../providers/transaction_provider.dart';
 import '../../core/theme/app_colors.dart';
-import 'confirm_dialog.dart';
 
 /// ══════════════════════════════════════════════════════════════
 /// TransactionDetailSheet — Bottom sheet detail satu transaksi.
 ///
-/// Menampilkan: icon, nominal, tipe, dan baris detail
-/// (Title, Category, Wallet, Date, Time) + tombol Delete.
+/// Menampilkan: icon, nominal, dan baris detail
+/// (Category, Title (jika More), Wallet, Date, Time).
+/// Background menggunakan SVG kontur.
 ///
 /// Cara pakai:
 /// ```dart
@@ -47,13 +47,8 @@ class TransactionDetailSheet extends StatelessWidget {
   Color get _typeColor =>
       _isIncome ? AppColors.incomeGreen : AppColors.expenseRed;
 
-  Color get _typeBgColor =>
-      _isIncome ? AppColors.incomeGreenBg : AppColors.expenseRedBg;
-
   IconData get _typeIcon =>
       _isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
-
-  String get _typeLabel => _isIncome ? 'Income' : 'Expense';
 
   String get _formattedAmount {
     final formatter = NumberFormat('#,##0', 'id_ID');
@@ -62,10 +57,14 @@ class TransactionDetailSheet extends StatelessWidget {
   }
 
   String get _formattedDate =>
-      DateFormat('d MMMM yyyy', 'id_ID').format(transaction.date);
+      DateFormat('d MMM yyyy', 'id_ID').format(transaction.date);
 
   String get _formattedTime =>
       DateFormat('HH:mm').format(transaction.date);
+
+  /// Title hanya tampil jika category == 'More' dan title tidak kosong
+  bool get _showTitle =>
+      transaction.category == 'More' && transaction.title.isNotEmpty;
 
   // ── Build ──────────────────────────────────────────────────
   @override
@@ -73,7 +72,7 @@ class TransactionDetailSheet extends StatelessWidget {
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return FractionallySizedBox(
-      heightFactor: 0.78,
+      heightFactor: 0.65,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(
@@ -87,31 +86,23 @@ class TransactionDetailSheet extends StatelessWidget {
           children: [
             // ── Header (purple) ────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
               child: Row(
                 children: [
-                  // Tombol close
+                  // Tombol close — plain icon seperti di mockup
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryPurple.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: AppColors.primaryPurple,
-                        size: 20,
-                      ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.primaryPurple,
+                      size: 24,
                     ),
                   ),
 
-                  // Judul
+                  // Judul tengah
                   const Expanded(
                     child: Text(
-                      'Transaction Detail',
+                      'Transaction detail',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Nunito',
@@ -123,147 +114,154 @@ class TransactionDetailSheet extends StatelessWidget {
                   ),
 
                   // Spacer biar title tetap center
-                  const SizedBox(width: 36),
+                  const SizedBox(width: 24),
                 ],
               ),
             ),
 
-            // ── Body (white rounded card) ──────────────────
+            // ── Body (white + kontur bg) ───────────────────
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.backgroundWhite,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(28),
-                    topRight: Radius.circular(28),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // White base
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                    ),
                   ),
-                ),
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.only(bottom: safeBottom + 24),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 32),
 
-                      // ── Icon bulat ──────────────────────
-                      Container(
-                        width: 76,
-                        height: 76,
-                        decoration: BoxDecoration(
-                          color: _typeBgColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          _typeIcon,
-                          color: _typeColor,
-                          size: 36,
+                  // SVG kontur overlay
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                      child: Opacity(
+                        opacity: 0.55,
+                        child: SvgPicture.asset(
+                          'assets/images/kontur.svg',
+                          fit: BoxFit.cover,
                         ),
                       ),
+                    ),
+                  ),
 
-                      const SizedBox(height: 16),
+                  // Scrollable content di atas overlay
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(bottom: safeBottom + 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 36),
 
-                      // ── Nominal ─────────────────────────
-                      Text(
-                        _formattedAmount,
-                        style: TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: _typeColor,
-                        ),
-                      ),
+                        // ── Amount Card (glassmorphism) ──────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 28, horizontal: 20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.dashboardPurple
+                                      .withValues(alpha: 0.25),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.primaryPurple.withValues(alpha: 0.5),
+                                    width: 1.5,
+                                  ),
+                                ),
 
-                      const SizedBox(height: 6),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Icon bulat berwarna
+                                    Container(
+                                      width: 52,
+                                      height: 52,
+                                      decoration: BoxDecoration(
+                                        color: _typeColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        _typeIcon,
+                                        color: Colors.white,
+                                        size: 26,
+                                      ),
+                                    ),
 
-                      // ── Label tipe ──────────────────────
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _typeBgColor,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          _typeLabel,
-                          style: TextStyle(
-                            fontFamily: 'Nunito',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _typeColor,
+                                    const SizedBox(height: 14),
+
+                                    // Nominal
+                                    Text(
+                                      _formattedAmount,
+                                      style: TextStyle(
+                                        fontFamily: 'Nunito',
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w800,
+                                        color: _typeColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 28),
 
-                      const Divider(
-                          height: 1,
-                          color: AppColors.divider,
-                          indent: 24,
-                          endIndent: 24),
+                        const SizedBox(height: 44),
 
-                      const SizedBox(height: 4),
+                        // ── Info Rows ─────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          child: Column(
+                            children: [
+                              _InfoRow(
+                                label: 'Category',
+                                value: transaction.category.isEmpty
+                                    ? '-'
+                                    : transaction.category,
+                              ),
 
-                      // ── Baris detail ────────────────────
-                      _DetailRow(
-                        label: 'Title',
-                        value: transaction.category.isEmpty
-                            ? '-'
-                            : transaction.category,
-                      ),
-                      _DetailRow(
-                        label: 'Category',
-                        value: transaction.category.isEmpty
-                            ? '-'
-                            : transaction.category,
-                      ),
-                      _DetailRow(
-                        label: 'Wallet',
-                        value: transaction.walletName.isEmpty
-                            ? '-'
-                            : transaction.walletName,
-                      ),
-                      _DetailRow(
-                        label: 'Date',
-                        value: _formattedDate,
-                      ),
-                      _DetailRow(
-                        label: 'Time',
-                        value: _formattedTime,
-                        isLast: true,
-                      ),
+                              // Title hanya muncul jika category == 'More'
+                              if (_showTitle)
+                                _InfoRow(
+                                  label: 'Title',
+                                  value: transaction.title,
+                                ),
 
-                      const SizedBox(height: 32),
-
-                      // ── Tombol Delete ───────────────────
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: _DeleteButton(
-                          onTap: () {
-                            ConfirmDialog.show(
-                              context: context,
-                              icon: Icons.delete_rounded,
-                              iconColor: AppColors.error,
-                              iconBgColor: AppColors.expenseRedBg,
-                              title: 'Delete Transaction?',
-                              description:
-                                  'This transaction will be permanently deleted and cannot be recovered.',
-                              confirmLabel: 'Delete',
-                              confirmColor: AppColors.error,
-                              onConfirm: () {
-                                context
-                                    .read<TransactionProvider>()
-                                    .deleteTransaction(transaction.id);
-                                Navigator.of(context).pop();
-                              },
-                            );
-                          },
+                              _InfoRow(
+                                label: 'Wallet',
+                                value: transaction.walletName.isEmpty
+                                    ? '-'
+                                    : transaction.walletName,
+                              ),
+                              _InfoRow(
+                                label: 'Date',
+                                value: _formattedDate,
+                              ),
+                              _InfoRow(
+                                label: 'Time',
+                                value: _formattedTime,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -273,125 +271,44 @@ class TransactionDetailSheet extends StatelessWidget {
   }
 }
 
-// ── Detail row ───────────────────────────────────────────────
+// ── Info row ─────────────────────────────────────────────────
 
-class _DetailRow extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  final bool isLast;
 
-  const _DetailRow({
+  const _InfoRow({
     required this.label,
     required this.value,
-    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
           ),
-        ),
-        if (!isLast)
-          const Divider(
-            height: 1,
-            color: AppColors.divider,
-            indent: 24,
-            endIndent: 24,
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
-      ],
-    );
-  }
-}
-
-// ── Delete button ────────────────────────────────────────────
-
-class _DeleteButton extends StatefulWidget {
-  final VoidCallback onTap;
-
-  const _DeleteButton({required this.onTap});
-
-  @override
-  State<_DeleteButton> createState() => _DeleteButtonState();
-}
-
-class _DeleteButtonState extends State<_DeleteButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => Future.delayed(
-        const Duration(milliseconds: 120),
-        () {
-          if (mounted) setState(() => _pressed = false);
-        },
-      ),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: double.infinity,
-          height: 52,
-          decoration: BoxDecoration(
-            color: _pressed
-                ? AppColors.error.withValues(alpha: 0.87)
-                : AppColors.error,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.error.withValues(alpha: 0.28),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.delete_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Delete Transaction',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

@@ -201,7 +201,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tidak ada transaksi',
+              'No transaction yet',
               style: (Theme.of(context).textTheme.bodySmall ??
                       const TextStyle())
                   .copyWith(fontSize: 13),

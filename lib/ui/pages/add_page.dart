@@ -139,18 +139,18 @@ class _AddPageState extends State<AddPage>
       return;
     }
 
-    // ── Determine category ──
+    // ── Determine category & title ──
     String category;
+    String title = '';
     if (_type == TransactionType.expense) {
       category = _selectedCategory ?? 'Expense';
-      // If "More" was selected, use the title
-      if (category == 'More' && _titleController.text.trim().isNotEmpty) {
-        category = _titleController.text.trim();
+      if (category == 'More') {
+        title = _titleController.text.trim();
       }
     } else {
       category = _selectedCategory ?? 'Income';
-      if (category == 'More' && _titleController.text.trim().isNotEmpty) {
-        category = _titleController.text.trim();
+      if (category == 'More') {
+        title = _titleController.text.trim();
       }
     }
 
@@ -158,6 +158,7 @@ class _AddPageState extends State<AddPage>
     final transaction = TransactionModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       category: category,
+      title: title,
       amount: amount,
       date: DateTime.now(),
       walletName: _selectedWallet!,

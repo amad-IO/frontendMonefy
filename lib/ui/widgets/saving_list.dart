@@ -2,22 +2,19 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
 class SavingList extends StatelessWidget {
-  const SavingList({super.key});
+  final List<Map<String, dynamic>> items;
+
+  const SavingList({
+    super.key,
+    this.items = const [], // 🔥 default kosong
+  });
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      "Phone",
-      "Car",
-      "Laptop",
-      "Watch",
-      "Watch",
-    ];
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.builder(
-        itemCount: items.length + 1,
+        itemCount: items.isEmpty ? 1 : items.length + 1,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           mainAxisSpacing: 16,
@@ -25,71 +22,47 @@ class SavingList extends StatelessWidget {
           childAspectRatio: 1.1,
         ),
         itemBuilder: (context, index) {
+          /// 🔥 KALAU BELUM ADA DATA
+          if (items.isEmpty) {
+            return _buildCreateCard();
+          }
+
+          /// 🔥 CARD TAMBAH
           if (index == items.length) {
             return _buildCreateCard();
           }
-          return _buildItem(items[index]);
+
+          final item = items[index];
+
+          return _buildItem(
+            title: item['name'],
+            amount: item['amount'],
+            target: item['target'],
+          );
         },
       ),
     );
   }
 
-  Widget _buildItem(String title) {
+  Widget _buildItem({
+    required String title,
+    required int amount,
+    required int target,
+  }) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.panelWhite,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // ICON BULAT
-          Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primaryPurple,
-            ),
-            child: const Icon(
-              Icons.attach_money,
-              color: AppColors.panelWhite,
-              size: 28,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.primaryPurple,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          const Text(
-            "1.000.000,00",
-            style: TextStyle(fontSize: 12),
-          ),
-
-          const SizedBox(height: 2),
-
-          const Text(
-            "of 1.000.000 saving",
-            style: TextStyle(fontSize: 10, color: AppColors.disabled),
-          ),
+          const Icon(Icons.attach_money, size: 30),
+          const SizedBox(height: 10),
+          Text(title),
+          Text("Rp. $amount"),
+          Text("of Rp. $target"),
         ],
       ),
     );
@@ -99,7 +72,7 @@ class SavingList extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.cardMuted,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: const Center(
         child: Column(

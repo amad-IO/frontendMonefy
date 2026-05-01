@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
 class SavingCard extends StatelessWidget {
-  const SavingCard({super.key});
+  final int? total;
+
+  const SavingCard({super.key, this.total});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity, //FULL WIDTH
+      width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       decoration: BoxDecoration(
@@ -15,16 +17,15 @@ class SavingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             offset: const Offset(0, 6),
             blurRadius: 8,
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center, //tengah
-        children: const [
-          Text(
+        children: [
+          const Text(
             'Total Saving',
             style: TextStyle(
               color: AppColors.primaryPurple,
@@ -32,10 +33,12 @@ class SavingCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
+
+          /// 🔥 KALAU BELUM ADA DATA
           Text(
-            'Rp. 5.000.000,00',
-            style: TextStyle(
+            total == null ? "-" : "Rp. $total",
+            style: const TextStyle(
               color: AppColors.primaryPurple,
               fontSize: 26,
               fontWeight: FontWeight.bold,

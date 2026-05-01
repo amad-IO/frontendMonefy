@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
+import 'providers/saving_provider.dart'; // 🔥 tambahin ini
 import 'core/theme/app_theme.dart';
 import 'ui/pages/main_page.dart';
 import 'ui/pages/login_page.dart';
@@ -19,8 +20,18 @@ class MonefyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => TransactionProvider(),
+    return MultiProvider( // 🔥 GANTI INI
+      providers: [
+
+        ChangeNotifierProvider(
+          create: (_) => TransactionProvider(),
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => SavingProvider(),
+        ),
+
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Monefy',

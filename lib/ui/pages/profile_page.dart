@@ -108,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
             // ── Kontur SVG background ──
             Positioned.fill(
               child: Opacity(
-                opacity: 0.28,
+                opacity: 0.9,
                 child: SvgPicture.asset(
                   'assets/images/kontur.svg',
                   fit: BoxFit.cover,

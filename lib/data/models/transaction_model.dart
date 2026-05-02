@@ -5,7 +5,7 @@ enum TransactionFilter { day, week, month, year, all }
 class TransactionModel {
   final String id;
   final String category;
-  final String title; // diisi jika category == 'More'
+  final String title; 
   final double amount;
   final DateTime date;
   final String walletName;
@@ -34,4 +34,4 @@ class TransactionModel {
           : TransactionType.expense,
     );
   }
-}
+}

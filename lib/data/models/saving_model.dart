@@ -11,7 +11,7 @@ class Saving {
     required this.target,
   });
 
-  /// 🔥 dari JSON (backend → frontend)
+  /// dari JSON (backend → frontend)
   factory Saving.fromJson(Map<String, dynamic> json) {
     return Saving(
       id: json['id'] ?? 0,

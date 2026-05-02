@@ -67,3 +67,125 @@ class AppColors {
   // Decorative
   static const decorativeCircle = Color(0x0CF6F7FB);
 }
+
+// ══════════════════════════════════════════════════════════════
+/// WalletTheme — pasangan gradasi untuk card wallet.
+///
+/// [cardGradient]  → gradasi utama latar belakang kartu.
+/// [logoGradient]  → gradasi untuk elemen logo / chip di kartu.
+///
+/// Cara pakai:
+/// ```dart
+/// final theme = WalletTheme.midnight;
+/// BoxDecoration(gradient: theme.cardLinearGradient)
+/// ```
+// ══════════════════════════════════════════════════════════════
+class WalletTheme {
+  final List<Color> cardGradient;
+  final List<Color> logoGradient;
+
+  const WalletTheme(this.cardGradient, this.logoGradient);
+
+  /// Gradient siap pakai untuk [BoxDecoration].
+  LinearGradient get cardLinearGradient => LinearGradient(
+        colors: cardGradient,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+
+  LinearGradient get logoLinearGradient => LinearGradient(
+        colors: logoGradient,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
+
+  // ── Named themes ──────────────────────────────────────────
+
+  /// Merah-oranye — cocok untuk ShopeePay
+  static const volcano = WalletTheme(
+    [Color(0xFFFF6B35), Color(0xFFFF2200)],
+    [Color(0xFFEB001B), Color(0xFFF79E1B)],
+  );
+
+  /// Tosca-biru — cocok untuk GoPay
+  static const ocean = WalletTheme(
+    [Color(0xFF00C4B4), Color(0xFF0066FF)],
+    [Color(0xFF0066FF), Color(0xFF00C4B4)],
+  );
+
+  /// Ungu-gelap — cocok untuk OVO
+  static const nebula = WalletTheme(
+    [Color(0xFF9B59F5), Color(0xFF4C1D95)],
+    [Color(0xFF9B59F5), Color(0xFFC084FC)],
+  );
+
+  /// Biru langit — cocok untuk DANA
+  static const sky = WalletTheme(
+    [Color(0xFF38BDF8), Color(0xFF0369A1)],
+    [Color(0xFF0369A1), Color(0xFF38BDF8)],
+  );
+
+  /// Oranye-merah tua — cocok untuk LinkAja
+  static const ember = WalletTheme(
+    [Color(0xFFF97316), Color(0xFF9F1239)],
+    [Color(0xFF9F1239), Color(0xFFF97316)],
+  );
+
+  /// Biru gelap navy — cocok untuk BCA
+  static const midnight = WalletTheme(
+    [Color(0xFF1E3A5F), Color(0xFF0F172A)],
+    [Color(0xFF1D4ED8), Color(0xFF60A5FA)],
+  );
+
+  /// Cyan-indigo — cocok untuk BRI
+  static const aurora = WalletTheme(
+    [Color(0xFF06B6D4), Color(0xFF6366F1)],
+    [Color(0xFF6366F1), Color(0xFF06B6D4)],
+  );
+
+  /// Kuning-emas — cocok untuk Mandiri
+  static const citrus = WalletTheme(
+    [Color(0xFFFCD34D), Color(0xFFF59E0B)],
+    [Color(0xFFF59E0B), Color(0xFFFCD34D)],
+  );
+
+  /// Oranye-merah bata — #EB8431 → #E63E34
+  static const sunset = WalletTheme(
+    [Color(0xFFEB8431), Color(0xFFE63E34)],
+    [Color(0xFFE63E34), Color(0xFFEB8431)],
+  );
+
+  /// Abu gelap-hitam — #504E4F → #1A1819
+  static const carbon = WalletTheme(
+    [Color(0xFF504E4F), Color(0xFF1A1819)],
+    [Color(0xFF1A1819), Color(0xFF504E4F)],
+  );
+
+  /// Biru baja — #708FA4 → #115199
+  static const steel = WalletTheme(
+    [Color(0xFF708FA4), Color(0xFF115199)],
+    [Color(0xFF115199), Color(0xFF708FA4)],
+  );
+
+  /// Biru-hitam gelap — #20212A → #292E3E
+  static const cosmos = WalletTheme(
+    [Color(0xFF20212A), Color(0xFF292E3E)],
+    [Color(0xFF292E3E), Color(0xFF20212A)],
+  );
+
+  /// Semua tema dalam urutan daftar (berguna untuk picker).
+  static const List<WalletTheme> all = [
+    volcano,
+    ocean,
+    nebula,
+    sky,
+    ember,
+    midnight,
+    aurora,
+    citrus,
+    sunset,
+    carbon,
+    steel,
+    cosmos,
+  ];
+}

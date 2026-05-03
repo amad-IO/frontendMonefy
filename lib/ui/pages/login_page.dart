@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+
 import 'package:monefy/ui/pages/sign_up_page.dart';
 import '../widgets/auth_form.dart';
 import 'main_page.dart';
+import '../../providers/auth_provider.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,12 +17,18 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  /// 🔥 FORM KEY
+  /// FORM KEY
   final _formKey = GlobalKey<FormState>();
 
-  void handleLogin() {
+  /// HANDLE LOGIN (SUDAH CONNECT PROVIDER)
+  void handleLogin() async {
 
-    /// 🔥 CEK VALIDASI DARI AuthForm
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    /// BIAR GAK DOUBLE CLICK SAAT LOADING
+    if (authProvider.isLoading) return;
+
+    /// VALIDASI FORM
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -27,13 +36,27 @@ class _LoginPageState extends State<LoginPage> {
     String username = usernameController.text.trim();
     String password = passwordController.text.trim();
 
-    print("Login: $username - $password");
+    try {
+      await authProvider.login(username, password);
 
-    /// 🔥 PINDAH KE DASHBOARD
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => MainPage()),
-    );
+      /// PINDAH KE DASHBOARD
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainPage()),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Username atau password salah")),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -71,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 30),
 
-                  /// 🔥 FORM
+                  /// FORM
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -82,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Padding(
                         padding: const EdgeInsets.all(25),
                         child: AuthForm(
-                          formKey: _formKey, // 🔥 TAMBAH INI
+                          formKey: _formKey,
                           title: "Login",
                           buttonText: "Login",
                           usernameController: usernameController,

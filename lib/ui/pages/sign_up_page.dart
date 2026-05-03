@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+
 import '../widgets/auth_form.dart';
 import 'login_page.dart';
+import '../../providers/auth_provider.dart';
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -14,32 +17,62 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
-  /// 🔥 FORM KEY
+  /// FORM KEY
   final _formKey = GlobalKey<FormState>();
 
-  void handleRegister() {
+  void handleRegister() async {
 
-    /// 🔥 CEK VALIDASI DARI AuthForm
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    /// BIAR GAK DOUBLE CLICK
+    if (authProvider.isLoading) return;
+
+    /// VALIDASI FORM
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     String username = usernameController.text.trim();
+    String password = passwordController.text.trim();
+    String confirmPassword = confirmPasswordController.text.trim();
 
-    print("Register: $username");
-
-    /// 🔥 PINDAH KE LOGIN
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-
-    /// 🔥 NOTIF BERHASIL
-    Future.delayed(const Duration(milliseconds: 300), () {
+    /// VALIDASI CONFIRM PASSWORD
+    if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sign up berhasil")),
+        const SnackBar(content: Text("Password tidak sama")),
       );
-    });
+      return;
+    }
+
+    try {
+      await authProvider.signUp(username, password);
+
+      /// PINDAH KE LOGIN
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+
+      /// NOTIF BERHASIL
+      Future.delayed(const Duration(milliseconds: 300), () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Sign up berhasil")),
+        );
+      });
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -72,7 +105,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
               const SizedBox(height: 30),
 
-              /// 🔥 FORM
+              /// FORM
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -82,9 +115,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(25),
                   child: AuthForm(
-                    formKey: _formKey, // 🔥 WAJIB
+                    formKey: _formKey,
                     title: "Sign Up",
-                    buttonText: "Register",
+                    buttonText: "Sign Up",
                     isRegister: true,
                     usernameController: usernameController,
                     passwordController: passwordController,

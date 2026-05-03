@@ -7,6 +7,7 @@ import 'providers/saving_provider.dart'; // 🔥 tambahin ini
 import 'core/theme/app_theme.dart';
 import 'ui/pages/main_page.dart';
 import 'ui/pages/login_page.dart';
+import 'providers/auth_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,8 +21,12 @@ class MonefyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider( // 🔥 GANTI INI
+    return MultiProvider(
       providers: [
+
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+        ),
 
         ChangeNotifierProvider(
           create: (_) => TransactionProvider(),

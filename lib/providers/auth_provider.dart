@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../data/models/login_request.dart';
-import '../data/models/sign_up_request.dart';
-import '../data/services/auth_service.dart';
+
+import '../data/api_services.dart';
 
 class AuthProvider with ChangeNotifier {
-  final AuthService _authService = AuthService();
+  final ApiService _apiService = ApiService();
 
   String? _token;
   String? _username;
@@ -15,52 +14,40 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _token != null;
 
-  // ✅ LOGIN (PAKAI EMAIL)
   Future<void> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final response = await _authService.login(
-        LoginRequest(
-          email: email, // 🔥 GANTI
-          password: password,
-        ),
-      );
+      final response = await _apiService.login(email, password);
 
-      _token = response.token;
-      _username = response.username;
+      _token = response['token'] ?? response['access_token'] ?? response['data']?['token'];
+      _username = response['username'] ?? response['data']?['username'] ?? email;
 
-    } catch (e) {
-      rethrow;
+      if (_token == null) {
+        throw Exception('Token tidak ditemukan pada respons login');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // ✅ SIGN UP (TAMBAH EMAIL)
   Future<void> signUp(String username, String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await _authService.signUp(
-        SignUpRequest(
-          username: username,
-          email: email, // 🔥 TAMBAH
-          password: password,
-        ),
-      );
-    } catch (e) {
-      rethrow;
+      final success = await _apiService.signUp(username, email, password);
+      if (!success) {
+        throw Exception('Sign up gagal');
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // LOGOUT
   void logout() {
     _token = null;
     _username = null;

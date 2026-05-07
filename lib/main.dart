@@ -3,11 +3,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
-import 'providers/saving_provider.dart'; // 🔥 tambahin ini
-import 'core/theme/app_theme.dart';
-import 'ui/pages/main_page.dart';
-import 'ui/pages/login_page.dart';
+import 'providers/saving_provider.dart'; //  tambahin ini
 import 'providers/auth_provider.dart';
+import 'core/theme/app_theme.dart';
+import 'ui/pages/login_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +22,6 @@ class MonefyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-
         ChangeNotifierProvider(
           create: (_) => AuthProvider(),
         ),
@@ -35,7 +33,6 @@ class MonefyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SavingProvider(),
         ),
-
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import 'package:monefy/ui/pages/sign_up_page.dart';
 import '../widgets/auth_form.dart';
-import 'main_page.dart';
 import '../../providers/auth_provider.dart';
+import 'main_page.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,8 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
-  final TextEditingController emailController = TextEditingController(); // ✅ GANTI
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
@@ -23,30 +22,28 @@ class _LoginPageState extends State<LoginPage> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (authProvider.isLoading) return;
-
     if (!_formKey.currentState!.validate()) return;
 
-    String email = emailController.text.trim(); // ✅ GANTI
-    String password = passwordController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
     try {
-      await authProvider.login(email, password); // ✅ GANTI
+      await authProvider.login(email, password);
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainPage()),
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email atau password salah")), // ✅ GANTI
+        const SnackBar(content: Text("Email atau password salah")),
       );
     }
   }
 
   @override
   void dispose() {
-    emailController.dispose(); // ✅ JANGAN LUPA
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -65,7 +62,6 @@ class _LoginPageState extends State<LoginPage> {
             child: IntrinsicHeight(
               child: Column(
                 children: [
-
                   const SizedBox(height: 40),
 
                   SvgPicture.asset(
@@ -86,7 +82,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 30),
 
-                  /// FORM
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -100,12 +95,10 @@ class _LoginPageState extends State<LoginPage> {
                           formKey: _formKey,
                           title: "Login",
                           buttonText: "Login",
-                          isRegister: false, // ✅ PENTING
-
-                          usernameController: TextEditingController(), // dummy (tidak dipakai)
-                          emailController: emailController, // ✅ WAJIB
+                          isRegister: false,
+                          usernameController: TextEditingController(),
+                          emailController: emailController,
                           passwordController: passwordController,
-
                           onSubmit: handleLogin,
                           onSwitch: () {
                             Navigator.push(

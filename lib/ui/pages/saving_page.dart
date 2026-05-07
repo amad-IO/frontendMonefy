@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/saving_provider.dart';
 import '../widgets/saving_card.dart';
 import '../widgets/saving_list.dart';
+import '../widgets/create_saving_modal.dart';
 
 class SavingPage extends StatefulWidget {
   const SavingPage({super.key});
@@ -18,10 +19,19 @@ class _SavingPageState extends State<SavingPage> {
   void initState() {
     super.initState();
 
-    /// 🔥 ambil data dari API saat halaman dibuka
     Future.microtask(() {
-      Provider.of<SavingProvider>(context, listen: false).fetchSavings();
+      context.read<SavingProvider>().fetchSavings();
     });
+  }
+
+  /// 🔥 HANDLE CREATE (biar gak duplikat)
+  void _handleCreateSaving(String name, int amount) {
+    context.read<SavingProvider>().addSaving(name, amount);
+  }
+
+  /// 🔥 BUKA MODAL
+  void _openCreateModal() {
+    showCreateSavingModal(context, _handleCreateSaving);
   }
 
   @override
@@ -29,19 +39,27 @@ class _SavingPageState extends State<SavingPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFB7AEEB),
 
+      /// 🔥 FLOATING BUTTON
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primaryPurple,
+        onPressed: _openCreateModal,
+        child: const Icon(Icons.add),
+      ),
+
       body: SafeArea(
         child: Consumer<SavingProvider>(
           builder: (context, provider, child) {
+            print("BUILD UI: ${provider.savings.length}");
 
-            /// 🔥 LOADING
+            /// 🔄 LOADING
             if (provider.isLoading) {
               return const Center(
                 child: CircularProgressIndicator(),
               );
             }
 
-            /// 🔥 HITUNG TOTAL
-            int total = provider.savings.fold(
+            /// 💰 TOTAL
+            final total = provider.savings.fold<int>(
               0,
                   (sum, item) => sum + item.amount,
             );
@@ -50,7 +68,7 @@ class _SavingPageState extends State<SavingPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                /// HEADER
+                /// 🔝 HEADER
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Stack(
@@ -60,9 +78,7 @@ class _SavingPageState extends State<SavingPage> {
                         alignment: Alignment.centerLeft,
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          onPressed: () => Navigator.pop(context),
                         ),
                       ),
                       const Text(
@@ -79,11 +95,12 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// 🔥 TOTAL DARI API
+                /// 💳 TOTAL CARD
                 SavingCard(total: total),
 
                 const SizedBox(height: 16),
 
+                /// 📋 TITLE
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
@@ -98,7 +115,7 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// 🔥 LIST DARI API
+                /// 📦 LIST
                 Expanded(
                   child: SavingList(
                     items: provider.savings.map((e) => {
@@ -106,6 +123,9 @@ class _SavingPageState extends State<SavingPage> {
                       "amount": e.amount,
                       "target": e.target,
                     }).toList(),
+
+                    /// 🔥 klik dari card juga bisa buka modal
+                    onCreateTap: _openCreateModal,
                   ),
                 ),
               ],

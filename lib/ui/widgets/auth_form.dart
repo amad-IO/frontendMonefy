@@ -9,6 +9,7 @@ class AuthForm extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
   final TextEditingController usernameController;
+  final TextEditingController emailController;
   final TextEditingController passwordController;
   final TextEditingController? confirmPasswordController;
 
@@ -20,6 +21,7 @@ class AuthForm extends StatefulWidget {
     required this.buttonText,
     required this.formKey,
     required this.usernameController,
+    required this.emailController,
     required this.passwordController,
     this.confirmPasswordController,
     required this.onSubmit,
@@ -32,7 +34,6 @@ class AuthForm extends StatefulWidget {
 }
 
 class _AuthFormState extends State<AuthForm> {
-
   bool isPasswordHidden = true;
   bool isConfirmPasswordHidden = true;
 
@@ -40,7 +41,6 @@ class _AuthFormState extends State<AuthForm> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-
         /// BACKGROUND
         Positioned.fill(
           child: Opacity(
@@ -56,11 +56,10 @@ class _AuthFormState extends State<AuthForm> {
         Padding(
           padding: const EdgeInsets.all(20),
           child: Form(
-            key: widget.formKey, // 🔥 FIX PENTING
+            key: widget.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 /// TITLE
                 Text(
                   widget.title,
@@ -73,20 +72,51 @@ class _AuthFormState extends State<AuthForm> {
 
                 const SizedBox(height: 20),
 
-                /// USERNAME
-                const Text("Username",
+                /// USERNAME (REGISTER ONLY)
+                if (widget.isRegister) ...[
+                  const Text("Username",
+                      style: TextStyle(color: Color(0xFF694EDA))),
+                  const SizedBox(height: 5),
+
+                  TextFormField(
+                    controller: widget.usernameController,
+                    autovalidateMode:
+                    AutovalidateMode.onUserInteraction,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Username wajib diisi";
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFF6F7FB),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+
+                /// EMAIL
+                const Text("Email",
                     style: TextStyle(color: Color(0xFF694EDA))),
                 const SizedBox(height: 5),
 
                 TextFormField(
-                  controller: widget.usernameController,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  controller: widget.emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autovalidateMode:
+                  AutovalidateMode.onUserInteraction,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return "Username wajib diisi";
+                      return "Email wajib diisi";
                     }
-                    if (RegExp(r'[0-9]').hasMatch(value)) {
-                      return "Username tidak boleh mengandung angka";
+                    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                      return "Format email tidak valid";
                     }
                     return null;
                   },
@@ -110,7 +140,8 @@ class _AuthFormState extends State<AuthForm> {
                 TextFormField(
                   controller: widget.passwordController,
                   obscureText: isPasswordHidden,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  autovalidateMode:
+                  AutovalidateMode.onUserInteraction,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return "Password wajib diisi";
@@ -129,8 +160,6 @@ class _AuthFormState extends State<AuthForm> {
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide.none,
                     ),
-
-                    /// 👁️ ICON MATA
                     suffixIcon: IconButton(
                       icon: Icon(
                         isPasswordHidden
@@ -146,7 +175,7 @@ class _AuthFormState extends State<AuthForm> {
                   ),
                 ),
 
-                /// CONFIRM PASSWORD
+                /// CONFIRM PASSWORD (REGISTER ONLY)
                 if (widget.isRegister) ...[
                   const SizedBox(height: 20),
 
@@ -157,7 +186,8 @@ class _AuthFormState extends State<AuthForm> {
                   TextFormField(
                     controller: widget.confirmPasswordController,
                     obscureText: isConfirmPasswordHidden,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    autovalidateMode:
+                    AutovalidateMode.onUserInteraction,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Konfirmasi password wajib diisi";
@@ -174,8 +204,6 @@ class _AuthFormState extends State<AuthForm> {
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
-
-                      /// 👁️ ICON MATA
                       suffixIcon: IconButton(
                         icon: Icon(
                           isConfirmPasswordHidden

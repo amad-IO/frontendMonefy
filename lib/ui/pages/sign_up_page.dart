@@ -14,25 +14,21 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
 
   final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController(); // ✅ BARU
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
-  /// FORM KEY
   final _formKey = GlobalKey<FormState>();
 
   void handleRegister() async {
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    /// BIAR GAK DOUBLE CLICK
     if (authProvider.isLoading) return;
 
-    /// VALIDASI FORM
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     String username = usernameController.text.trim();
+    String email = emailController.text.trim(); // ✅ BARU
     String password = passwordController.text.trim();
     String confirmPassword = confirmPasswordController.text.trim();
 
@@ -45,15 +41,14 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     try {
-      await authProvider.signUp(username, password);
+      /// ✅ KIRIM EMAIL JUGA
+      await authProvider.signUp(username, email, password);
 
-      /// PINDAH KE LOGIN
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
       );
 
-      /// NOTIF BERHASIL
       Future.delayed(const Duration(milliseconds: 300), () {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Sign up berhasil")),
@@ -70,6 +65,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose(); // ✅ JANGAN LUPA
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -119,9 +115,12 @@ class _SignUpPageState extends State<SignUpPage> {
                     title: "Sign Up",
                     buttonText: "Sign Up",
                     isRegister: true,
+
                     usernameController: usernameController,
+                    emailController: emailController, // ✅ WAJIB
                     passwordController: passwordController,
                     confirmPasswordController: confirmPasswordController,
+
                     onSubmit: handleRegister,
                     onSwitch: () {
                       Navigator.pop(context);

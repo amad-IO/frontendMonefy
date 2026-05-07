@@ -13,49 +13,59 @@ class BillsPage extends StatefulWidget {
 class _BillsPageState extends State<BillsPage> {
   final _formKey = GlobalKey<FormState>();
 
+  /// ✅ CONTROLLERS
+  final TextEditingController billNameController = TextEditingController();
+  final TextEditingController accountNumberController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController dueDateController = TextEditingController();
+
+  String? billingCycle;
+
+  @override
+  void dispose() {
+    billNameController.dispose();
+    accountNumberController.dispose();
+    amountController.dispose();
+    dueDateController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
-
       body: SafeArea(
         child: Column(
           children: [
 
-            /// 🔵 BACKGROUND ATAS (UNGU)
+            /// 🔵 HEADER
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
               color: AppColors.primaryPurple.withOpacity(0.3),
-              child: Column(
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                      const Expanded(
-                        child: Text(
-                          'Bills',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryPurple,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.pop(context),
                   ),
+                  const Expanded(
+                    child: Text(
+                      'Bills',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryPurple,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
 
-            /// ⚪ CONTAINER PUTIH + KONTUR
+            /// ⚪ BODY
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -68,7 +78,7 @@ class _BillsPageState extends State<BillsPage> {
                 child: Stack(
                   children: [
 
-                    /// 🔥 KONTUR BACKGROUND
+                    /// BACKGROUND
                     Positioned.fill(
                       child: Opacity(
                         opacity: 0.9,
@@ -79,7 +89,7 @@ class _BillsPageState extends State<BillsPage> {
                       ),
                     ),
 
-                    /// 🔥 FORM
+                    /// FORM
                     SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Form(
@@ -101,31 +111,62 @@ class _BillsPageState extends State<BillsPage> {
 
                             const SizedBox(height: 16),
 
+                            /// 🧾 BILL NAME
                             BillsInput(
                               label: 'Bill Name',
                               hint: 'e.g., PLN, Internet',
                               isTextOnly: true,
                             ),
 
+                            /// 🔢 ACCOUNT NUMBER
                             BillsInput(
                               label: 'Account Number',
                               hint: '0',
                               isNumber: true,
                             ),
 
+                            /// 💰 AMOUNT
                             BillsInput(
                               label: 'Amount',
                               hint: 'e.g., 100000',
                               isNumber: true,
                             ),
 
+                            /// 📅 DUE DATE
+                            BillsInput(
+                              label: 'Due Date',
+                              hint: 'Pilih tanggal',
+                              isDate: true,
+                            ),
+
+                            /// 🔁 BILLING CYCLE
+                            BillsInput(
+                              label: 'Billing Cycle',
+                              hint: 'Pilih siklus',
+                              isDropdown: true,
+                              dropdownItems: const [
+                                "Bulanan",
+                                "Tahunan",
+                                "Sekali Bayar",
+                              ],
+                            ),
+
                             const SizedBox(height: 24),
 
+                            /// BUTTON
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {
+
+                                    /// 🔥 NANTI BISA KIRIM KE API
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Data berhasil disimpan"),
+                                      ),
+                                    );
+
                                     Navigator.pop(context);
                                   }
                                 },

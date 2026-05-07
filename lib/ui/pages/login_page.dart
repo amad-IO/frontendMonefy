@@ -14,32 +14,24 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
 
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController(); // ✅ GANTI
   final TextEditingController passwordController = TextEditingController();
 
-  /// FORM KEY
   final _formKey = GlobalKey<FormState>();
 
-  /// HANDLE LOGIN (SUDAH CONNECT PROVIDER)
   void handleLogin() async {
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    /// BIAR GAK DOUBLE CLICK SAAT LOADING
     if (authProvider.isLoading) return;
 
-    /// VALIDASI FORM
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    String username = usernameController.text.trim();
+    String email = emailController.text.trim(); // ✅ GANTI
     String password = passwordController.text.trim();
 
     try {
-      await authProvider.login(username, password);
+      await authProvider.login(email, password); // ✅ GANTI
 
-      /// PINDAH KE DASHBOARD
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainPage()),
@@ -47,14 +39,14 @@ class _LoginPageState extends State<LoginPage> {
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Username atau password salah")),
+        const SnackBar(content: Text("Email atau password salah")), // ✅ GANTI
       );
     }
   }
 
   @override
   void dispose() {
-    usernameController.dispose();
+    emailController.dispose(); // ✅ JANGAN LUPA
     passwordController.dispose();
     super.dispose();
   }
@@ -108,8 +100,12 @@ class _LoginPageState extends State<LoginPage> {
                           formKey: _formKey,
                           title: "Login",
                           buttonText: "Login",
-                          usernameController: usernameController,
+                          isRegister: false, // ✅ PENTING
+
+                          usernameController: TextEditingController(), // dummy (tidak dipakai)
+                          emailController: emailController, // ✅ WAJIB
                           passwordController: passwordController,
+
                           onSubmit: handleLogin,
                           onSwitch: () {
                             Navigator.push(

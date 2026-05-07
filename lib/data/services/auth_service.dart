@@ -4,46 +4,47 @@ import '../models/auth_response.dart';
 
 class AuthService {
 
-  /// SIMPAN DATA USER SEMENTARA (DUMMY DATABASE)
+  /// DUMMY DATABASE
   static final List<Map<String, String>> _users = [];
 
-  // LOGIN
+  // ✅ LOGIN (PAKAI EMAIL)
   Future<AuthResponse> login(LoginRequest request) async {
     await Future.delayed(const Duration(seconds: 1));
 
     final user = _users.firstWhere(
           (u) =>
-      u['username'] == request.username &&
+      u['email'] == request.email &&
           u['password'] == request.password,
       orElse: () => {},
     );
 
     if (user.isNotEmpty) {
       return AuthResponse(
-        token: "dummy_token_${request.username}",
-        username: request.username,
+        token: "dummy_token_${request.email}",
+        username: user['username']!, // tetap kirim username
       );
     } else {
-      throw Exception("Username atau password salah");
+      throw Exception("Email atau password salah");
     }
   }
 
-  // SIGN UP
+  // ✅ SIGN UP (TAMBAH EMAIL)
   Future<void> signUp(SignUpRequest request) async {
     await Future.delayed(const Duration(seconds: 1));
 
-    /// 🔥 CEK USER SUDAH ADA
+    /// 🔥 CEK EMAIL SUDAH ADA
     final isExist = _users.any(
-          (u) => u['username'] == request.username,
+          (u) => u['email'] == request.email,
     );
 
     if (isExist) {
-      throw Exception("Username sudah digunakan");
+      throw Exception("Email sudah digunakan");
     }
 
     /// 🔥 SIMPAN USER
     _users.add({
       'username': request.username,
+      'email': request.email,
       'password': request.password,
     });
   }

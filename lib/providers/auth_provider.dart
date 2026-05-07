@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/models/login_request.dart';
 import '../data/models/sign_up_request.dart';
 import '../data/services/auth_service.dart';
+
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
 
@@ -14,14 +15,17 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _token != null;
 
-  // LOGIN
-  Future<void> login(String username, String password) async {
+  // ✅ LOGIN (PAKAI EMAIL)
+  Future<void> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       final response = await _authService.login(
-        LoginRequest(username: username, password: password),
+        LoginRequest(
+          email: email, // 🔥 GANTI
+          password: password,
+        ),
       );
 
       _token = response.token;
@@ -35,14 +39,18 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // SIGN UP
-  Future<void> signUp(String username, String password) async {
+  // ✅ SIGN UP (TAMBAH EMAIL)
+  Future<void> signUp(String username, String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       await _authService.signUp(
-        SignUpRequest(username: username, password: password),
+        SignUpRequest(
+          username: username,
+          email: email, // 🔥 TAMBAH
+          password: password,
+        ),
       );
     } catch (e) {
       rethrow;

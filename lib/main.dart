@@ -3,8 +3,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
-import 'providers/saving_provider.dart'; //  tambahin ini
+import 'providers/saving_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/wallet_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'ui/pages/login_page.dart';
 
@@ -32,6 +33,10 @@ class MonefyApp extends StatelessWidget {
 
         ChangeNotifierProvider(
           create: (_) => SavingProvider(),
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => WalletProvider(),
         ),
       ],
       child: MaterialApp(

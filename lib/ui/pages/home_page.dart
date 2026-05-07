@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:monefy/ui/pages/main_page.dart';
 import 'package:monefy/ui/pages/saving_page.dart';
-import 'package:monefy/ui/pages/add_wallet_page.dart';
+import 'package:monefy/ui/pages/your_wallet_page.dart';
 import '../../data/models/user_model.dart';
 import '../../providers/transaction_provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
                   MaterialPageRoute(
                     builder: (_) => MainPage(
                       initialIndex: 5,
-                      extraPage: AddWalletPage(),
+                      extraPage: YourWalletPage(),
                     ),
                   ),
                 );

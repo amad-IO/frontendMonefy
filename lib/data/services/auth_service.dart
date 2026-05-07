@@ -3,48 +3,56 @@ import '../models/sign_up_request.dart';
 import '../models/auth_response.dart';
 
 class AuthService {
+  /// ─── AKUN TEST — langsung bisa login tanpa daftar ───────────────────────
+  ///
+  ///   Email    : test@monefy.com
+  ///   Password : 123456
+  ///
+  ///   Tambah akun lain di list _users di bawah jika perlu.
+  /// ────────────────────────────────────────────────────────────────────────
+  static final List<Map<String, String>> _users = [
+    {
+      'username': 'Test User',
+      'email': 'test@monefy.com',
+      'password': 'Test@123',   //  memenuhi: huruf besar, kecil, angka, simbol
+    },
+   
+  ];
 
-  /// DUMMY DATABASE
-  static final List<Map<String, String>> _users = [];
-
-  // ✅ LOGIN (PAKAI EMAIL)
+  // ─── LOGIN ────────────────────────────────────────────────────────────────
   Future<AuthResponse> login(LoginRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500));
 
     final user = _users.firstWhere(
-          (u) =>
-      u['email'] == request.email &&
-          u['password'] == request.password,
+      (u) =>
+          u['email'] == request.email.trim() &&
+          u['password'] == request.password.trim(),
       orElse: () => {},
     );
 
     if (user.isNotEmpty) {
       return AuthResponse(
-        token: "dummy_token_${request.email}",
-        username: user['username']!, // tetap kirim username
+        token: 'local_token_${user['email']}',
+        username: user['username']!,
       );
     } else {
-      throw Exception("Email atau password salah");
+      throw Exception('Email atau password salah');
     }
   }
 
-  // ✅ SIGN UP (TAMBAH EMAIL)
+  // ─── SIGN UP (opsional, tetap ada untuk keperluan lain) ──────────────────
   Future<void> signUp(SignUpRequest request) async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    /// 🔥 CEK EMAIL SUDAH ADA
-    final isExist = _users.any(
-          (u) => u['email'] == request.email,
-    );
+    final isExist = _users.any((u) => u['email'] == request.email.trim());
 
     if (isExist) {
-      throw Exception("Email sudah digunakan");
+      throw Exception('Email sudah digunakan');
     }
 
-    /// 🔥 SIMPAN USER
     _users.add({
       'username': request.username,
-      'email': request.email,
+      'email': request.email.trim(),
       'password': request.password,
     });
   }

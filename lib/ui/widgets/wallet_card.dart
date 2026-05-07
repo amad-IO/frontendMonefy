@@ -52,7 +52,7 @@ class WalletCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 1.65,
+      aspectRatio: 2.0,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -89,7 +89,7 @@ class WalletCard extends StatelessWidget {
 
             // ── Konten utama ──────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+              padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

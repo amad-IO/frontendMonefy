@@ -24,12 +24,12 @@ class _SavingPageState extends State<SavingPage> {
     });
   }
 
-  /// 🔥 HANDLE CREATE (biar gak duplikat)
+  /// HANDLE CREATE (biar gak duplikat)
   void _handleCreateSaving(String name, int amount) {
     context.read<SavingProvider>().addSaving(name, amount);
   }
 
-  /// 🔥 BUKA MODAL
+  /// BUKA MODAL
   void _openCreateModal() {
     showCreateSavingModal(context, _handleCreateSaving);
   }
@@ -39,7 +39,7 @@ class _SavingPageState extends State<SavingPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFB7AEEB),
 
-      /// 🔥 FLOATING BUTTON
+      /// FLOATING BUTTON
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primaryPurple,
         onPressed: _openCreateModal,
@@ -58,7 +58,7 @@ class _SavingPageState extends State<SavingPage> {
               );
             }
 
-            /// 💰 TOTAL
+            /// TOTAL
             final total = provider.savings.fold<int>(
               0,
                   (sum, item) => sum + item.amount,
@@ -68,7 +68,7 @@ class _SavingPageState extends State<SavingPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                /// 🔝 HEADER
+                /// HEADER
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Stack(
@@ -95,12 +95,12 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// 💳 TOTAL CARD
+                /// TOTAL CARD
                 SavingCard(total: total),
 
                 const SizedBox(height: 16),
 
-                /// 📋 TITLE
+                /// TITLE
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
@@ -115,7 +115,7 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// 📦 LIST
+                /// LIST
                 Expanded(
                   child: SavingList(
                     items: provider.savings.map((e) => {
@@ -124,7 +124,7 @@ class _SavingPageState extends State<SavingPage> {
                       "target": e.target,
                     }).toList(),
 
-                    /// 🔥 klik dari card juga bisa buka modal
+                    /// klik dari card juga bisa buka modal
                     onCreateTap: _openCreateModal,
                   ),
                 ),

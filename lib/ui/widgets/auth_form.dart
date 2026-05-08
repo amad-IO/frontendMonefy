@@ -8,7 +8,7 @@ class AuthForm extends StatefulWidget {
 
   final GlobalKey<FormState> formKey;
 
-  final TextEditingController usernameController;
+  final TextEditingController? usernameController; // ✅ OPTIONAL
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final TextEditingController? confirmPasswordController;
@@ -17,10 +17,11 @@ class AuthForm extends StatefulWidget {
   final VoidCallback onSwitch;
 
   const AuthForm({
+    super.key,
     required this.title,
     required this.buttonText,
     required this.formKey,
-    required this.usernameController,
+    this.usernameController, // ✅ TIDAK WAJIB
     required this.emailController,
     required this.passwordController,
     this.confirmPasswordController,
@@ -79,7 +80,7 @@ class _AuthFormState extends State<AuthForm> {
                   const SizedBox(height: 5),
 
                   TextFormField(
-                    controller: widget.usernameController,
+                    controller: widget.usernameController!,
                     autovalidateMode:
                     AutovalidateMode.onUserInteraction,
                     validator: (value) {
@@ -184,7 +185,7 @@ class _AuthFormState extends State<AuthForm> {
                   const SizedBox(height: 5),
 
                   TextFormField(
-                    controller: widget.confirmPasswordController,
+                    controller: widget.confirmPasswordController!,
                     obscureText: isConfirmPasswordHidden,
                     autovalidateMode:
                     AutovalidateMode.onUserInteraction,
@@ -234,7 +235,10 @@ class _AuthFormState extends State<AuthForm> {
                         borderRadius: BorderRadius.circular(25),
                       ),
                     ),
-                    onPressed: widget.onSubmit,
+                    onPressed: () {
+                      print("🔥 BUTTON AUTH DIKLIK"); // DEBUG
+                      widget.onSubmit();
+                    },
                     child: Text(
                       widget.buttonText,
                       style: const TextStyle(fontSize: 18),

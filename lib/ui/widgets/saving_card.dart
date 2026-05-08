@@ -35,7 +35,7 @@ class SavingCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          /// 🔥 KALAU BELUM ADA DATA
+          /// KALAU BELUM ADA DATA
           Text(
             total == null ? "-" : "Rp. $total",
             style: const TextStyle(

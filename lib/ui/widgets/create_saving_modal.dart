@@ -35,7 +35,7 @@ void showCreateSavingModal(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                /// 🔘 HANDLE
+                /// HANDLE
                 Center(
                   child: Container(
                     width: 40,
@@ -126,7 +126,7 @@ void showCreateSavingModal(
 
                       final name = nameController.text.trim();
 
-                      /// 🔥 BERSIHIN INPUT ANGKA
+                      /// BERSIHIN INPUT ANGKA
                       final raw = amountController.text
                           .replaceAll('.', '')
                           .replaceAll('Rp', '')
@@ -134,7 +134,7 @@ void showCreateSavingModal(
 
                       final amount = int.tryParse(raw) ?? 0;
 
-                      /// 🔥 VALIDASI ANGKA
+                      /// VALIDASI ANGKA
                       if (amount <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -144,13 +144,13 @@ void showCreateSavingModal(
                         return;
                       }
 
-                      /// 🔥 DEBUG (opsional)
+                      /// DEBUG (opsional)
                       print("CREATE SAVING: $name - $amount");
 
                       /// 🔥 KIRIM DATA
                       onCreate(name, amount);
 
-                      /// 🔥 TUTUP MODAL
+                      /// TUTUP MODAL
                       Navigator.pop(context);
                     },
                     child: const Text(

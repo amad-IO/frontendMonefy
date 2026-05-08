@@ -14,7 +14,7 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
 
   final TextEditingController usernameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController(); // ✅ BARU
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
@@ -23,16 +23,18 @@ class _SignUpPageState extends State<SignUpPage> {
   void handleRegister() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    /// CEGAH DOUBLE CLICK
     if (authProvider.isLoading) return;
 
+    /// VALIDASI FORM
     if (!_formKey.currentState!.validate()) return;
 
     String username = usernameController.text.trim();
-    String email = emailController.text.trim(); // ✅ BARU
+    String email = emailController.text.trim();
     String password = passwordController.text.trim();
     String confirmPassword = confirmPasswordController.text.trim();
 
-    /// VALIDASI CONFIRM PASSWORD
+    ///  VALIDASI CONFIRM PASSWORD
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password tidak sama")),
@@ -40,22 +42,39 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
+    /// VALIDASI EMAIL FORMAT (OPSIONAL TAPI BAGUS)
+    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Format email tidak valid")),
+      );
+      return;
+    }
+
     try {
-      /// ✅ KIRIM EMAIL JUGA
+      /// DEBUG
+      print("🔵 SIGNUP BUTTON DIKLIK");
+      print("👤 USERNAME: $username");
+      print("📧 EMAIL: $email");
+
+      /// CALL API
       await authProvider.signUp(username, email, password);
 
+      print("🟢 SIGNUP BERHASIL");
+
+      /// PINDAH KE LOGIN
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
       );
 
-      Future.delayed(const Duration(milliseconds: 300), () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Sign up berhasil")),
-        );
-      });
+      /// NOTIF
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Sign up berhasil")),
+      );
 
     } catch (e) {
+      print("SIGNUP ERROR DI PAGE: $e");
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -65,7 +84,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   void dispose() {
     usernameController.dispose();
-    emailController.dispose(); // ✅ JANGAN LUPA
+    emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -116,11 +135,13 @@ class _SignUpPageState extends State<SignUpPage> {
                     buttonText: "Sign Up",
                     isRegister: true,
 
+                    /// CONTROLLERS
                     usernameController: usernameController,
-                    emailController: emailController, // ✅ WAJIB
+                    emailController: emailController,
                     passwordController: passwordController,
                     confirmPasswordController: confirmPasswordController,
 
+                    /// ACTIONS
                     onSubmit: handleRegister,
                     onSwitch: () {
                       Navigator.pop(context);

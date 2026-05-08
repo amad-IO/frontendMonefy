@@ -18,7 +18,7 @@ class SavingList extends StatelessWidget {
       child: GridView.builder(
         padding: const EdgeInsets.only(bottom: 80),
 
-        /// 🔥 SELALU TAMBAH 1 (untuk create card)
+        /// SELALU TAMBAH 1 (untuk create card)
         itemCount: items.length + 1,
 
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -29,7 +29,7 @@ class SavingList extends StatelessWidget {
         ),
         itemBuilder: (context, index) {
 
-          /// 🔥 CARD CREATE (SELALU DI AKHIR)
+          /// CARD CREATE (SELALU DI AKHIR)
           if (index == items.length) {
             return _buildCreateCard();
           }

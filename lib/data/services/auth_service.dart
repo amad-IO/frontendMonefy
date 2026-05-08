@@ -1,59 +1,70 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import '../models/login_request.dart';
 import '../models/sign_up_request.dart';
 import '../models/auth_response.dart';
 
 class AuthService {
-  /// ─── AKUN TEST — langsung bisa login tanpa daftar ───────────────────────
-  ///
-  ///   Email    : test@monefy.com
-  ///   Password : 123456
-  ///
-  ///   Tambah akun lain di list _users di bawah jika perlu.
-  /// ────────────────────────────────────────────────────────────────────────
-  static final List<Map<String, String>> _users = [
-    {
-      'username': 'Test User',
-      'email': 'test@monefy.com',
-      'password': 'Test@123',   //  memenuhi: huruf besar, kecil, angka, simbol
-    },
-   
-  ];
+  static const String baseUrl = "http://10.0.2.2:8000/api";
 
-  // ─── LOGIN ────────────────────────────────────────────────────────────────
+  // =========================
+  // LOGIN
+  // =========================
   Future<AuthResponse> login(LoginRequest request) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final user = _users.firstWhere(
-      (u) =>
-          u['email'] == request.email.trim() &&
-          u['password'] == request.password.trim(),
-      orElse: () => {},
+    final response = await http.post(
+      Uri.parse("$baseUrl/login"),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: json.encode({
+        "email": request.email,
+        "password": request.password,
+      }),
     );
 
-    if (user.isNotEmpty) {
-      return AuthResponse(
-        token: 'local_token_${user['email']}',
-        username: user['username']!,
-      );
+    final data = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      return AuthResponse.fromJson(data);
     } else {
-      throw Exception('Email atau password salah');
+      if (data["errors"] != null) {
+        throw Exception(data["errors"].toString());
+      } else {
+        throw Exception(data["message"] ?? "Login gagal");
+      }
     }
   }
 
-  // ─── SIGN UP (opsional, tetap ada untuk keperluan lain) ──────────────────
+  // =========================
+  // SIGN UP
+  // =========================
   Future<void> signUp(SignUpRequest request) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    final response = await http.post(
+      Uri.parse("$baseUrl/register"),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: json.encode({
+        "name": request.username,
+        "email": request.email,
+        "password": request.password,
+        "password_confirmation": request.password,
+      }),
+    );
 
-    final isExist = _users.any((u) => u['email'] == request.email.trim());
+    final data = json.decode(response.body);
 
-    if (isExist) {
-      throw Exception('Email sudah digunakan');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return;
+    } else {
+      if (data["errors"] != null) {
+        throw Exception(data["errors"].toString());
+      } else {
+        throw Exception(data["message"] ?? "Sign up gagal");
+      }
     }
-
-    _users.add({
-      'username': request.username,
-      'email': request.email.trim(),
-      'password': request.password,
-    });
   }
 }

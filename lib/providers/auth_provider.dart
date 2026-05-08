@@ -18,8 +18,11 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
 
   String? get token => _token;
+
   String? get username => _username;
+
   bool get isLoading => _isLoading;
+
   bool get isLoggedIn => _token != null;
 
   /// Login dengan email & password.
@@ -29,12 +32,30 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      print("🟡 PROVIDER LOGIN START");
+
       final response = await _authService.login(
+<<<<<<< HEAD
         LoginRequest(email: email, password: password),
+=======
+        LoginRequest(
+          email: email,
+          password: password,
+        ),
+>>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
       );
 
       _token = response.token;
       _username = response.username;
+<<<<<<< HEAD
+=======
+
+      print("🟢 TOKEN: $_token");
+      print("🟢 USERNAME: $_username");
+    } catch (e) {
+      print("🔴 PROVIDER LOGIN ERROR: $e");
+      rethrow;
+>>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -48,18 +69,37 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      print("🟡 PROVIDER SIGNUP START");
+
       await _authService.signUp(
+<<<<<<< HEAD
         SignUpRequest(username: username, email: email, password: password),
       );
+=======
+        SignUpRequest(
+          username: username,
+          email: email,
+          password: password,
+        ),
+      );
+
+      print("🟢 PROVIDER SIGNUP SUCCESS");
+    } catch (e) {
+      print("🔴 PROVIDER SIGNUP ERROR: $e");
+      rethrow;
+>>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
+<<<<<<< HEAD
 
   void logout() {
     _token = null;
     _username = null;
     notifyListeners();
   }
+=======
+>>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
 }

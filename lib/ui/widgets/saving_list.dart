@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import 'saving_detail_dialog.dart';
 
 class SavingList extends StatelessWidget {
   final List<Map<String, dynamic>> items;
@@ -27,9 +28,9 @@ class SavingList extends StatelessWidget {
           crossAxisSpacing: 16,
           childAspectRatio: 1.05,
         ),
-        itemBuilder: (context, index) {
 
-          /// CARD CREATE (SELALU DI AKHIR)
+        itemBuilder: (context, index) {
+          /// CARD CREATE
           if (index == items.length) {
             return _buildCreateCard();
           }
@@ -37,58 +38,82 @@ class SavingList extends StatelessWidget {
           final item = items[index];
 
           return _buildItem(
-            title: item['name'],
-            amount: item['amount'],
-            target: item['target'],
+            context: context,
+            item: item, // 🔥 kirim full item
           );
         },
       ),
     );
   }
 
+  /// 🔥 ITEM CARD (FIXED)
   Widget _buildItem({
-    required String title,
-    required int amount,
-    required int target,
+    required BuildContext context,
+    required Map<String, dynamic> item,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.panelWhite,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.attach_money,
-              size: 28, color: AppColors.primaryPurple),
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          barrierColor: Colors.black.withValues(alpha: 0.3), // 🔥 fix warning
+          builder: (context) {
+            return SavingDetailDialog(
+              saving: item, // 🔥 kirim langsung semua data
+            );
+          },
+        );
+      },
 
-          const SizedBox(height: 10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.panelWhite,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 5,
+            )
+          ],
+        ),
 
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            "Rp. $amount",
-            style: const TextStyle(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.attach_money,
+              size: 28,
               color: AppColors.primaryPurple,
-              fontWeight: FontWeight.bold,
             ),
-          ),
 
-          Text(
-            "of Rp. $target",
-            style: const TextStyle(fontSize: 12),
-          ),
-        ],
+            const SizedBox(height: 10),
+
+            Text(
+              item["name"],
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+
+            const SizedBox(height: 5),
+
+            Text(
+              "Rp. ${item["amount"]}",
+              style: const TextStyle(
+                color: AppColors.primaryPurple,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            Text(
+              "of Rp. ${item["target"]}",
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  /// ➕ CREATE CARD
   Widget _buildCreateCard() {
     return GestureDetector(
       onTap: onCreateTap,

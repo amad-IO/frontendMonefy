@@ -13,10 +13,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-<<<<<<< HEAD
-=======
-
->>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -25,48 +21,22 @@ class _LoginPageState extends State<LoginPage> {
   void handleLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    /// CEGAH DOUBLE CLICK
     if (authProvider.isLoading) return;
-<<<<<<< HEAD
-    if (!_formKey.currentState!.validate()) return;
-
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-
-    try {
-      await authProvider.login(email, password);
-=======
-
-    /// VALIDASI FORM
     if (!_formKey.currentState!.validate()) return;
 
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
     try {
-      /// DEBUG
-      print("LOGIN BUTTON DIKLIK");
-      print("EMAIL: $email");
->>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
-
       await authProvider.login(email, password);
 
-      print("LOGIN BERHASIL");
-
-      /// PINDAH KE MAIN PAGE
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainPage()),
       );
     } catch (e) {
-      print("LOGIN ERROR DI PAGE: $e");
-
       ScaffoldMessenger.of(context).showSnackBar(
-<<<<<<< HEAD
-        const SnackBar(content: Text("Email atau password salah")),
-=======
         SnackBar(content: Text(e.toString())),
->>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
       );
     }
   }
@@ -126,14 +96,10 @@ class _LoginPageState extends State<LoginPage> {
                           title: "Login",
                           buttonText: "Login",
                           isRegister: false,
-<<<<<<< HEAD
-                          usernameController: TextEditingController(),
-=======
 
-                          /// FIX DI SINI
+                          // ✅ LOGIN tidak butuh username
                           usernameController: null,
 
->>>>>>> d3750d0 (menyambungkan ke backend (signup dan login))
                           emailController: emailController,
                           passwordController: passwordController,
                           onSubmit: handleLogin,

@@ -24,12 +24,12 @@ class _SavingPageState extends State<SavingPage> {
     });
   }
 
-  /// HANDLE CREATE (biar gak duplikat)
-  void _handleCreateSaving(String name, int amount) {
-    context.read<SavingProvider>().addSaving(name, amount);
+  /// 🔥 HANDLE CREATE (SUDAH 3 PARAMETER)
+  void _handleCreateSaving(String name, int target, String date) {
+    context.read<SavingProvider>().addSaving(name, target, date);
   }
 
-  /// BUKA MODAL
+  /// 🔥 BUKA MODAL
   void _openCreateModal() {
     showCreateSavingModal(context, _handleCreateSaving);
   }
@@ -39,7 +39,6 @@ class _SavingPageState extends State<SavingPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFB7AEEB),
 
-      /// FLOATING BUTTON
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primaryPurple,
         onPressed: _openCreateModal,
@@ -49,9 +48,8 @@ class _SavingPageState extends State<SavingPage> {
       body: SafeArea(
         child: Consumer<SavingProvider>(
           builder: (context, provider, child) {
-            print("BUILD UI: ${provider.savings.length}");
 
-            /// 🔄 LOADING
+            /// LOADING
             if (provider.isLoading) {
               return const Center(
                 child: CircularProgressIndicator(),
@@ -119,12 +117,12 @@ class _SavingPageState extends State<SavingPage> {
                 Expanded(
                   child: SavingList(
                     items: provider.savings.map((e) => {
+                      "id": e.id,
                       "name": e.name,
                       "amount": e.amount,
                       "target": e.target,
+                      "date": e.date,
                     }).toList(),
-
-                    /// klik dari card juga bisa buka modal
                     onCreateTap: _openCreateModal,
                   ),
                 ),

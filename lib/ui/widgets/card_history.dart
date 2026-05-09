@@ -12,8 +12,13 @@ class CardHistory extends StatelessWidget {
     required this.transaction,
   });
 
+
   String get _formattedAmount {
     final formatter = NumberFormat('#,##0', 'id_ID');
+    if (transaction.type == TransactionType.transfer) {
+      // Transfer: tanpa +/- prefix
+      return 'Rp.${formatter.format(transaction.amount)}';
+    }
     final prefix = transaction.type == TransactionType.income ? '+' : '-';
     return '$prefix Rp.${formatter.format(transaction.amount)}';
   }
@@ -22,13 +27,28 @@ class CardHistory extends StatelessWidget {
     return DateFormat('d MMMM yyyy', 'id_ID').format(transaction.date);
   }
 
-  Color get _amountColor => transaction.type == TransactionType.income
-      ? AppColors.success
-      : AppColors.error;
+  Color get _amountColor {
+    switch (transaction.type) {
+      case TransactionType.income:
+        return AppColors.success;
+      case TransactionType.expense:
+        return AppColors.error;
+      case TransactionType.transfer:
+        return AppColors.textSecondary;
+    }
+  }
 
-  IconData get _historyIcon => transaction.type == TransactionType.income
-      ? Icons.arrow_downward_rounded
-      : Icons.arrow_upward_rounded;
+  IconData get _historyIcon {
+    switch (transaction.type) {
+      case TransactionType.income:
+        return Icons.arrow_downward_rounded;
+      case TransactionType.expense:
+        return Icons.arrow_upward_rounded;
+      case TransactionType.transfer:
+        return Icons.swap_horiz_rounded;
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -108,9 +128,11 @@ class CardHistory extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  transaction.walletName.isEmpty
-                      ? 'Unknown Wallet'
-                      : transaction.walletName,
+                  transaction.type == TransactionType.transfer
+                      ? '${transaction.walletName} → ${transaction.toWalletName}'
+                      : transaction.walletName.isEmpty
+                          ? 'Unknown Wallet'
+                          : transaction.walletName,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

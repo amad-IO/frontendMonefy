@@ -42,16 +42,36 @@ class TransactionDetailSheet extends StatelessWidget {
   }
 
   // ── Helpers ────────────────────────────────────────────────
-  bool get _isIncome => transaction.type == TransactionType.income;
+  bool get _isIncome   => transaction.type == TransactionType.income;
+  bool get _isTransfer => transaction.type == TransactionType.transfer;
 
-  Color get _typeColor =>
-      _isIncome ? AppColors.incomeGreen : AppColors.expenseRed;
+  Color get _typeColor {
+    switch (transaction.type) {
+      case TransactionType.income:
+        return AppColors.incomeGreen;
+      case TransactionType.expense:
+        return AppColors.expenseRed;
+      case TransactionType.transfer:
+        return const Color(0xFF7B8EC8); // biru-abu netral
+    }
+  }
 
-  IconData get _typeIcon =>
-      _isIncome ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+  IconData get _typeIcon {
+    switch (transaction.type) {
+      case TransactionType.income:
+        return Icons.arrow_downward_rounded;
+      case TransactionType.expense:
+        return Icons.arrow_upward_rounded;
+      case TransactionType.transfer:
+        return Icons.swap_horiz_rounded;
+    }
+  }
 
   String get _formattedAmount {
     final formatter = NumberFormat('#,##0', 'id_ID');
+    if (_isTransfer) {
+      return 'Rp${formatter.format(transaction.amount)},00';
+    }
     final prefix = _isIncome ? '+' : '-';
     return '$prefix Rp${formatter.format(transaction.amount)},00';
   }
@@ -242,11 +262,21 @@ class TransactionDetailSheet extends StatelessWidget {
                                 ),
 
                               _InfoRow(
-                                label: 'Wallet',
+                                label: _isTransfer ? 'From Wallet' : 'Wallet',
                                 value: transaction.walletName.isEmpty
                                     ? '-'
                                     : transaction.walletName,
                               ),
+
+                              // To Wallet — hanya untuk transfer
+                              if (_isTransfer)
+                                _InfoRow(
+                                  label: 'To Wallet',
+                                  value: transaction.toWalletName.isEmpty
+                                      ? '-'
+                                      : transaction.toWalletName,
+                                ),
+
                               _InfoRow(
                                 label: 'Date',
                                 value: _formattedDate,

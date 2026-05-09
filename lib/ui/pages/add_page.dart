@@ -5,11 +5,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/transaction_model.dart';
+import '../../data/models/wallet_model.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../components/numpad.dart';
 import '../components/filter_expense.dart';
 import '../components/filter_income.dart';
+import '../components/filter_transfer.dart';
 import '../components/wallet_selector_popup.dart';
 
 class AddPage extends StatefulWidget {
@@ -21,22 +24,54 @@ class AddPage extends StatefulWidget {
 
 class _AddPageState extends State<AddPage>
     with SingleTickerProviderStateMixin {
-  TransactionType _type = TransactionType.income;
+  // ── Transaction type (0=Income, 1=Expense, 2=Transfer) ──
+  int _typeIndex = 0;
+
+  TransactionType get _type {
+    switch (_typeIndex) {
+      case 1:
+        return TransactionType.expense;
+      case 2:
+        return TransactionType.transfer;
+      default:
+        return TransactionType.income;
+    }
+  }
+
   String? _selectedCategory;
-  String? _selectedWallet;
+  String? _selectedWallet;     // From wallet (semua mode)
+  String? _selectedToWallet;   // To wallet (hanya Transfer)
+
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
 
-  // ── Wallet shake animation ──
+  // ── Wallet shake animation (validasi) ──
   late final AnimationController _walletShakeController;
   bool _walletError = false;
 
-  static final List<WalletOption> _wallets = [
-    WalletOption(name: 'Gopay', icon: Icons.account_balance_wallet_rounded, balance: 500000),
-    WalletOption(name: 'ShopeePay', icon: Icons.shopping_bag_rounded, balance: 250000),
-    WalletOption(name: 'BCA', icon: Icons.account_balance_rounded, balance: 1500000),
-    WalletOption(name: 'Cash', icon: Icons.payments_rounded, balance: 300000),
-  ];
+  // ── Key to reset FilterTransfer selection when From wallet changes ──
+  Key _filterTransferKey = UniqueKey();
+
+  // ── Tab labels ──
+  static const List<String> _tabLabels = ['Income', 'Expense', 'Transfer'];
+
+  /// Konversi WalletModel → WalletOption.
+  /// Icon ditentukan berdasarkan WalletCategory.
+  static WalletOption _toWalletOption(WalletModel w) {
+    final IconData icon;
+    switch (w.category) {
+      case WalletCategory.cash:
+        icon = Icons.payments_rounded;
+        break;
+      case WalletCategory.bankAccount:
+        icon = Icons.account_balance_rounded;
+        break;
+      case WalletCategory.eWallet:
+        icon = Icons.account_balance_wallet_rounded;
+        break;
+    }
+    return WalletOption(name: w.name, icon: icon, balance: w.balance);
+  }
 
   @override
   void initState() {
@@ -91,7 +126,6 @@ class _AddPageState extends State<AddPage>
   void _onNumPadBackspace() {
     final current = _amountController.text;
     if (current.isEmpty) return;
-
     setState(() {
       _amountController.text = current.substring(0, current.length - 1);
     });
@@ -101,40 +135,27 @@ class _AddPageState extends State<AddPage>
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (amount <= 0) return;
 
-    // ── Validate wallet selection ──
+    // ── Validate From Wallet ──
     if (_selectedWallet == null) {
       setState(() => _walletError = true);
       _walletShakeController.forward(from: 0);
-
-      // Auto-clear error highlight after 2 seconds
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) setState(() => _walletError = false);
       });
+      _showSnackBar(
+        'Pilih penyimpanan terlebih dahulu!',
+        AppColors.error,
+        Icons.warning_amber_rounded,
+      );
+      return;
+    }
 
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded,
-                  color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Pilih penyimpanan terlebih dahulu!',
-                  style: TextStyle(
-                      fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          duration: const Duration(seconds: 2),
-        ),
+    // ── Validate To Wallet (Transfer only) ──
+    if (_type == TransactionType.transfer && _selectedToWallet == null) {
+      _showSnackBar(
+        'Pilih wallet tujuan transfer!',
+        AppColors.error,
+        Icons.warning_amber_rounded,
       );
       return;
     }
@@ -142,19 +163,18 @@ class _AddPageState extends State<AddPage>
     // ── Determine category & title ──
     String category;
     String title = '';
-    if (_type == TransactionType.expense) {
+
+    if (_type == TransactionType.transfer) {
+      category = 'Transfer';
+    } else if (_type == TransactionType.expense) {
       category = _selectedCategory ?? 'Expense';
-      if (category == 'More') {
-        title = _titleController.text.trim();
-      }
+      if (category == 'More') title = _titleController.text.trim();
     } else {
       category = _selectedCategory ?? 'Income';
-      if (category == 'More') {
-        title = _titleController.text.trim();
-      }
+      if (category == 'More') title = _titleController.text.trim();
     }
 
-    // ── Create transaction and save to provider ──
+    // ── Create & save transaction ──
     final transaction = TransactionModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       category: category,
@@ -162,22 +182,46 @@ class _AddPageState extends State<AddPage>
       amount: amount,
       date: DateTime.now(),
       walletName: _selectedWallet!,
+      toWalletName: _type == TransactionType.transfer
+          ? (_selectedToWallet ?? '')
+          : '',
       type: _type,
     );
 
     context.read<TransactionProvider>().addTransaction(transaction);
 
     Navigator.of(context).pop();
+    _showSnackBar(
+      _type == TransactionType.transfer
+          ? 'Transfer berhasil dicatat!'
+          : 'Transaction added successfully!',
+      AppColors.success,
+      Icons.check_circle_rounded,
+    );
+  }
+
+  void _showSnackBar(String message, Color color, IconData icon) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          'Transaction added successfully!',
-          style: TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                    fontFamily: 'Nunito', fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: AppColors.success,
+        backgroundColor: color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -190,23 +234,20 @@ class _AddPageState extends State<AddPage>
     super.dispose();
   }
 
-  // ── Build ──
-  //
-  // Figma reference frame  : 390 × 673
-  //   gradient zone         : 0 → 194   (29 %)
-  //   content area          : 194 → 673  (71 %, height 479)
-  //     category padding‑top: 134
-  //     input row           : 28
-  //     gap                 : 36
-  //     numpad              : 218
-  //     bottom padding      : 63
-  //
-  // All positions below are derived from those values
-  // and scaled via sx / sy so the layout adapts to any screen.
+  // ══════════════════════════════════════════════════════════
+  //  BUILD
+  // ══════════════════════════════════════════════════════════
 
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).padding.bottom;
+
+    // ── Baca wallet dari WalletProvider, konvert ke WalletOption ──
+    final walletOptions = context
+        .watch<WalletProvider>()
+        .wallets
+        .map(_toWalletOption)
+        .toList();
 
     return FractionallySizedBox(
       heightFactor: 0.86,
@@ -227,8 +268,6 @@ class _AddPageState extends State<AddPage>
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(25),
                   topRight: Radius.circular(25),
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0),
                 ),
               ),
             ),
@@ -262,7 +301,7 @@ class _AddPageState extends State<AddPage>
 
                 // ── Back button (glass) ──
                 Positioned(
-                  left: 28 * sx,
+                  left: 16 * sx,
                   top: 23 * sy,
                   child: _GlassCircleButton(
                     size: 42,
@@ -281,39 +320,31 @@ class _AddPageState extends State<AddPage>
                   ),
                 ),
 
-                // ── Income toggle (glass) ──
+                // ── Sliding Glass Pill (3 tabs, text-only) ──
                 Positioned(
-                  left: 105 * sx,
-                  top: 24 * sy,
-                  child: _buildToggleButton(
-                      'Income', TransactionType.income, sx, sy),
+                  left: 70 * sx,
+                  right: 16 * sx,
+                  top: 23 * sy,
+                  child: _buildSlidingPill(sx, sy),
                 ),
 
-                // ── Expense toggle (glass) ──
+                // ── Mic button (glass, right side) ──
                 Positioned(
-                  left: 235 * sx,
-                  top: 24 * sy,
-                  child: _buildToggleButton(
-                      'Expense', TransactionType.expense, sx, sy),
-                ),
-
-                // ── Mic button (glass, bottom-right) ──
-                Positioned(
-                  left: 330 * sx,
-                  top: 60 * sy,
+                  right: 16 * sx,
+                  top: 90 * sy,
                   child: _GlassCircleButton(
-                    size: 52,
+                    size: 44,
                     sx: sx,
                     sy: sy,
                     child: Icon(Icons.mic_rounded,
-                        color: Colors.white, size: 26 * sx),
+                        color: Colors.white, size: 22 * sx),
                   ),
                 ),
 
                 // ── Amount text ──
                 Positioned(
-                  left: 61 * sx,
-                  top: 78 * sy,
+                  left: 24 * sx,
+                  top: 80 * sy,
                   right: 72 * sx,
                   child: FittedBox(
                     alignment: Alignment.centerLeft,
@@ -331,20 +362,20 @@ class _AddPageState extends State<AddPage>
                   ),
                 ),
 
-                // ── Camera button (glass, bottom-right) ──
+                // ── Camera button (glass, right side) ──
                 Positioned(
-                  left: 330 * sx,
-                  top: 125 * sy,
+                  right: 16 * sx,
+                  top: 142 * sy,
                   child: _GlassCircleButton(
-                    size: 52,
+                    size: 44,
                     sx: sx,
                     sy: sy,
                     child: Icon(Icons.camera_alt_rounded,
-                        color: Colors.white, size: 26 * sx),
+                        color: Colors.white, size: 22 * sx),
                   ),
                 ),
 
-                // ── Content area (F1F1F1) ──
+                // ── Content area (white card) ──
                 Positioned(
                   left: 0,
                   right: 0,
@@ -358,8 +389,6 @@ class _AddPageState extends State<AddPage>
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(30),
                           topRight: Radius.circular(30),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(0),
                         ),
                       ),
                     ),
@@ -367,16 +396,18 @@ class _AddPageState extends State<AddPage>
                       children: [
                         SizedBox(height: 134 * sy),
 
-                        // ── Input row (Add Title + Choose Wallet) ──
+                        // ── Input row (Add Title + Select Wallet) ──
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 30 * sx),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 30 * sx),
                           child: SizedBox(
                             height: 40 * sy,
-                            child: _buildInputRow(sx, sy),
+                            child: _buildInputRow(sx, sy, walletOptions),
                           ),
                         ),
                         SizedBox(height: 24 * sy),
 
+                        // ── NumPad ──
                         Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(
@@ -403,26 +434,12 @@ class _AddPageState extends State<AddPage>
                   ),
                 ),
 
-                // ── Category icons ──
+                // ── Category / To-Wallet area ──
                 Positioned(
                   left: 20 * sx,
                   right: 20 * sx,
                   top: (194 + 24) * sy,
-                  child: _type == TransactionType.expense
-                      ? FilterExpanse(
-                          sx: sx,
-                          sy: sy,
-                          onCategorySelected: (cat) {
-                            setState(() => _selectedCategory = cat);
-                          },
-                        )
-                      : FilterIncome(
-                          sx: sx,
-                          sy: sy,
-                          onCategorySelected: (cat) {
-                            setState(() => _selectedCategory = cat);
-                          },
-                        ),
+                  child: _buildCategoryArea(sx, sy, walletOptions),
                 ),
               ],
             ),
@@ -432,106 +449,164 @@ class _AddPageState extends State<AddPage>
     );
   }
 
-  // ── Toggle button (Income / Expense) ──
+  // ══════════════════════════════════════════════════════════
+  //  Sliding Glass Pill — 3 tabs
+  // ══════════════════════════════════════════════════════════
 
-  // ── Glass circle helper ──
-
-  // ── Toggle button (Income / Expense) — glass ──
-
-  Widget _buildToggleButton(
-      String label, TransactionType type, double sx, double sy) {
-    final isActive = _type == type;
-
-    final isIncome = type == TransactionType.income;
-    final arrowIcon = isIncome
-        ? Icons.arrow_downward_rounded
-        : Icons.arrow_upward_rounded;
-
-    final child = AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 100 * sx,
+  Widget _buildSlidingPill(double sx, double sy) {
+    return Container(
       height: 40 * sy,
-      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isActive
-            ? AppColors.dashboardPurple
-            : Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
+        // Sangat transparan — ungu di belakang tetap terlihat
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          width: isActive ? 1.0 : 0.5,
-          color: isActive
-              ? AppColors.dashboardPurple
-              : Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withValues(alpha: 0.45),
+          width: 1.2,
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          Icon(
-            arrowIcon,
-            color: isActive ? AppColors.primaryPurple : AppColors.white2,
-            size: 16 * sy,
+          // ── Animated white pill indicator ──
+          LayoutBuilder(
+            builder: (context, c) {
+              final pillW = c.maxWidth / _tabLabels.length;
+              final alignment = Alignment(
+                -1.0 + (2.0 * _typeIndex / (_tabLabels.length - 1)),
+                0,
+              );
+              return AnimatedAlign(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeInOutCubic,
+                alignment: alignment,
+                child: Container(
+                  width: pillW,
+                  margin: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.10),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
-          SizedBox(width: 4 * sx),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive
-                  ? AppColors.primaryPurple
-                  : AppColors.white2,
-              fontSize: 14 * sy,
-              fontFamily: 'Nunito',
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            ),
+
+          // ── Tab labels ──
+          Row(
+            children: List.generate(_tabLabels.length, (index) {
+              final isActive = _typeIndex == index;
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() {
+                      _typeIndex = index;
+                      _selectedCategory = null;
+                      _selectedToWallet = null;
+                      _titleController.clear();
+                      _filterTransferKey = UniqueKey();
+                    });
+                  },
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 220),
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 13 * sx,
+                        fontWeight:
+                            isActive ? FontWeight.w800 : FontWeight.w500,
+                        color: isActive
+                            ? AppColors.primaryPurple
+                            : Colors.white.withValues(alpha: 0.85),
+                      ),
+                      child: Text(_tabLabels[index]),
+                    ),
+                  ),
+                ),
+              );
+            }),
           ),
         ],
       ),
     );
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _type = type;
-          _selectedCategory = null;
-          _titleController.clear();
-        });
-      },
-      child: isActive
-          ? child
-          : ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: child,
-              ),
-            ),
-    );
   }
 
-  // ── Category row ──
 
+  // ══════════════════════════════════════════════════════════
+  //  Category / To-Wallet area (switches by mode)
+  // ══════════════════════════════════════════════════════════
 
+  Widget _buildCategoryArea(double sx, double sy, List<WalletOption> walletOptions) {
+    if (_type == TransactionType.transfer) {
+      // Transfer mode — tampilkan bubble wallet (To Wallet)
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FilterTransfer(
+            key: _filterTransferKey,
+            wallets: walletOptions,
+            excludeWallet: _selectedWallet,
+            sx: sx,
+            sy: sy,
+            onWalletSelected: (name) {
+              setState(() => _selectedToWallet = name);
+            },
+          ),
+        ],
+      );
+    } else if (_type == TransactionType.expense) {
+      return FilterExpanse(
+        sx: sx,
+        sy: sy,
+        onCategorySelected: (cat) {
+          setState(() => _selectedCategory = cat);
+        },
+      );
+    } else {
+      return FilterIncome(
+        sx: sx,
+        sy: sy,
+        onCategorySelected: (cat) {
+          setState(() => _selectedCategory = cat);
+        },
+      );
+    }
+  }
 
-  // ── Input row ──
+  // ══════════════════════════════════════════════════════════
+  //  Input row — Add Title + Select Wallet (From)
+  // ══════════════════════════════════════════════════════════
 
-  Widget _buildInputRow(double sx, double sy) {
+  Widget _buildInputRow(double sx, double sy, List<WalletOption> walletOptions) {
+    // Title field: disabled saat Transfer atau saat category != 'More'
+    final bool titleEnabled =
+        _type != TransactionType.transfer && _selectedCategory == 'More';
+
     return Row(
       children: [
-        // Add Title
+        // ── Add Title / Note ──
         Expanded(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             height: double.infinity,
-            padding: EdgeInsets.only(
-                top: 9 * sy, left: 12 * sx, bottom: 9 * sy),
+            padding:
+                EdgeInsets.only(top: 9 * sy, left: 12 * sx, bottom: 9 * sy),
             decoration: BoxDecoration(
-              color: _selectedCategory == 'More'
+              color: titleEnabled
                   ? AppColors.dashboardPurple.withValues(alpha: 0.3)
                   : AppColors.white2,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: _selectedCategory == 'More'
+                color: titleEnabled
                     ? AppColors.primaryPurple
                     : Colors.transparent,
                 width: 1.2,
@@ -546,27 +621,31 @@ class _AddPageState extends State<AddPage>
             ),
             child: Row(
               children: [
-                Icon(Icons.description_outlined,
-                    size: 16 * sx,
-                    color: _selectedCategory == 'More'
-                        ? AppColors.primaryPurple
-                        : AppColors.disabled),
+                Icon(
+                  Icons.description_outlined,
+                  size: 16 * sx,
+                  color: titleEnabled
+                      ? AppColors.primaryPurple
+                      : AppColors.disabled,
+                ),
                 SizedBox(width: 8 * sx),
                 Expanded(
                   child: TextField(
                     controller: _titleController,
-                    enabled: _selectedCategory == 'More',
+                    enabled: titleEnabled,
                     style: TextStyle(
                       fontFamily: 'Nunito',
                       fontSize: 13.5 * sy,
-                      color: _selectedCategory == 'More'
+                      color: titleEnabled
                           ? AppColors.textPrimary
                           : AppColors.disabled,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Add Title',
+                      hintText: _type == TransactionType.transfer
+                          ? 'Disabled'
+                          : 'Add Title',
                       hintStyle: TextStyle(
-                        color: _selectedCategory == 'More'
+                        color: titleEnabled
                             ? AppColors.primaryPurple.withValues(alpha: 0.5)
                             : AppColors.disabled,
                         fontSize: 13.5 * sy,
@@ -585,11 +664,10 @@ class _AddPageState extends State<AddPage>
 
         SizedBox(width: 21 * sx),
 
-        // Select Wallet — wrapped with shake animation
+        // ── Select Wallet (From) — shake animation on error ──
         AnimatedBuilder(
           animation: _walletShakeController,
           builder: (context, child) {
-            // Sine-based shake: oscillates 3× across 500 ms
             final double shake = _walletShakeController.value == 0
                 ? 0
                 : math.sin(_walletShakeController.value * math.pi * 6) *
@@ -604,13 +682,18 @@ class _AddPageState extends State<AddPage>
             onTap: () async {
               final selected = await WalletSelectorPopup.show(
                 context: context,
-                wallets: _wallets,
+                wallets: walletOptions,
                 selectedWallet: _selectedWallet,
               );
               if (selected != null && mounted) {
                 setState(() {
                   _selectedWallet = selected;
                   _walletError = false;
+                  // Reset To Wallet jika sama dengan From yang baru dipilih
+                  if (_selectedToWallet == selected) {
+                    _selectedToWallet = null;
+                    _filterTransferKey = UniqueKey();
+                  }
                 });
               }
             },
@@ -669,7 +752,9 @@ class _AddPageState extends State<AddPage>
   }
 }
 
-
+// ══════════════════════════════════════════════════════════
+//  Glass Circle Button
+// ══════════════════════════════════════════════════════════
 
 class _GlassCircleButton extends StatefulWidget {
   final double size;
@@ -693,9 +778,7 @@ class _GlassCircleButton extends StatefulWidget {
 class _GlassCircleButtonState extends State<_GlassCircleButton> {
   bool _pressed = false;
 
-  void _handleTapDown(TapDownDetails _) {
-    setState(() => _pressed = true);
-  }
+  void _handleTapDown(TapDownDetails _) => setState(() => _pressed = true);
 
   void _handleTapUp(TapUpDetails _) {
     Future.delayed(const Duration(milliseconds: 150), () {

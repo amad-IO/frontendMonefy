@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 class ApiService {
-  // Ganti dengan IP laptopmu jika pakai HP fisik (misal: 192.168.x.x)
-  // Atau gunakan 10.0.2.2 jika pakai Emulator Android
-  static const String baseUrl = "http://192.168.1.66:8000/api";
+  // baseUrl dibaca dari app_config.dart (lokal, tidak di-push ke GitHub)
+  static const String baseUrl = AppConfig.baseUrl;
 
   // Contoh fungsi untuk mengambil data (GET)
   Future<List<dynamic>> getTransactions() async {

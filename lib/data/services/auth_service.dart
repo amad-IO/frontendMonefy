@@ -4,9 +4,10 @@ import 'package:http/http.dart' as http;
 import '../models/login_request.dart';
 import '../models/sign_up_request.dart';
 import '../models/auth_response.dart';
+import '../../config/app_config.dart';
 
 class AuthService {
-  static const String baseUrl = "http://192.168.1.93:8000/api";
+  static const String baseUrl = AppConfig.baseUrl;
 
   // =========================
   // LOGIN

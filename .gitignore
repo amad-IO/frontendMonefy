@@ -2,6 +2,14 @@
 # .gitignore — Monefy Flutter Mobile App
 # =============================================
 
+# =============================================
+# Konfigurasi Lokal (IP Address per Developer)
+# =============================================
+# File ini TIDAK di-push ke GitHub.
+# Setiap developer punya app_config.dart sendiri di lokal.
+# Lihat app_config.example.dart sebagai template.
+lib/config/app_config.dart
+
 # Miscellaneous
 *.class
 *.log

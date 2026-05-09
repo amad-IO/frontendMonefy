@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/saving_model.dart';
+import '../../config/app_config.dart';
 
 class SavingService {
-  static const String baseUrl = "http://10.0.2.2:8000/api/savings";
+  static String get baseUrl => "${AppConfig.baseUrl}/savings";
 
   static Future<List<Saving>> getSavings(String token) async {
     final response = await http.get(

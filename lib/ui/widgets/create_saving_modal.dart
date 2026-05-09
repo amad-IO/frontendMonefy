@@ -114,7 +114,7 @@ void showCreateSavingModal(
 
                     const SizedBox(height: 16),
 
-                    /// 📅 DATE PICKER
+                    /// DATE PICKER
                     const Text(
                       "Target Date",
                       style: TextStyle(color: AppColors.primaryPurple),
@@ -190,7 +190,7 @@ void showCreateSavingModal(
                             return;
                           }
 
-                          /// 🔥 KIRIM DATA
+                          /// KIRIM DATA
                           onCreate(name, amount, selectedDate);
 
                           Navigator.pop(context);

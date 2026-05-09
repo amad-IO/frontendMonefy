@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/input_add_wallet.dart';
+import '../widgets/transaction_type_selector.dart';
 
-// ══════════════════════════════════════════════════════════════
-/// CreateWalletPage — form untuk menambah wallet baru.
-///
-/// Dipanggil dari [AddWalletPage] ketika user menekan tombol
-/// tambah (ikon card+ di pojok kanan atas).
-// ══════════════════════════════════════════════════════════════
-class CreateWalletPage extends StatelessWidget {
-  CreateWalletPage({super.key});
+class CreateWalletPage extends StatefulWidget {
+  const CreateWalletPage({super.key});
 
+  @override
+  State<CreateWalletPage> createState() => _CreateWalletPageState();
+}
+
+class _CreateWalletPageState extends State<CreateWalletPage> {
   final _formKey = GlobalKey<FormState>();
+
+  String selectedType = "Income"; // 🔥 state untuk tab
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class CreateWalletPage extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
-              color: AppColors.primaryPurple.withOpacity(0.3),
+              color: AppColors.primaryPurple.withValues(alpha: 0.3),
               child: Row(
                 children: [
                   IconButton(
@@ -51,7 +53,7 @@ class CreateWalletPage extends StatelessWidget {
               ),
             ),
 
-            /// CONTAINER PUTIH + KONTUR
+            /// BODY
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -64,7 +66,7 @@ class CreateWalletPage extends StatelessWidget {
                 child: Stack(
                   children: [
 
-                    /// KONTUR BACKGROUND
+                    /// BACKGROUND
                     Positioned.fill(
                       child: Opacity(
                         opacity: 0.9,
@@ -95,6 +97,20 @@ class CreateWalletPage extends StatelessWidget {
                               ),
                             ),
 
+                            const SizedBox(height: 12),
+
+                            /// TAB PINDAH KE SINI (DI BAWAH JUDUL)
+                            TransactionTypeSelector(
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedType = value;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 20),
+
+
                             const SizedBox(height: 16),
 
                             /// Wallet Name
@@ -113,12 +129,16 @@ class CreateWalletPage extends StatelessWidget {
 
                             const SizedBox(height: 24),
 
-                            /// BUTTON SIMPAN
+                            /// BUTTON
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {
+
+                                    /// 🔥 DEBUG (cek nilai tab)
+                                    print("TYPE: $selectedType");
+
                                     Navigator.pop(context);
                                   }
                                 },

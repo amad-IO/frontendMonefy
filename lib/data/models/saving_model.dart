@@ -35,7 +35,7 @@ class Saving {
     };
   }
 
-  /// 🔥 INI YANG KURANG (WAJIB)
+  /// INI YANG KURANG (WAJIB)
   Saving copyWith({
     int? id,
     String? name,

@@ -30,6 +30,9 @@ class AuthProvider with ChangeNotifier {
 
       _token = response.token;
       _username = response.username;
+
+      print("🟢 TOKEN: $_token");
+      print("🟢 USERNAME: $_username");
     } catch (e) {
       rethrow;
     } finally {

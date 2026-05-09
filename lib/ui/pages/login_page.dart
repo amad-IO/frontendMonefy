@@ -22,12 +22,18 @@ class _LoginPageState extends State<LoginPage> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (authProvider.isLoading) return;
+
+    /// VALIDASI FORM
     if (!_formKey.currentState!.validate()) return;
 
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
     try {
+      /// DEBUG
+      print("LOGIN BUTTON DIKLIK");
+      print("EMAIL: $email");
+
       await authProvider.login(email, password);
 
       Navigator.pushReplacement(
@@ -96,10 +102,8 @@ class _LoginPageState extends State<LoginPage> {
                           title: "Login",
                           buttonText: "Login",
                           isRegister: false,
-
                           // ✅ LOGIN tidak butuh username
                           usernameController: null,
-
                           emailController: emailController,
                           passwordController: passwordController,
                           onSubmit: handleLogin,

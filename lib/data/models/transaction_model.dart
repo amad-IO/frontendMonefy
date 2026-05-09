@@ -8,8 +8,8 @@ class TransactionModel {
   final String title;
   final double amount;
   final DateTime date;
-  final String walletName;     // From wallet (semua tipe) / sumber transfer
-  final String toWalletName;   // Hanya diisi saat tipe transfer, '' untuk income/expense
+  final String walletName; // From wallet (semua tipe) / sumber transfer
+  final String toWalletName; // Hanya diisi saat tipe transfer, '' untuk income/expense
   final TransactionType type;
 
   TransactionModel({
@@ -40,9 +40,9 @@ class TransactionModel {
       id: json['id'].toString(),
       category: json['category']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
-      amount: double.tryParse(json['amount'].toString()) ?? 0.0,
-      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-      walletName: json['wallet_name']?.toString() ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      date: DateTime.tryParse(json['transaction_date'] ?? '') ?? DateTime.now(),
+      walletName: json['wallet_name']?.toString() ?? 'Wallet',
       toWalletName: json['to_wallet_name']?.toString() ?? '',
       type: type,
     );

@@ -5,7 +5,7 @@ import '../../config/app_config.dart';
 import '../models/login_request.dart';
 import '../models/sign_up_request.dart';
 import '../models/auth_response.dart';
-import '../../config/app_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static const String baseUrl = AppConfig.baseUrl;
@@ -29,7 +29,14 @@ class AuthService {
     final data = json.decode(response.body);
 
     if (response.statusCode == 200) {
-      return AuthResponse.fromJson(data);
+      final auth = AuthResponse.fromJson(data);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', auth.token);
+
+      print("TOKEN DISIMPAN: ${auth.token}");
+
+      return auth;
     } else {
       if (data["errors"] != null) {
         throw Exception(data["errors"].toString());
@@ -42,7 +49,7 @@ class AuthService {
   // =========================
   // SIGN UP
   // =========================
-  Future<void> signUp(SignUpRequest request) async {
+  Future<AuthResponse> signUp(SignUpRequest request) async {
     final response = await http.post(
       Uri.parse("$baseUrl/register"),
       headers: {
@@ -60,7 +67,15 @@ class AuthService {
     final data = json.decode(response.body);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return;
+      final auth = AuthResponse.fromJson(data);
+
+      //SIMPAN TOKEN
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', auth.token);
+
+      print("TOKEN SIGNUP: ${auth.token}");
+
+      return auth;
     } else {
       if (data["errors"] != null) {
         throw Exception(data["errors"].toString());

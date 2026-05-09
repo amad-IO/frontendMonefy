@@ -16,8 +16,11 @@ import '../components/filter_expense.dart';
 import '../components/filter_income.dart';
 import '../components/filter_transfer.dart';
 import '../components/wallet_selector_popup.dart';
+import '../../data/services/transaction_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// 🔥 IMPORT WIDGET HASIL PECAHAN
+
+// IMPORT WIDGET HASIL PECAHAN
 import '../widgets/add_page/sliding_pill.dart';
 import '../widgets/add_page/category_area.dart';
 import '../widgets/add_page/input_row.dart';
@@ -131,7 +134,7 @@ class _AddPageState extends State<AddPage>
     });
   }
 
-  void _onConfirm() {
+  Future<void> _onConfirm() async {
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (amount <= 0) return;
 
@@ -173,18 +176,26 @@ class _AddPageState extends State<AddPage>
 
     final transaction = TransactionModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      category: category,
-      title: title,
+      title: _titleController.text,
       amount: amount,
+      category: _selectedCategory ?? 'General',
       date: DateTime.now(),
-      walletName: _selectedWallet!,
-      toWalletName:
-      _type == TransactionType.transfer ? (_selectedToWallet ?? '') : '',
+      walletName: "Wallet",
       type: _type,
     );
+    // 🔥 TAMBAH DI SINI
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-    context.read<TransactionProvider>().addTransaction(transaction);
+    print("TOKEN DIPAKAI: $token");
 
+// 🔥 GANTI INI
+    await context.read<TransactionProvider>().addTransactionWithApi(
+      transaction,
+      token!, // ✅ BUKAN "TOKEN_KAMU"
+      1,
+      _typeIndex == 2 ? 2 : null,
+    );
     Navigator.of(context).pop();
     _showSnackBar(
       _type == TransactionType.transfer

@@ -2,20 +2,11 @@ import '../data/models/transaction_model.dart';
 import '../data/models/summary_model.dart';
 import '../data/models/analytic/analytic_models.dart';
 import '../data/services/analytics_calculator.dart';
+import '../data/services/transaction_service.dart';
 import 'package:flutter/material.dart';
 
-/// Centralized state manager for all transactions.
-///
-/// Architecture note: Currently in-memory only.
-/// When backend is ready, replace the body of [addTransaction],
-/// [deleteTransaction], and add a [loadTransactions] that calls
-/// your REST API. The rest of the app won't need any changes.
 class TransactionProvider extends ChangeNotifier {
   final List<TransactionModel> _transactions = [];
-
-  // ═══════════════════════════════════════════════════════════
-  //  Getters
-  // ═══════════════════════════════════════════════════════════
 
   List<TransactionModel> get transactions =>
       List.unmodifiable(_transactions);
@@ -30,21 +21,16 @@ class TransactionProvider extends ChangeNotifier {
 
   double get balance => totalIncome - totalExpense;
 
-  /// Summary for the SummaryCard widget on the dashboard.
   SummaryModel get summary => SummaryModel(
-        totalBalance: balance,
-        totalIncome: totalIncome,
-        totalExpense: totalExpense,
-      );
-
-  // ═══════════════════════════════════════════════════════════
-  //  Filtered list (for History & Dashboard)
-  // ═══════════════════════════════════════════════════════════
+    totalBalance: balance,
+    totalIncome: totalIncome,
+    totalExpense: totalExpense,
+  );
 
   List<TransactionModel> getFiltered(
-    TransactionFilter filter, {
-    String query = '',
-  }) {
+      TransactionFilter filter, {
+        String query = '',
+      }) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -83,7 +69,6 @@ class TransactionProvider extends ChangeNotifier {
         break;
     }
 
-    // Apply search query
     if (query.isNotEmpty) {
       final q = query.toLowerCase();
       result = result.where((t) {
@@ -94,13 +79,6 @@ class TransactionProvider extends ChangeNotifier {
 
     return result;
   }
-
-  // ═══════════════════════════════════════════════════════════
-  //  Analytics — delegasi ke AnalyticsCalculator
-  //
-  //  Provider hanya menjadi "bridge" antara data dan kalkulator.
-  //  Semua logika kalkulasi ada di analytics_calculator.dart.
-  // ═══════════════════════════════════════════════════════════
 
   AnalyticSummary getAnalytics({
     required DateTime start,
@@ -117,25 +95,42 @@ class TransactionProvider extends ChangeNotifier {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  //  Mutations
-  // ═══════════════════════════════════════════════════════════
-
-  /// Add a new transaction. When backend is ready, replace with:
-  /// ```dart
-  /// Future<void> addTransaction(TransactionModel t) async {
-  ///   await http.post(Uri.parse('$baseUrl/transactions'), body: t.toJson());
-  ///   await loadTransactions();
-  /// }
-  /// ```
+  // =========================
+  // EXISTING (JANGAN DIUBAH)
+  // =========================
   void addTransaction(TransactionModel transaction) {
-    _transactions.insert(0, transaction); // newest first
+    _transactions.insert(0, transaction);
     notifyListeners();
   }
 
-  /// Delete a transaction by ID.
   void deleteTransaction(String id) {
     _transactions.removeWhere((t) => t.id == id);
     notifyListeners();
+  }
+
+  // =========================
+  // 🔥 NEW (API VERSION)
+  // =========================
+  Future<void> addTransactionWithApi(
+      TransactionModel transaction,
+      String token,
+      int walletId,
+      int? toWalletId,
+      ) async {
+    final service = TransactionService();
+
+    await service.addTransaction(
+      token: token,
+      walletId: walletId,
+      toWalletId: toWalletId,
+      title: transaction.title,
+      amount: transaction.amount,
+      type: transaction.type.name,
+      category: transaction.category,
+      date: transaction.date.toIso8601String(),
+    );
+
+    // tetap pakai logic lama biar UI update
+    addTransaction(transaction);
   }
 }

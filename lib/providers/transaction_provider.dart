@@ -134,8 +134,35 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   /// Delete a transaction by ID.
+  /// When backend is ready, replace with:
+  /// ```dart
+  /// Future<void> deleteTransaction(String id) async {
+  ///   await http.delete(Uri.parse('$baseUrl/transactions/$id'),
+  ///       headers: {'Authorization': 'Bearer $token'});
+  ///   await loadTransactions();
+  /// }
+  /// ```
   void deleteTransaction(String id) {
     _transactions.removeWhere((t) => t.id == id);
     notifyListeners();
+  }
+
+  /// Update an existing transaction by ID.
+  /// When backend is ready, replace with:
+  /// ```dart
+  /// Future<void> updateTransaction(TransactionModel updated) async {
+  ///   await http.put(Uri.parse('$baseUrl/transactions/${updated.id}'),
+  ///       headers: {'Authorization': 'Bearer $token',
+  ///                 'Content-Type': 'application/json'},
+  ///       body: json.encode(updated.toJson()));
+  ///   await loadTransactions();
+  /// }
+  /// ```
+  void updateTransaction(TransactionModel updated) {
+    final index = _transactions.indexWhere((t) => t.id == updated.id);
+    if (index != -1) {
+      _transactions[index] = updated;
+      notifyListeners();
+    }
   }
 }

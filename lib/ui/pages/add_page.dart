@@ -16,7 +16,12 @@ import '../components/filter_transfer.dart';
 import '../components/wallet_selector_popup.dart';
 
 class AddPage extends StatefulWidget {
-  const AddPage({super.key});
+  /// Jika diisi, AddPage berjalan dalam mode Edit.
+  /// Semua field akan di-preload dari transaksi ini.
+  /// Jika null, AddPage berjalan dalam mode Add (tambah baru).
+  final TransactionModel? editTransaction;
+
+  const AddPage({super.key, this.editTransaction});
 
   @override
   State<AddPage> createState() => _AddPageState();
@@ -24,6 +29,9 @@ class AddPage extends StatefulWidget {
 
 class _AddPageState extends State<AddPage>
     with SingleTickerProviderStateMixin {
+  // ── Mode flag ──
+  bool get _isEditMode => widget.editTransaction != null;
+
   // ── Transaction type (0=Income, 1=Expense, 2=Transfer) ──
   int _typeIndex = 0;
 
@@ -85,6 +93,31 @@ class _AddPageState extends State<AddPage>
         _walletShakeController.reset();
       }
     });
+
+    // ── Preload data jika mode Edit ──
+    if (_isEditMode) {
+      final t = widget.editTransaction!;
+
+      // Set tab index sesuai type transaksi
+      _typeIndex = t.type == TransactionType.income
+          ? 0
+          : t.type == TransactionType.expense
+              ? 1
+              : 2;
+
+      // Set category & wallet
+      _selectedCategory = t.category;
+      _selectedWallet   = t.walletName.isEmpty ? null : t.walletName;
+      _selectedToWallet = t.toWalletName.isEmpty ? null : t.toWalletName;
+
+      // Set amount — tanpa desimal jika bulat
+      _amountController.text = t.amount == t.amount.truncateToDouble()
+          ? t.amount.toInt().toString()
+          : t.amount.toString();
+
+      // Set title
+      _titleController.text = t.title;
+    }
   }
 
   // ── Amount formatting ──
@@ -174,30 +207,55 @@ class _AddPageState extends State<AddPage>
       if (category == 'More') title = _titleController.text.trim();
     }
 
-    // ── Create & save transaction ──
-    final transaction = TransactionModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      category: category,
-      title: title,
-      amount: amount,
-      date: DateTime.now(),
-      walletName: _selectedWallet!,
-      toWalletName: _type == TransactionType.transfer
-          ? (_selectedToWallet ?? '')
-          : '',
-      type: _type,
-    );
+    if (_isEditMode) {
+      // ── Mode Edit: update transaksi yang sudah ada ──
+      final updated = widget.editTransaction!.copyWith(
+        category:     category,
+        title:        title,
+        amount:       amount,
+        walletName:   _selectedWallet!,
+        toWalletName: _type == TransactionType.transfer
+            ? (_selectedToWallet ?? '')
+            : '',
+        type: _type,
+        // date dibiarkan tetap (tanggal asli transaksi)
+        // Jika ingin update tanggal ke sekarang: date: DateTime.now()
+      );
 
-    context.read<TransactionProvider>().addTransaction(transaction);
+      context.read<TransactionProvider>().updateTransaction(updated);
 
-    Navigator.of(context).pop();
-    _showSnackBar(
-      _type == TransactionType.transfer
-          ? 'Transfer berhasil dicatat!'
-          : 'Transaction added successfully!',
-      AppColors.success,
-      Icons.check_circle_rounded,
-    );
+      Navigator.of(context).pop();
+      _showSnackBar(
+        'Transaksi berhasil diperbarui!',
+        AppColors.success,
+        Icons.check_circle_rounded,
+      );
+    } else {
+      // ── Mode Add: tambah transaksi baru ──
+      final transaction = TransactionModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        category: category,
+        title: title,
+        amount: amount,
+        date: DateTime.now(),
+        walletName: _selectedWallet!,
+        toWalletName: _type == TransactionType.transfer
+            ? (_selectedToWallet ?? '')
+            : '',
+        type: _type,
+      );
+
+      context.read<TransactionProvider>().addTransaction(transaction);
+
+      Navigator.of(context).pop();
+      _showSnackBar(
+        _type == TransactionType.transfer
+            ? 'Transfer berhasil dicatat!'
+            : 'Transaction added successfully!',
+        AppColors.success,
+        Icons.check_circle_rounded,
+      );
+    }
   }
 
   void _showSnackBar(String message, Color color, IconData icon) {

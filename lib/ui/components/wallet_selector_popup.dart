@@ -4,11 +4,13 @@ import '../../core/theme/app_colors.dart';
 
 /// Data model for a wallet option in the selector.
 class WalletOption {
+  final String id;     // ID dari backend (WalletModel.id)
   final String name;
   final IconData icon;
   final double balance;
 
   const WalletOption({
+    this.id = '',
     required this.name,
     required this.icon,
     this.balance = 0,

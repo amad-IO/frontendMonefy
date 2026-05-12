@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../providers/auth_provider.dart';
 import '../widgets/confirm_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -133,26 +135,30 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   const SizedBox(height: 16),
 
-                  // Name
-                  const Text(
-                    'mochi',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryPurple,
+                  // Name — dari AuthProvider
+                  Consumer<AuthProvider>(
+                    builder: (_, auth, __) => Text(
+                      auth.username ?? 'User',
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryPurple,
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 4),
 
-                  // Email
-                  const Text(
-                    'exsmplemochi@gmail.com',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 14,
-                      color: AppColors.disabled,
+                  // Email — dari AuthProvider
+                  Consumer<AuthProvider>(
+                    builder: (_, auth, __) => Text(
+                      auth.email ?? '',
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 14,
+                        color: AppColors.disabled,
+                      ),
                     ),
                   ),
 
@@ -317,7 +323,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 "Are you sure you want to log out of Monefy?\nYou'll need to sign in again to access your savings and track your finances.",
             confirmLabel: 'Log Out',
             confirmColor: AppColors.error,
-            onConfirm: () {
+            onConfirm: () async {
+              // Logout: clear token dari memory & SharedPreferences
+              await context.read<AuthProvider>().logout();
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
           );

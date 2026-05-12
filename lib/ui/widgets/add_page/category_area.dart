@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../data/models/wallet_model.dart';
 import '../../components/filter_expense.dart';
 import '../../components/filter_income.dart';
 import '../../components/filter_transfer.dart';
@@ -11,7 +10,9 @@ class CategoryArea extends StatelessWidget {
   final String? selectedWallet;
   final Key filterTransferKey;
   final Function(String) onCategorySelected;
-  final Function(String) onWalletSelected;
+  /// Callback untuk pilih to-wallet saat Transfer mode.
+  /// Membawa WalletOption penuh agar parent bisa ambil id & name.
+  final Function(WalletOption) onWalletSelected;
   final double sx;
   final double sy;
 

@@ -58,8 +58,10 @@ class _AddPageState extends State<AddPage>
   }
 
   String? _selectedCategory;
-  String? _selectedWallet;
-  String? _selectedToWallet;
+  String? _selectedWallet;      // nama wallet (untuk ditampilkan)
+  String? _selectedWalletId;   // ID wallet (untuk dikirim ke backend)
+  String? _selectedToWallet;   // nama to-wallet
+  String? _selectedToWalletId; // ID to-wallet
 
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
@@ -84,7 +86,8 @@ class _AddPageState extends State<AddPage>
         icon = Icons.account_balance_wallet_rounded;
         break;
     }
-    return WalletOption(name: w.name, icon: icon, balance: w.balance);
+    // Simpan id di WalletOption.id untuk keperluan kirim ke backend
+    return WalletOption(name: w.name, icon: icon, balance: w.balance, id: w.id);
   }
 
   @override
@@ -114,7 +117,9 @@ class _AddPageState extends State<AddPage>
       // Set category & wallet
       _selectedCategory = t.category;
       _selectedWallet   = t.walletName.isEmpty ? null : t.walletName;
+      _selectedWalletId = t.walletId.isEmpty ? null : t.walletId;
       _selectedToWallet = t.toWalletName.isEmpty ? null : t.toWalletName;
+      _selectedToWalletId = t.toWalletId.isEmpty ? null : t.toWalletId;
 
       // Set amount — tanpa desimal jika bulat
       _amountController.text = t.amount == t.amount.truncateToDouble()
@@ -258,11 +263,22 @@ class _AddPageState extends State<AddPage>
         return;
       }
 
+      // Pastikan walletId sudah ada
+      final walletId = _selectedWalletId ?? '';
+      if (walletId.isEmpty) {
+        _showSnackBar(
+          'Wallet tidak valid. Silakan pilih wallet.',
+          AppColors.error,
+          Icons.warning_amber_rounded,
+        );
+        return;
+      }
+
       await context.read<TransactionProvider>().addTransactionWithApi(
         transaction,
         token,
-        1,
-        _typeIndex == 2 ? 2 : null,
+        walletId: walletId,
+        toWalletId: _selectedToWalletId,
       );
 
       Navigator.of(context).pop();
@@ -455,8 +471,11 @@ class _AddPageState extends State<AddPage>
                           filterTransferKey: _filterTransferKey,
                           onCategorySelected: (val) =>
                               setState(() => _selectedCategory = val),
-                          onWalletSelected: (val) =>
-                              setState(() => _selectedToWallet = val),
+                          onWalletSelected: (walletOption) =>
+                              setState(() {
+                                _selectedToWallet = walletOption.name;
+                                _selectedToWalletId = walletOption.id;
+                              }),
                           sx: sx,
                           sy: sy,
                         ),
@@ -474,9 +493,10 @@ class _AddPageState extends State<AddPage>
                               titleEnabled: true,
                               walletError: _walletError,
                               walletShakeController: _walletShakeController,
-                              onWalletSelected: (val) {
+                              onWalletSelected: (walletOption) {
                                 setState(() {
-                                  _selectedWallet = val;
+                                  _selectedWallet = walletOption.name;
+                                  _selectedWalletId = walletOption.id;
                                   _walletError = false;
                                 });
                               },

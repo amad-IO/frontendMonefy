@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:monefy/ui/pages/sign_up_page.dart';
 import '../widgets/auth_form.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/transaction_provider.dart';
+import '../../providers/wallet_provider.dart';
 import 'main_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -23,18 +25,25 @@ class _LoginPageState extends State<LoginPage> {
 
     if (authProvider.isLoading) return;
 
-    /// VALIDASI FORM
     if (!_formKey.currentState!.validate()) return;
 
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
 
     try {
-      /// DEBUG
       print("LOGIN BUTTON DIKLIK");
       print("EMAIL: $email");
 
       await authProvider.login(email, password);
+
+      // Setelah login: load transaksi + summary dari backend
+      final token = authProvider.token!;
+      final txProvider = Provider.of<TransactionProvider>(context, listen: false);
+      final walletProvider = Provider.of<WalletProvider>(context, listen: false);
+
+      await txProvider.loadAll(token);
+      // Build wallet list dari relasi transaksi yang baru di-load
+      walletProvider.loadWalletsFromTransactions(txProvider.transactions);
 
       Navigator.pushReplacement(
         context,

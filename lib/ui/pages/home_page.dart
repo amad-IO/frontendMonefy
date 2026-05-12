@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:monefy/ui/pages/main_page.dart';
 import 'package:monefy/ui/pages/saving_page.dart';
 import 'package:monefy/ui/pages/your_wallet_page.dart';
-import '../../data/models/user_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../widgets/quick_access.dart';
@@ -24,12 +25,21 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final UserModel _user;
 
   @override
   void initState() {
     super.initState();
-    _user = UserModel.dummy();
+    // Load data dari backend jika token tersedia
+    Future.microtask(() async {
+      final auth = context.read<AuthProvider>();
+      if (auth.isLoggedIn) {
+        final token = auth.token!;
+        final txProvider = context.read<TransactionProvider>();
+        await txProvider.loadAll(token);
+        // Update wallet list dari transaksi yang baru di-load
+        context.read<WalletProvider>().loadWalletsFromTransactions(txProvider.transactions);
+      }
+    });
   }
 
   @override
@@ -101,6 +111,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeader() {
+    final auth = context.watch<AuthProvider>();
+    final username = auth.username ?? 'User';
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -110,7 +123,7 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hi, ${_user.username}!',
+                'Hi, $username!',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),

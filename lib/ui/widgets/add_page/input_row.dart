@@ -6,11 +6,12 @@ import '../../components/wallet_selector_popup.dart'; // ✅ cukup ini
 class InputRow extends StatelessWidget {
   final TextEditingController titleController;
   final String? selectedWallet;
-  final List<WalletOption> wallets; // ✅ pakai dari popup
+  final List<WalletOption> wallets;
   final bool titleEnabled;
   final bool walletError;
   final AnimationController walletShakeController;
-  final Function(String) onWalletSelected;
+  /// Callback dengan WalletOption penuh agar caller bisa ambil id & name
+  final Function(WalletOption) onWalletSelected;
   final double sx;
   final double sy;
 
@@ -120,14 +121,23 @@ class InputRow extends StatelessWidget {
           },
           child: GestureDetector(
             onTap: () async {
-              final selected = await WalletSelectorPopup.show(
+              final selectedName = await WalletSelectorPopup.show(
                 context: context,
                 wallets: wallets,
                 selectedWallet: selectedWallet,
               );
 
-              if (selected != null) {
-                onWalletSelected(selected);
+              if (selectedName != null) {
+                // Cari WalletOption berdasarkan nama yang dipilih
+                final found = wallets.firstWhere(
+                  (w) => w.name == selectedName,
+                  orElse: () => WalletOption(
+                    id: '',
+                    name: selectedName,
+                    icon: Icons.account_balance_wallet,
+                  ),
+                );
+                onWalletSelected(found);
               }
             },
             child: AnimatedContainer(

@@ -14,8 +14,8 @@ class FilterTransfer extends StatefulWidget {
   /// Nama wallet yang dikecualikan (= wallet "From" yang sudah dipilih).
   final String? excludeWallet;
 
-  /// Callback saat user memilih wallet tujuan.
-  final Function(String walletName)? onWalletSelected;
+  /// Callback saat user memilih wallet tujuan. Membawa WalletOption penuh.
+  final Function(WalletOption wallet)? onWalletSelected;
 
   final double sx;
   final double sy;
@@ -93,7 +93,7 @@ class _FilterTransferState extends State<FilterTransfer> {
           return GestureDetector(
             onTap: () {
               setState(() => _selectedWallet = wallet.name);
-              widget.onWalletSelected?.call(wallet.name);
+              widget.onWalletSelected?.call(wallet);
             },
             child: SizedBox(
               width: 64 * sx,

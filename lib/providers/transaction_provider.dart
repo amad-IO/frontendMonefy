@@ -1,15 +1,24 @@
+import 'package:flutter/material.dart';
 import '../data/models/transaction_model.dart';
 import '../data/models/summary_model.dart';
 import '../data/models/analytic/analytic_models.dart';
 import '../data/services/analytics_calculator.dart';
 import '../data/services/transaction_service.dart';
-import 'package:flutter/material.dart';
+import '../data/services/dashboard_service.dart';
 
 class TransactionProvider extends ChangeNotifier {
-  final List<TransactionModel> _transactions = [];
+  final TransactionService _txService = TransactionService();
+  final DashboardService _dashService = DashboardService();
 
-  List<TransactionModel> get transactions =>
-      List.unmodifiable(_transactions);
+  List<TransactionModel> _transactions = [];
+  SummaryModel? _backendSummary;
+  bool _isLoading = false;
+  String? _error;
+
+  // ── Getters ────────────────────────────────────────────────────
+  List<TransactionModel> get transactions => List.unmodifiable(_transactions);
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   double get totalIncome => _transactions
       .where((t) => t.type == TransactionType.income)
@@ -21,16 +30,133 @@ class TransactionProvider extends ChangeNotifier {
 
   double get balance => totalIncome - totalExpense;
 
-  SummaryModel get summary => SummaryModel(
-    totalBalance: balance,
-    totalIncome: totalIncome,
-    totalExpense: totalExpense,
-  );
+  /// Summary: gunakan data backend jika sudah loaded, fallback ke computed lokal
+  SummaryModel get summary => _backendSummary ??
+      SummaryModel(
+        totalBalance: balance,
+        totalIncome: totalIncome,
+        totalExpense: totalExpense,
+      );
 
+  // ── Load Transactions dari Backend ─────────────────────────────
+  /// Panggil GET /transactions, update state.
+  Future<void> loadTransactions(String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _transactions = await _txService.getTransactions(token);
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('❌ loadTransactions error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Load Summary dari Backend ──────────────────────────────────
+  /// Panggil GET /dashboard/summary, update _backendSummary.
+  Future<void> loadSummary(String token) async {
+    try {
+      _backendSummary = await _dashService.getSummary(token);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ loadSummary error: $e');
+    }
+  }
+
+  // ── Load All (summary + transactions) ─────────────────────────
+  Future<void> loadAll(String token) async {
+    await Future.wait([
+      loadTransactions(token),
+      loadSummary(token),
+    ]);
+  }
+
+  // ── Add Transaction via API ─────────────────────────────────────
+  Future<void> addTransactionWithApi(
+    TransactionModel transaction,
+    String token, {
+    required String walletId,
+    String? toWalletId,
+  }) async {
+    await _txService.addTransaction(
+      token: token,
+      walletId: walletId,
+      toWalletId: toWalletId,
+      title: transaction.title.isEmpty ? transaction.category : transaction.title,
+      amount: transaction.amount,
+      type: transaction.type.name,
+      category: transaction.category,
+      date: '${transaction.date.year.toString().padLeft(4, '0')}-'
+            '${transaction.date.month.toString().padLeft(2, '0')}-'
+            '${transaction.date.day.toString().padLeft(2, '0')}',
+      note: transaction.note.isEmpty ? null : transaction.note,
+    );
+
+    // Refresh data dari backend setelah berhasil add
+    await loadAll(token);
+  }
+
+  // ── Update Transaction via API ─────────────────────────────────
+  Future<void> updateTransactionWithApi(
+    TransactionModel updated,
+    String token,
+  ) async {
+    final payload = <String, dynamic>{
+      'title': updated.title,
+      'amount': updated.amount,
+      'category': updated.category,
+      'transaction_date': '${updated.date.year.toString().padLeft(4, '0')}-'
+                          '${updated.date.month.toString().padLeft(2, '0')}-'
+                          '${updated.date.day.toString().padLeft(2, '0')}',
+    };
+    if (updated.note.isNotEmpty) payload['note'] = updated.note;
+
+    final ok = await _txService.updateTransaction(updated.id, payload, token);
+    if (ok) {
+      await loadAll(token);
+    } else {
+      throw Exception('Gagal update transaksi');
+    }
+  }
+
+  // ── Delete Transaction via API ─────────────────────────────────
+  Future<void> deleteTransactionWithApi(String id, String token) async {
+    final ok = await _txService.deleteTransaction(id, token);
+    if (ok) {
+      await loadAll(token);
+    } else {
+      throw Exception('Gagal hapus transaksi');
+    }
+  }
+
+  // ── Local-only methods (tetap ada untuk backward compat) ────────
+  void addTransaction(TransactionModel transaction) {
+    _transactions = [transaction, ..._transactions];
+    notifyListeners();
+  }
+
+  void deleteTransaction(String id) {
+    _transactions = _transactions.where((t) => t.id != id).toList();
+    notifyListeners();
+  }
+
+  void updateTransaction(TransactionModel updated) {
+    final index = _transactions.indexWhere((t) => t.id == updated.id);
+    if (index != -1) {
+      _transactions = List.of(_transactions)..[index] = updated;
+      notifyListeners();
+    }
+  }
+
+  // ── Filter & Analytics ─────────────────────────────────────────
   List<TransactionModel> getFiltered(
-      TransactionFilter filter, {
-        String query = '',
-      }) {
+    TransactionFilter filter, {
+    String query = '',
+  }) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -93,63 +219,5 @@ class TransactionProvider extends ChangeNotifier {
       isExpense: isExpense,
       periodLabel: periodLabel,
     );
-  }
-
-  // =========================
-  // EXISTING (JANGAN DIUBAH)
-  // =========================
-  void addTransaction(TransactionModel transaction) {
-    _transactions.insert(0, transaction);
-    notifyListeners();
-  }
-
-  void deleteTransaction(String id) {
-    _transactions.removeWhere((t) => t.id == id);
-    notifyListeners();
-  }
-
-  /// Update an existing transaction by ID.
-  /// When backend is ready, replace with:
-  /// ```dart
-  /// Future<void> updateTransaction(TransactionModel updated) async {
-  ///   await http.put(Uri.parse('$baseUrl/transactions/${updated.id}'),
-  ///       headers: {'Authorization': 'Bearer $token',
-  ///                 'Content-Type': 'application/json'},
-  ///       body: json.encode(updated.toJson()));
-  ///   await loadTransactions();
-  /// }
-  /// ```
-  void updateTransaction(TransactionModel updated) {
-    final index = _transactions.indexWhere((t) => t.id == updated.id);
-    if (index != -1) {
-      _transactions[index] = updated;
-      notifyListeners();
-    }
-  }
-
-  // =========================
-  // 🔥 NEW (API VERSION)
-  // =========================
-  Future<void> addTransactionWithApi(
-      TransactionModel transaction,
-      String token,
-      int walletId,
-      int? toWalletId,
-      ) async {
-    final service = TransactionService();
-
-    await service.addTransaction(
-      token: token,
-      walletId: walletId,
-      toWalletId: toWalletId,
-      title: transaction.title,
-      amount: transaction.amount,
-      type: transaction.type.name,
-      category: transaction.category,
-      date: transaction.date.toIso8601String(),
-    );
-
-    // tetap pakai logic lama biar UI update
-    addTransaction(transaction);
   }
 }

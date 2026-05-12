@@ -23,7 +23,7 @@ class _TransactionTypeSelectorState
       margin: const EdgeInsets.symmetric(horizontal: 0),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.primaryPurple.withValues(alpha: 0.3), // 🔥 lebih kelihatan frame
+        color: AppColors.primaryPurple.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: AppColors.primaryPurple.withValues(alpha: 0.2),

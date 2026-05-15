@@ -52,6 +52,15 @@ class AppColors {
   static const badgeDark = Color(0xFF111111);
   static const decorativePurple = Color(0xFFA68EF0);
 
+  // Scan Page (light bottom-sheet)
+  static const scanBackground = Color(0xFFF2F2F2);
+  static const scanViewfinderBg = Color(0xFF1A1A2E);
+  static const scanMintGreen = Color(0xFF6EE7B7);
+  static const scanMintDark = Color(0xFF059669);
+  static const scanIconBg = Color(0xFFE0E0E0);
+  static const scanRetakeBg = Color(0xFFE0E0E0);
+  static const scanRetakeText = Color(0xFF424242);
+
   // Numpad
   static const numpadButton = Color(0xFFF7F7FD);
   static const numpadDeleteBg = Color(0xFFF7D9E0);

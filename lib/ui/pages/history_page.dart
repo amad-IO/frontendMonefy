@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -18,7 +19,8 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  TransactionFilter _activeFilter = TransactionFilter.day;
+  // ✅ Default 'all' agar langsung tampil semua transaksi
+  TransactionFilter _activeFilter = TransactionFilter.all;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -252,26 +254,50 @@ class _HistoryPageState extends State<HistoryPage> {
 
                   // ── Transaction list ──
                   Expanded(
-                    child: filtered.isEmpty
-                        ? _EmptyState(isSearch: _searchQuery.isNotEmpty)
-                        : ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            padding: EdgeInsets.only(
-                              top: 4,
-                              bottom: 120 + mediaBottom,
-                            ),
-                            itemCount: filtered.length,
-                            itemBuilder: (context, index) {
-                              return CardHistory(
-                                  transaction: filtered[index]);
-                            },
-                          ),
+                    child: provider.isLoading
+                        ? _buildSkeleton()
+                        : filtered.isEmpty
+                            ? _EmptyState(isSearch: _searchQuery.isNotEmpty)
+                            : ListView.builder(
+                                physics: const BouncingScrollPhysics(),
+                                padding: EdgeInsets.only(
+                                  top: 4,
+                                  bottom: 120 + mediaBottom,
+                                ),
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  return CardHistory(
+                                      transaction: filtered[index]);
+                                },
+                              ),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Skeleton loading: 6 dummy card transaksi ──────────────────
+  Widget _buildSkeleton() {
+    final dummy = TransactionModel(
+      id: '0',
+      category: 'Shopping',
+      title: 'Loading...',
+      amount: 150000,
+      date: DateTime.now(),
+      walletName: 'BCA',
+      type: TransactionType.expense,
+    );
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 4),
+        itemCount: 6,
+        itemBuilder: (_, __) => CardHistory(transaction: dummy),
       ),
     );
   }

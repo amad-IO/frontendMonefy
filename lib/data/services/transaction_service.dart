@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../config/app_config.dart';
 import '../models/transaction_model.dart';
@@ -22,8 +23,7 @@ class TransactionService {
       headers: _headers(token),
     );
 
-    print('GET /transactions → ${response.statusCode}');
-    print('BODY: ${response.body}');
+    debugPrint('GET /transactions → ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -69,8 +69,7 @@ class TransactionService {
       body: json.encode(body),
     );
 
-    print('POST /transactions → ${response.statusCode}');
-    print('BODY: ${response.body}');
+    debugPrint('POST /transactions → ${response.statusCode}');
 
     if (response.statusCode != 201) {
       final data = json.decode(response.body);
@@ -91,8 +90,7 @@ class TransactionService {
       body: json.encode(data),
     );
 
-    print('PUT /transactions/$id → ${response.statusCode}');
-    print('BODY: ${response.body}');
+    debugPrint('PUT /transactions/$id → ${response.statusCode}');
 
     return response.statusCode == 200;
   }
@@ -105,7 +103,7 @@ class TransactionService {
       headers: _headers(token),
     );
 
-    print('DELETE /transactions/$id → ${response.statusCode}');
+    debugPrint('DELETE /transactions/$id → ${response.statusCode}');
     return response.statusCode == 200;
   }
 }

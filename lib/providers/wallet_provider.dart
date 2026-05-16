@@ -50,8 +50,7 @@ class WalletProvider extends ChangeNotifier {
         },
       );
 
-      print('GET /wallets → ${response.statusCode}');
-      print('BODY: ${response.body}');
+      debugPrint('GET /wallets → ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body) as Map<String, dynamic>;
@@ -126,8 +125,7 @@ class WalletProvider extends ChangeNotifier {
         }),
       );
 
-      print('POST /wallets → ${response.statusCode}');
-      print('BODY: ${response.body}');
+      debugPrint('POST /wallets → ${response.statusCode}');
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body)['data'] as Map<String, dynamic>;

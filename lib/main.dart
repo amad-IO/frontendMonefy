@@ -63,14 +63,18 @@ class _RootPageState extends State<_RootPage> {
     await auth.tryAutoLogin();
 
     if (auth.isLoggedIn) {
-      // Token ditemukan → load data lalu ke MainPage
       final token = auth.token!;
-      final txProvider = context.read<TransactionProvider>();
+      final txProvider     = context.read<TransactionProvider>();
       final walletProvider = context.read<WalletProvider>();
 
-      await txProvider.loadAll(token);
-      // Setelah transaksi loaded, build wallet list dari relasi transaksi
-      walletProvider.loadWalletsFromTransactions(txProvider.transactions);
+      // Load transaksi + wallet dari API secara paralel
+      await Future.wait([
+        txProvider.loadAll(token),
+        walletProvider.loadWalletsFromApi(token),
+      ]);
+
+      // Isi toWalletName setelah keduanya selesai
+      txProvider.enrichToWalletNames(walletProvider.wallets);
     }
 
     if (mounted) setState(() => _checking = false);

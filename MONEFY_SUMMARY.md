@@ -354,6 +354,8 @@ Total Balance = sum(semua wallet.balance)
 | **WalletController default 'general'** | `store()` pakai `$request->category ?? 'general'` padahal frontend kirim 'Cash'/'Bank Account'/'E-Wallet' |
 | **transaction_date date-only** | Tidak menyimpan waktu → jam diambil dari `created_at` |
 | **Edit transaksi lokal** | Update transaction UI masih pakai local update, bukan API update (perlu cek) |
+| **⚠️ Saving/Wishlist schema mismatch** | `saving_service.dart` salah pakai endpoint `/saving-goals` → seharusnya `/wishlists`. Backend Wishlist hanya punya field `name` + `status` (belum_terbeli/terbeli). Tidak ada `amount`, `target`, `date` di backend → field ini hanya bisa lokal di frontend. |
+| **⚠️ SavingService endpoint salah** | `SavingService.baseUrl` → `/saving-goals` ❌. Endpoint backend yang benar: `/wishlists` ✅ |
 
 ---
 
@@ -451,3 +453,62 @@ Status: isPaid (bool) → tampil badge "Lunas" / "Belum Lunas"
 8. **Gradient colors** sudah tersedia: `incomeGradient`, `expenseGradient`, `transferGradient` di `AppColors`
 9. **Token** disimpan di `SharedPreferences['token']` — cek `auth_provider.dart`
 10. **`ConfirmDialog`** adalah komponen universal untuk semua dialog konfirmasi (hapus, logout, dll)
+11. **Skeleton loading** menggunakan package `skeletonizer: ^2.1.3` — HARUS versi 2.x (bukan 1.x) karena Flutter SDK user sangat baru (memiliki `Canvas.clipRSuperellipse`)
+12. **Default filter HistoryPage** adalah `TransactionFilter.all` (bukan `.day`) sejak sesi 2026-05-17
+13. **Edit transaksi** sekarang memanggil `updateTransactionWithApi()` — data persist ke backend
+14. **Auto-login** di `main.dart` sekarang memanggil `loadWalletsFromApi()` secara paralel dengan `loadAll()` — wallet saldo akurat sejak pertama buka
+15. **Double-fetch guard** ada di `home_page.dart` initState — hanya load jika `transactions.isEmpty && !isLoading`
+16. **Saving endpoint BENAR:** `/wishlists` ✅ (bukan `/saving-goals` ❌) — sudah diperbaiki di `saving_service.dart`
+17. **Saving schema mismatch:** Backend Wishlist hanya punya `name` + `status`. Field `amount`, `target`, `date` di `SavingModel` adalah LOKAL saja — tidak persist ke backend
+
+---
+
+## 19. PERUBAHAN SESI 2026-05-17 (Bug Fix + Skeletonizer)
+
+### Bug Yang Diperbaiki
+| File | Bug | Fix |
+|---|---|---|
+| `your_wallet_page.dart` | Icon visibility selalu `visibility_off` | Fix kondisi toggle icon |
+| `add_page.dart` | Edit mode hanya update lokal | Ganti ke `updateTransactionWithApi()` |
+| `main.dart` | Auto-login load wallet dari transaksi (balance 0) | Ganti ke `loadWalletsFromApi()` paralel |
+| `main.dart` + `home_page.dart` | Data di-fetch 2x | Guard di `initState`: skip jika data sudah ada |
+| `saving_service.dart` | Endpoint `/saving-goals` (salah) | Fix ke `/wishlists` |
+| `saving_provider.dart` | Field publik, API tidak terpanggil | Private fields + connect API + fallback lokal |
+| `wallet_provider.dart` | `print()` expose response body | Ganti `debugPrint()` |
+| `transaction_service.dart` | `print()` expose response body | Ganti `debugPrint()` + tambah `foundation` import |
+| `history_page.dart` | Default filter `day` → tampak kosong | Ganti default ke `all` |
+
+### Skeleton Loading Yang Ditambahkan
+| Halaman | Widget yang di-skeleton |
+|---|---|
+| `home_page.dart` | `SummaryCard` + 5 dummy `CardHistory` di `HistorySection` |
+| `history_page.dart` | 6 dummy `CardHistory` saat `isLoading` |
+| `saving_page.dart` | `SavingCard` (total) + `SavingList` (3 dummy item) |
+| `your_wallet_page.dart` | Label "Your total balance is" + nominal saldo + 3 `_CategoryTile` |
+| `wallet_category_page.dart` | `WalletCard` carousel (1 dummy card saat loading) |
+
+### Dependency Baru
+```yaml
+# pubspec.yaml
+skeletonizer: ^2.1.3   # WAJIB 2.x — Flutter SDK user sangat baru (ada Canvas.clipRSuperellipse)
+                        # Versi 1.x akan GAGAL build dengan error: missing implementations for Canvas members
+```
+
+### Cara Jalankan Aplikasi
+```bash
+# Dari folder frontendMonefy (BUKAN folder Tubes!)
+cd "e:\semester 6\Aplikasi Berbasis Platfrom\Tubes\mobile\frontendMonefy"
+flutter run          # debug mode
+flutter run --release # release mode (lebih ringan di HP)
+
+# Jika ganti WiFi → update IP di:
+# lib/config/app_config.dart → static const baseUrl = 'http://IP_BARU:8000/api';
+# Lalu tekan R (hot restart) di terminal flutter
+```
+
+### Backend harus jalan dengan:
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+# Bukan 'php artisan serve' biasa (hanya bisa diakses dari localhost)
+```
+

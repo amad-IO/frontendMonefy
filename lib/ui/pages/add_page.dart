@@ -199,7 +199,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       type: _type,
     );
 
-    // 3A. Mode Edit
+    // 3A. Mode Edit — update via API
     if (_isEditMode) {
       final updated = widget.editTransaction!.copyWith(
         category:     category,
@@ -209,9 +209,29 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
         toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ?? '') : '',
         type:         _type,
       );
-      context.read<TransactionProvider>().updateTransaction(updated);
-      Navigator.of(context).pop();
-      _showSnackBar('Transaksi berhasil diperbarui!', AppColors.success, Icons.check_circle_rounded);
+
+      // Simpan referensi sebelum await
+      final provider   = context.read<TransactionProvider>();
+      final navigator  = Navigator.of(context);
+      final messenger  = ScaffoldMessenger.of(context);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        _showSnackBar('Token tidak ditemukan. Silakan login ulang.', AppColors.error, Icons.warning_amber_rounded);
+        return;
+      }
+
+      try {
+        await provider.updateTransactionWithApi(updated, token);
+        if (!mounted) return;
+        navigator.pop();
+        _showSnackBarOnMessenger(messenger, 'Transaksi berhasil diperbarui!', AppColors.success, Icons.check_circle_rounded);
+      } catch (e) {
+        if (!mounted) return;
+        _showSnackBarOnMessenger(messenger, 'Gagal memperbarui transaksi.', AppColors.error, Icons.warning_amber_rounded);
+      }
       return;
     }
 

@@ -30,12 +30,29 @@ class CardHistory extends StatelessWidget {
   Color get _amountColor {
     switch (transaction.type) {
       case TransactionType.income:
-        return AppColors.success;
+        return AppColors.incomeGreen;
       case TransactionType.expense:
-        return AppColors.error;
+        return AppColors.expenseRed;
       case TransactionType.transfer:
-        return AppColors.textSecondary;
+        return AppColors.transferOrange;
     }
+  }
+
+  /// BoxDecoration gradient untuk semua tipe transaksi
+  BoxDecoration get _iconDecoration {
+    final LinearGradient gradient;
+    switch (transaction.type) {
+      case TransactionType.income:
+        gradient = AppColors.incomeGradient;
+        break;
+      case TransactionType.expense:
+        gradient = AppColors.expenseGradient;
+        break;
+      case TransactionType.transfer:
+        gradient = AppColors.transferGradient;
+        break;
+    }
+    return BoxDecoration(gradient: gradient, shape: BoxShape.circle);
   }
 
   IconData get _historyIcon {
@@ -77,13 +94,10 @@ class CardHistory extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
-                color: _amountColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: _iconDecoration, // ← gradient untuk transfer
               child: Icon(
                 _historyIcon,
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Colors.white,
                 size: 20,
               ),
             ),

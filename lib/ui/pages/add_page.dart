@@ -76,7 +76,13 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
         icon = Icons.account_balance_wallet_rounded;
         break;
     }
-    return WalletOption(name: w.name, icon: icon, balance: w.balance, id: w.id);
+    return WalletOption(
+      name:     w.name,
+      icon:     icon,
+      balance:  w.balance,
+      id:       w.id,
+      gradient: w.theme.cardGradient, // ← warna sesuai kartu di Your Wallet
+    );
   }
 
   // ────────────────────────────────────────────
@@ -211,9 +217,10 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
 
     // 3B. Mode Add — tambah via API
     // Simpan referensi context-dependent sebelum await (avoid async gap warning)
-    final provider   = context.read<TransactionProvider>();
-    final navigator  = Navigator.of(context);
-    final messenger  = ScaffoldMessenger.of(context);
+    final provider        = context.read<TransactionProvider>();
+    final walletProvider  = context.read<WalletProvider>();  // ← untuk refresh saldo
+    final navigator       = Navigator.of(context);
+    final messenger       = ScaffoldMessenger.of(context);
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -246,6 +253,13 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       walletId: walletId,
       toWalletId: _selectedToWalletId,
     );
+
+    // Refresh saldo wallet agar perubahan langsung terlihat
+    // (income/expense/transfer semua mengubah saldo wallet di backend)
+    await walletProvider.loadWalletsFromApi(token);
+
+    // Isi toWalletName untuk transaksi transfer yang baru dimuat
+    provider.enrichToWalletNames(walletProvider.wallets);
 
     if (!mounted) return;
     navigator.pop();
@@ -425,7 +439,13 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
             walletOptions: walletOptions,
             selectedWallet: _selectedWallet,
             filterTransferKey: _filterTransferKey,
-            onCategorySelected: (val) => setState(() => _selectedCategory = val),
+            onCategorySelected: (val) => setState(() {
+                  // Jika ganti dari More ke kategori lain, bersihkan title
+                  if (_selectedCategory == 'More' && val != 'More') {
+                    _titleController.clear();
+                  }
+                  _selectedCategory = val;
+                }),
             onWalletSelected: (walletOption) => setState(() {
               _selectedToWallet   = walletOption.name;
               _selectedToWalletId = walletOption.id;
@@ -445,14 +465,21 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
                 titleController:       _titleController,
                 selectedWallet:        _selectedWallet,
                 wallets:               walletOptions,
-                titleEnabled:          true,
+                titleEnabled: _typeIndex != 2 && _selectedCategory == 'More',
                 walletError:           _walletError,
                 walletShakeController: _walletShakeController,
+                // Saat Transfer: sembunyikan To Wallet dari From selector
+                excludeWallet: _typeIndex == 2 ? _selectedToWallet : null,
                 onWalletSelected: (walletOption) {
                   setState(() {
                     _selectedWallet   = walletOption.name;
                     _selectedWalletId = walletOption.id;
                     _walletError      = false;
+                    // Safety: reset To Wallet jika kebetulan sama
+                    if (_selectedToWallet == walletOption.name) {
+                      _selectedToWallet   = null;
+                      _selectedToWalletId = null;
+                    }
                   });
                 },
                 sx: sx,

@@ -75,6 +75,31 @@ class TransactionProvider extends ChangeNotifier {
     ]);
   }
 
+  // ── Enrich toWalletName dari daftar wallet ──────────────────────
+  /// Backend tidak eager-load destinationWallet di GET /transactions,
+  /// sehingga toWalletName selalu kosong.
+  /// Method ini mengisi toWalletName dengan lookup ke daftar wallet.
+  /// Panggil setelah loadAll() + loadWalletsFromApi() selesai.
+  void enrichToWalletNames(List<dynamic> wallets) {
+    if (wallets.isEmpty) return;
+    bool changed = false;
+    _transactions = _transactions.map((t) {
+      if (t.toWalletId.isNotEmpty && t.toWalletName.isEmpty) {
+        // Cari wallet dengan id yang cocok
+        final dest = wallets.cast<dynamic>().firstWhere(
+          (w) => w.id == t.toWalletId,
+          orElse: () => null,
+        );
+        if (dest != null) {
+          changed = true;
+          return t.copyWith(toWalletName: dest.name as String);
+        }
+      }
+      return t;
+    }).toList();
+    if (changed) notifyListeners();
+  }
+
   // ── Add Transaction via API ─────────────────────────────────────
   Future<void> addTransactionWithApi(
     TransactionModel transaction,

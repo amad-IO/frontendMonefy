@@ -3,8 +3,13 @@ import '../../core/theme/app_colors.dart';
 
 class TransactionTypeSelector extends StatefulWidget {
   final Function(String) onChanged;
+  final String initialValue; // ← tambah initial value
 
-  const TransactionTypeSelector({super.key, required this.onChanged});
+  const TransactionTypeSelector({
+    super.key,
+    required this.onChanged,
+    this.initialValue = 'Income', // default 'Income' agar backward compat
+  });
 
   @override
   State<TransactionTypeSelector> createState() =>
@@ -13,9 +18,15 @@ class TransactionTypeSelector extends StatefulWidget {
 
 class _TransactionTypeSelectorState
     extends State<TransactionTypeSelector> {
-  String selected = "Income";
+  late String selected;
 
   final List<String> types = ["Cash", "Bank", "E-Wallet"];
+
+  @override
+  void initState() {
+    super.initState();
+    selected = widget.initialValue;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +57,6 @@ class _TransactionTypeSelectorState
           });
           widget.onChanged(type);
         },
-
-        /// 🔥 ANIMASI HALUS
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,

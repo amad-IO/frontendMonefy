@@ -37,6 +37,20 @@ class TransactionModel {
     final walletMap = json['wallet'] as Map<String, dynamic>?;
     final destMap   = json['destination_wallet'] as Map<String, dynamic>?;
 
+    // Ambil tanggal dari transaction_date, jam dari created_at
+    final txDate    = DateTime.tryParse(json['transaction_date']?.toString() ?? '');
+    final createdAt = DateTime.tryParse(json['created_at']?.toString() ?? '')?.toLocal();
+    final DateTime combinedDate;
+    if (txDate != null && createdAt != null) {
+      // Gabungkan: date dari transaction_date, time dari created_at
+      combinedDate = DateTime(
+        txDate.year, txDate.month, txDate.day,
+        createdAt.hour, createdAt.minute,
+      );
+    } else {
+      combinedDate = txDate ?? DateTime.now();
+    }
+
     return TransactionModel(
       id:           json['id'].toString(),
       walletId:     json['wallet_id']?.toString() ?? '',
@@ -47,8 +61,7 @@ class TransactionModel {
       title:        json['title']?.toString() ?? '',
       note:         json['note']?.toString() ?? '',
       amount:       double.tryParse(json['amount'].toString()) ?? 0.0,
-      // Backend menggunakan key "transaction_date", bukan "date"
-      date:         DateTime.tryParse(json['transaction_date']?.toString() ?? '') ?? DateTime.now(),
+      date:         combinedDate,
       type:         _typeFromString(json['type']),
     );
   }

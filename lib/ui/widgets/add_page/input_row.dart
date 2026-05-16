@@ -10,8 +10,8 @@ class InputRow extends StatelessWidget {
   final bool titleEnabled;
   final bool walletError;
   final AnimationController walletShakeController;
-  /// Callback dengan WalletOption penuh agar caller bisa ambil id & name
   final Function(WalletOption) onWalletSelected;
+  final String? excludeWallet; // ← untuk exclude To Wallet dari From selector
   final double sx;
   final double sy;
 
@@ -24,6 +24,7 @@ class InputRow extends StatelessWidget {
     required this.walletError,
     required this.walletShakeController,
     required this.onWalletSelected,
+    this.excludeWallet,
     required this.sx,
     required this.sy,
   });
@@ -125,6 +126,7 @@ class InputRow extends StatelessWidget {
                 context: context,
                 wallets: wallets,
                 selectedWallet: selectedWallet,
+                excludeWallet: excludeWallet, // ← sembunyikan To Wallet
               );
 
               if (selectedName != null) {

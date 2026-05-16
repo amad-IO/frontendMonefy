@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -73,11 +74,11 @@ class YourWalletPage extends StatelessWidget {
   // HEADER
   // ══════════════════════════════════════════════════════════
   Widget _buildHeader(BuildContext context, WalletProvider provider) {
-    // Format: Rp3000.000 style (divide by 1000, append .000)
-    final totalInK = (provider.totalBalance / 1000).toStringAsFixed(0);
+    // Format angka dengan NumberFormat agar tidak ada pembulatan
+    final formatter = NumberFormat('#,##0', 'id_ID');
     final balanceText = provider.isHidden
         ? '••••••••'
-        : 'Rp$totalInK.000';
+        : 'Rp${formatter.format(provider.totalBalance.toInt())}';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 90),
@@ -368,9 +369,7 @@ class _CategoryTileState extends State<_CategoryTile> {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// Tombol Add wallet — pill ungu muda dengan ikon card + teks
-// ══════════════════════════════════════════════════════════════
+
 class _AddWalletButton extends StatefulWidget {
   final VoidCallback onTap;
   const _AddWalletButton({required this.onTap});

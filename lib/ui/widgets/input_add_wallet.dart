@@ -5,8 +5,9 @@ import '../../core/theme/app_colors.dart';
 class InputAddWallet extends StatelessWidget {
   final String label;
   final String hint;
-  final bool isNumber; // untuk initial balance
-  final bool isTextOnly; // untuk saving list
+  final bool isNumber;
+  final bool isTextOnly;
+  final TextEditingController? controller;
 
   const InputAddWallet({
     super.key,
@@ -14,6 +15,7 @@ class InputAddWallet extends StatelessWidget {
     required this.hint,
     this.isNumber = false,
     this.isTextOnly = false,
+    this.controller,
   });
 
   @override
@@ -26,34 +28,26 @@ class InputAddWallet extends StatelessWidget {
           Text(label),
           const SizedBox(height: 6),
           TextFormField(
+            controller: controller,
             keyboardType:
-            isNumber ? TextInputType.number : TextInputType.text,
-
+                isNumber ? TextInputType.number : TextInputType.text,
             inputFormatters: [
-              if (isNumber)
-                FilteringTextInputFormatter.digitsOnly,
+              if (isNumber) FilteringTextInputFormatter.digitsOnly,
               if (isTextOnly)
-                FilteringTextInputFormatter.allow(
-                    RegExp(r'[a-zA-Z\s,]')),
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s,]')),
             ],
-
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return '$label tidak boleh kosong';
               }
-
               if (isTextOnly && RegExp(r'[0-9]').hasMatch(value)) {
                 return 'Tidak boleh mengandung angka';
               }
-
-              if (isNumber &&
-                  !RegExp(r'^[0-9]+$').hasMatch(value)) {
+              if (isNumber && !RegExp(r'^[0-9]+$').hasMatch(value)) {
                 return 'Harus berupa angka';
               }
-
               return null;
             },
-
             decoration: InputDecoration(
               hintText: hint,
               filled: true,

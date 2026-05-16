@@ -35,9 +35,16 @@ class _HomePageState extends State<HomePage> {
       if (auth.isLoggedIn) {
         final token = auth.token!;
         final txProvider = context.read<TransactionProvider>();
-        await txProvider.loadAll(token);
-        // Update wallet list dari transaksi yang baru di-load
-        context.read<WalletProvider>().loadWalletsFromTransactions(txProvider.transactions);
+        final walletProvider = context.read<WalletProvider>();
+
+        // Load transaksi & wallet secara paralel
+        await Future.wait([
+          txProvider.loadAll(token),
+          walletProvider.loadWalletsFromApi(token),
+        ]);
+
+        // Isi toWalletName dari daftar wallet (backend tidak eager-load destinationWallet)
+        txProvider.enrichToWalletNames(walletProvider.wallets);
       }
     });
   }

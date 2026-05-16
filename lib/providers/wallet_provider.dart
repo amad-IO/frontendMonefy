@@ -9,10 +9,10 @@ import '../data/models/transaction_model.dart';
 // ══════════════════════════════════════════════════════════════
 /// WalletProvider — state manager untuk semua wallet.
 ///
-/// Karena backend tidak memiliki GET /wallets, wallet diperoleh
-/// dari dua sumber:
-/// 1. Ekstrak dari list transaksi (wallet relasi di setiap transaksi)
-/// 2. Setelah user menambah wallet baru via POST /wallets
+/// Wallet diperoleh dari dua sumber:
+/// 1. GET /wallets (utama) → balance akurat
+/// 2. Ekstrak dari list transaksi (fallback jika API gagal)
+/// 3. Setelah user menambah wallet baru via POST /wallets
 // ══════════════════════════════════════════════════════════════
 class WalletProvider extends ChangeNotifier {
   List<WalletModel> _wallets = [];
@@ -32,9 +32,53 @@ class WalletProvider extends ChangeNotifier {
   List<WalletModel> byCategory(WalletCategory cat) =>
       _wallets.where((w) => w.category == cat).toList();
 
-  // ── Load wallet dari list transaksi ──────────────────────
-  /// Dipanggil oleh TransactionProvider setelah loadTransactions selesai.
-  /// Ekstrak wallet unik berdasarkan wallet_id dari setiap transaksi.
+  // ── Load wallet langsung dari API ───────────────────────────
+  /// Panggil GET /wallets — balance akurat dari backend.
+  /// Response: { "status": "success", "data": [ { id, name_wallet, balance, ... } ] }
+  Future<void> loadWalletsFromApi(String token) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/wallets'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('GET /wallets → ${response.statusCode}');
+      print('BODY: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body) as Map<String, dynamic>;
+        final List<dynamic> data = body['data'] ?? [];
+        _wallets = data.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final e = entry.value as Map<String, dynamic>;
+          // Inject theme_index agar WalletModel.fromJson() bisa assign tema
+          e['theme_index'] = idx % WalletTheme.all.length;
+          return WalletModel.fromJson(e); // ✅ category dibaca dari field 'category' backend
+        }).toList();
+      } else {
+        _error = 'Gagal load wallet: ${response.statusCode}';
+        debugPrint('❌ loadWalletsFromApi: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('❌ loadWalletsFromApi error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Load wallet dari list transaksi (fallback) ───────────────
+  /// Dipanggil sebagai fallback jika loadWalletsFromApi gagal.
+  /// Balance selalu 0 karena relasi transaksi tidak membawa field balance.
   void loadWalletsFromTransactions(List<TransactionModel> transactions) {
     final Map<String, WalletModel> seen = {};
 
@@ -76,8 +120,9 @@ class WalletProvider extends ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
         body: json.encode({
-          'name_wallet': name,   // ✅ sesuai backend WalletController
+          'name_wallet': name,
           'balance': balance,
+          'category': _categoryToString(category), // kirim ke backend
         }),
       );
 
@@ -126,5 +171,17 @@ class WalletProvider extends ChangeNotifier {
   void toggleHide() {
     _isHidden = !_isHidden;
     notifyListeners();
+  }
+
+  // ── Helper: WalletCategory → string backend ───────────────
+  static String _categoryToString(WalletCategory cat) {
+    switch (cat) {
+      case WalletCategory.bankAccount:
+        return 'Bank Account';
+      case WalletCategory.eWallet:
+        return 'E-Wallet';
+      case WalletCategory.cash:
+        return 'Cash';
+    }
   }
 }

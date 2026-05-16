@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/wallet_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/wallet_provider.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/wallet_card.dart';
 
 // ══════════════════════════════════════════════════════════════
@@ -58,64 +60,51 @@ class _WalletCategoryPageState extends State<WalletCategoryPage> {
   Future<void> _confirmDelete(BuildContext context, WalletModel wallet) async {
     // Cache context-dependent objects BEFORE any await
     final provider = context.read<WalletProvider>();
+    final auth = context.read<AuthProvider>();
     final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    final confirmed = await showDialog<bool>(
+    await ConfirmDialog.show(
       context: context,
-      barrierColor: Colors.black54,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        title: Text(
-          'Hapus Wallet',
-          style: AppTextStyle.title.copyWith(
-            color: AppColors.primaryPurple,
-            fontWeight: FontWeight.w800,
+      icon: Icons.delete_rounded,
+      iconColor: AppColors.error,
+      iconBgColor: AppColors.error.withValues(alpha: 0.12),
+      title: 'Hapus Wallet?',
+      description:
+          'Wallet "${wallet.name}" akan dihapus.\nTindakan ini tidak dapat dibatalkan.',
+      cancelLabel: 'Batal',
+      confirmLabel: 'Hapus',
+      confirmColor: AppColors.error,
+      onConfirm: () async {
+        await provider.deleteWallet(wallet.id);
+
+        // Backend belum punya DELETE /wallets — reload dari API
+        // agar list kembali sinkron dengan database
+        final token = auth.token;
+        if (token != null) {
+          await provider.loadWalletsFromApi(token);
+        }
+
+        if (!mounted) return;
+
+        final remaining = provider.byCategory(widget.category);
+        if (remaining.isEmpty) {
+          navigator.maybePop();
+        } else {
+          setState(() {
+            _selectedIndex = _selectedIndex.clamp(0, remaining.length - 1);
+          });
+        }
+
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Wallet dihapus dari tampilan. Hapus permanen belum tersedia.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
           ),
-        ),
-        content: Text(
-          'Apakah kamu yakin ingin menghapus wallet "${wallet.name}"?\nTindakan ini tidak bisa dibatalkan.',
-          style: AppTextStyle.body.copyWith(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              'Batal',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Hapus', style: TextStyle(fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
+        );
+      },
     );
-
-    if (confirmed == true && mounted) {
-      await provider.deleteWallet(wallet.id);
-
-      if (!mounted) return;
-
-      // Kalau tidak ada wallet lagi, pop
-      final remaining = provider.byCategory(widget.category);
-      if (remaining.isEmpty) {
-        navigator.maybePop();
-      } else {
-        // Sesuaikan index
-        setState(() {
-          _selectedIndex = _selectedIndex.clamp(0, remaining.length - 1);
-        });
-      }
-    }
   }
 
   // ══════════════════════════════════════════════════════════

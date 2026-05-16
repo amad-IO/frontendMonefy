@@ -4,7 +4,7 @@ import '../models/saving_model.dart';
 import '../../config/app_config.dart';
 
 class SavingService {
-  static String get baseUrl => "${AppConfig.baseUrl}/savings";
+  static String get baseUrl => "${AppConfig.baseUrl}/saving-goals";
 
   static Future<List<Saving>> getSavings(String token) async {
     final response = await http.get(

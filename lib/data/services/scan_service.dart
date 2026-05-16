@@ -15,7 +15,7 @@ import '../../config/app_config.dart';
 /// TODO: Ganti _endpoint jika path backend berubah.
 // ══════════════════════════════════════════════════════════════════════════════
 class ScanService {
-  static const String _endpoint = '${AppConfig.baseUrl}/scan-receipt';
+  static const String _endpoint = '${AppConfig.baseUrl}/ai/scan-receipt';
 
   /// Kirim [imageFile] ke backend.
   /// Return [double] total jika berhasil, [null] jika gagal / error.
@@ -46,7 +46,9 @@ class ScanService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        final rawTotal = data['total'];
+        // Backend response: { "success": true, "data": { "total": 85000 } }
+        final innerData = data['data'] as Map<String, dynamic>?;
+        final rawTotal = innerData?['total'];
         if (rawTotal != null) {
           return (rawTotal as num).toDouble();
         }

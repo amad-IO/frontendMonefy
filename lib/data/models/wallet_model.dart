@@ -67,24 +67,30 @@ class WalletModel {
   }
 
   static WalletCategory _categoryFromString(String value) {
-    switch (value) {
-      case 'e_wallet':
-        return WalletCategory.eWallet;
+    // Backend mengirim: 'Bank Account', 'Cash', 'E-Wallet'
+    switch (value.toLowerCase().trim()) {
+      case 'bank account':
       case 'bank_account':
         return WalletCategory.bankAccount;
+      case 'e-wallet':
+      case 'e_wallet':
+      case 'ewallet':
+        return WalletCategory.eWallet;
+      case 'cash':
       default:
         return WalletCategory.cash;
     }
   }
 
   static String _categoryToString(WalletCategory cat) {
+    // Nilai yang dikirim ke backend harus sesuai enum: 'Bank Account', 'Cash', 'E-Wallet'
     switch (cat) {
       case WalletCategory.eWallet:
-        return 'e_wallet';
+        return 'E-Wallet';
       case WalletCategory.bankAccount:
-        return 'bank_account';
+        return 'Bank Account';
       case WalletCategory.cash:
-        return 'cash';
+        return 'Cash';
     }
   }
 

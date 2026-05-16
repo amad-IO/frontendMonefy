@@ -67,8 +67,25 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
       case TransactionType.expense:
         return AppColors.expenseRed;
       case TransactionType.transfer:
-        return const Color(0xFF7B8EC8);
+        return AppColors.transferOrange;
     }
+  }
+
+  /// Decoration untuk icon bubble — gradient untuk semua tipe
+  BoxDecoration get _iconDecoration {
+    final LinearGradient gradient;
+    switch (widget.transaction.type) {
+      case TransactionType.income:
+        gradient = AppColors.incomeGradient;
+        break;
+      case TransactionType.expense:
+        gradient = AppColors.expenseGradient;
+        break;
+      case TransactionType.transfer:
+        gradient = AppColors.transferGradient;
+        break;
+    }
+    return BoxDecoration(gradient: gradient, shape: BoxShape.circle);
   }
 
   IconData get _typeIcon {
@@ -318,10 +335,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                                     Container(
                                       width: 52,
                                       height: 52,
-                                      decoration: BoxDecoration(
-                                        color: _typeColor,
-                                        shape: BoxShape.circle,
-                                      ),
+                                      decoration: _iconDecoration, // ← gradient untuk transfer
                                       child: Icon(
                                         _typeIcon,
                                         color: Colors.white,

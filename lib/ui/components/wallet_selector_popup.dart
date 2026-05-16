@@ -8,12 +8,14 @@ class WalletOption {
   final String name;
   final IconData icon;
   final double balance;
+  final List<Color>? gradient; // ← warna card wallet (dari WalletTheme.cardGradient)
 
   const WalletOption({
     this.id = '',
     required this.name,
     required this.icon,
     this.balance = 0,
+    this.gradient,
   });
 }
 
@@ -30,11 +32,13 @@ class WalletOption {
 class WalletSelectorPopup extends StatefulWidget {
   final List<WalletOption> wallets;
   final String? selectedWallet;
+  final String? excludeWallet; // ← wallet yang disembunyikan dari list
 
   const WalletSelectorPopup({
     super.key,
     required this.wallets,
     this.selectedWallet,
+    this.excludeWallet,
   });
 
   /// Show the wallet selector as a modal bottom sheet.
@@ -43,6 +47,7 @@ class WalletSelectorPopup extends StatefulWidget {
     required BuildContext context,
     required List<WalletOption> wallets,
     String? selectedWallet,
+    String? excludeWallet, // ← tambah param
   }) {
     return showModalBottomSheet<String>(
       context: context,
@@ -51,6 +56,7 @@ class WalletSelectorPopup extends StatefulWidget {
       builder: (_) => WalletSelectorPopup(
         wallets: wallets,
         selectedWallet: selectedWallet,
+        excludeWallet: excludeWallet,
       ),
     );
   }
@@ -140,30 +146,51 @@ class _WalletSelectorPopupState extends State<WalletSelectorPopup>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: ConstrainedBox(
-                // Each tile ≈ 72px + 10px gap → 3 items = ~246px
                 constraints: const BoxConstraints(maxHeight: 246),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  itemCount: widget.wallets.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final wallet = widget.wallets[index];
-                    final isSelected = _currentSelection == wallet.name;
+                child: Builder(
+                  builder: (context) {
+                    // Filter keluar wallet yang sedang dipakai di sisi lain
+                    final visibleWallets = widget.wallets
+                        .where((w) => w.name != widget.excludeWallet)
+                        .toList();
 
-                    return _WalletTile(
-                      wallet: wallet,
-                      isSelected: isSelected,
-                      balanceFormatter: _balanceFormatter,
-                      onTap: () {
-                        setState(() => _currentSelection = wallet.name);
-                        final nav = Navigator.of(context);
-                        Future.delayed(const Duration(milliseconds: 200), () {
-                          if (mounted) {
-                            nav.pop(wallet.name);
-                          }
-                        });
+                    if (visibleWallets.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'Tidak ada wallet lain tersedia.',
+                            style: TextStyle(
+                              fontFamily: 'Nunito',
+                              color: AppColors.disabled,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      itemCount: visibleWallets.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final wallet = visibleWallets[index];
+                        final isSelected = _currentSelection == wallet.name;
+
+                        return _WalletTile(
+                          wallet: wallet,
+                          isSelected: isSelected,
+                          balanceFormatter: _balanceFormatter,
+                          onTap: () {
+                            setState(() => _currentSelection = wallet.name);
+                            final nav = Navigator.of(context);
+                            Future.delayed(const Duration(milliseconds: 200), () {
+                              if (mounted) nav.pop(wallet.name);
+                            });
+                          },
+                        );
                       },
                     );
                   },
@@ -228,17 +255,28 @@ class _WalletTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryPurple.withValues(alpha: 0.12)
-                    : AppColors.white2,
+                gradient: wallet.gradient != null
+                    ? LinearGradient(
+                        colors: wallet.gradient!,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: wallet.gradient == null
+                    ? (isSelected
+                        ? AppColors.primaryPurple.withValues(alpha: 0.12)
+                        : AppColors.white2)
+                    : null,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
                 child: Icon(
                   wallet.icon,
-                  color: isSelected
-                      ? AppColors.primaryPurple
-                      : AppColors.textSecondary,
+                  color: wallet.gradient != null
+                      ? Colors.white
+                      : (isSelected
+                          ? AppColors.primaryPurple
+                          : AppColors.textSecondary),
                   size: 22,
                 ),
               ),

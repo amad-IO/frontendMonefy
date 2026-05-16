@@ -31,6 +31,28 @@ class AppColors {
   static const incomeGreenBg = Color(0xFFE8F5E9);
   static const expenseRedBg = Color(0xFFFDE8EC);
 
+  // Income / Expense — gradients (untuk icon bubble di history & detail)
+  static const LinearGradient incomeGradient = LinearGradient(
+    colors: [Color(0xFF11C46E), Color(0xFF00E59B)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient expenseGradient = LinearGradient(
+    colors: [Color(0xFFFF2452), Color(0xFFFF6B35)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Transfer
+  static const transferYellow = Color(0xFFFBBF24); // amber-400
+  static const transferOrange = Color(0xFFF97316); // orange-500
+  static const transferBg     = Color(0xFFFFF3E0); // latar ikon transfer
+  static const LinearGradient transferGradient = LinearGradient(
+    colors: [Color(0xFFFBBF24), Color(0xFFF97316)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   // Sentiment
   static const sentimentGreen = Color(0xFF2E7D32);
   static const sentimentRed = Color(0xFFE53935);

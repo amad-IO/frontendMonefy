@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import 'saving_detail_dialog.dart';
 
-class SavingList extends StatelessWidget {
+class SavingList extends StatefulWidget {
   final List<Map<String, dynamic>> items;
   final VoidCallback? onCreateTap;
 
@@ -13,127 +13,203 @@ class SavingList extends StatelessWidget {
   });
 
   @override
+  State<SavingList> createState() => _SavingListState();
+}
+
+class _SavingListState extends State<SavingList> {
+  bool isDone = false;
+
+  @override
   Widget build(BuildContext context) {
+    final filteredItems = widget.items.where((item) {
+      return item["isDone"] == isDone;
+    }).toList();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        padding: const EdgeInsets.only(bottom: 80),
+      child: Column(
+        children: [
+          const SizedBox(height: 10),
 
-        /// SELALU TAMBAH 1 (untuk create card)
-        itemCount: items.length + 1,
+          /// TOP BAR (Add Wishlist + Toggle)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildToggle(),
+              _buildAddButton(),
+            ],
+          ),
 
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.05,
-        ),
+          const SizedBox(height: 16),
 
-        itemBuilder: (context, index) {
-          /// CARD CREATE
-          if (index == items.length) {
-            return _buildCreateCard();
-          }
-
-          final item = items[index];
-
-          return _buildItem(
-            context: context,
-            item: item, // kirim full item
-          );
-        },
+          /// LIST
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredItems.length,
+              itemBuilder: (context, index) {
+                final item = filteredItems[index];
+                return _buildItem(context, item);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  /// ITEM CARD (FIXED)
-  Widget _buildItem({
-    required BuildContext context,
-    required Map<String, dynamic> item,
-  }) {
+  /// =========================
+  /// TOGGLE (Figma style)
+  /// =========================
+  Widget _buildToggle() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0x33694EDA),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          _buildTab("Ongoing", !isDone, () {
+            setState(() => isDone = false);
+          }),
+          _buildTab("Done", isDone, () {
+            setState(() => isDone = true);
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String text, bool active, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: AppColors.primaryPurple,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// =========================
+  /// ADD WISHLIST BUTTON
+  /// =========================
+  Widget _buildAddButton() {
+    return GestureDetector(
+      onTap: widget.onCreateTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD5CEF5),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.add, size: 14, color: AppColors.primaryPurple),
+            SizedBox(width: 6),
+            Text(
+              "Add Wishlist",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryPurple,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// =========================
+  /// ITEM CARD (Figma style)
+  /// =========================
+  Widget _buildItem(BuildContext context, Map<String, dynamic> item) {
     return GestureDetector(
       onTap: () {
         showDialog(
           context: context,
-          barrierColor: Colors.black.withValues(alpha: 0.3), // fix warning
-          builder: (context) {
-            return SavingDetailDialog(
-              saving: item, // kirim langsung semua data
-            );
-          },
+          barrierColor: Colors.black.withOpacity(0.3),
+          builder: (_) => SavingDetailDialog(saving: item),
         );
       },
-
       child: Container(
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.panelWhite,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
-              blurRadius: 5,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             )
           ],
         ),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            const Icon(
-              Icons.attach_money,
-              size: 28,
-              color: AppColors.primaryPurple,
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              item["name"],
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-
-            const SizedBox(height: 5),
-
-            Text(
-              "Rp. ${item["amount"]}",
-              style: const TextStyle(
+            /// ICON BOX
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD5CEF5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.attach_money,
                 color: AppColors.primaryPurple,
-                fontWeight: FontWeight.bold,
               ),
             ),
 
+            const SizedBox(width: 12),
+
+            /// TITLE
+            Expanded(
+              child: Text(
+                item["name"],
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppColors.primaryPurple,
+                ),
+              ),
+            ),
+
+            /// PRICE
             Text(
-              "of Rp. ${item["target"]}",
-              style: const TextStyle(fontSize: 12),
+              "Rp${item["target"]}",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryPurple,
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            /// BUY BUTTON
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPurple,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                "Buy",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  /// CREATE CARD
-  Widget _buildCreateCard() {
-    return GestureDetector(
-      onTap: onCreateTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardMuted,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add, size: 30, color: AppColors.primaryPurple),
-              SizedBox(height: 8),
-              Text(
-                "Create Wishlist",
-                style: TextStyle(color: AppColors.primaryPurple),
-              ),
-            ],
-          ),
         ),
       ),
     );

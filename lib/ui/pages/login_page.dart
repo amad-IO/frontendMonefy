@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -10,8 +11,9 @@ import '../../providers/wallet_provider.dart';
 import 'main_page.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -31,8 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     String password = passwordController.text.trim();
 
     try {
-      print("LOGIN BUTTON DIKLIK");
-      print("EMAIL: $email");
+      debugPrint('Login attempt: $email');
 
       await authProvider.login(email, password);
 

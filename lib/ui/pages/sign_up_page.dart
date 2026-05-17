@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -7,8 +8,9 @@ import 'login_page.dart';
 import '../../providers/auth_provider.dart';
 
 class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
   @override
-  _SignUpPageState createState() => _SignUpPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
 class _SignUpPageState extends State<SignUpPage> {
@@ -52,14 +54,12 @@ class _SignUpPageState extends State<SignUpPage> {
 
     try {
       /// DEBUG
-      print("🔵 SIGNUP BUTTON DIKLIK");
-      print("👤 USERNAME: $username");
-      print("📧 EMAIL: $email");
+      debugPrint('SignUp attempt: $username');
 
       /// CALL API
       await authProvider.signUp(username, email, password);
 
-      print("🟢 SIGNUP BERHASIL");
+      debugPrint('SignUp success');
 
       /// PINDAH KE LOGIN
       Navigator.pushReplacement(
@@ -73,7 +73,7 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
     } catch (e) {
-      print("SIGNUP ERROR DI PAGE: $e");
+      debugPrint('SignUp error: $e');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),

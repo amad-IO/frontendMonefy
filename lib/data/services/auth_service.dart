@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/app_config.dart';
@@ -34,7 +35,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', auth.token);
 
-      print("TOKEN DISIMPAN: ${auth.token}");
+      debugPrint('Auth: token saved for ${request.email}');
 
       return auth;
     } else {
@@ -73,7 +74,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', auth.token);
 
-      print("TOKEN SIGNUP: ${auth.token}");
+      debugPrint('Auth: token saved after signup for ${request.email}');
 
       return auth;
     } else {

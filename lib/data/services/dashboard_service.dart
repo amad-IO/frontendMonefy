@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../config/app_config.dart';
 import '../models/summary_model.dart';
@@ -27,8 +28,7 @@ class DashboardService {
       headers: _headers(token),
     );
 
-    print('GET /dashboard/summary → ${response.statusCode}');
-    print('BODY: ${response.body}');
+    debugPrint('GET /dashboard/summary → ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;

@@ -97,6 +97,36 @@ class AppColors {
 
   // Decorative
   static const decorativeCircle = Color(0x0CF6F7FB);
+
+  // ── Transaction Popup (Loading & Success) ──────────────────────
+  /// Koin emas yang melayang di animasi loading
+  static const coinGold = Color(0xFFF5C842);
+
+  /// Hijau utama untuk kartu kredit di animasi loading (lebih gelap dari incomeGreen)
+  static const transactionCardGreen = Color(0xFF1A8A35);
+
+  /// Warna ring/pulse income (inkl. opacity rendah untuk background)
+  static const incomeRingColor = Color(0xFF11C46E);
+
+  /// Warna ring/pulse expense
+  static const expenseRingColor = Color(0xFFFF2452);
+
+  /// Warna ring/pulse transfer
+  static const transferRingColor = Color(0xFFFBBF24);
+
+  /// Warna nominal income di success popup
+  static const successIncomeText = Color(0xFF11C46E);
+
+  /// Warna nominal expense di success popup
+  static const successExpenseText = Color(0xFFFF2452);
+
+  /// Warna nominal transfer di success popup
+  static const successTransferText = Color(0xFFF97316);
+
+  /// Confetti warna-warni (kuning, merah-pink, biru)
+  static const confettiYellow = Color(0xFFF5C842);
+  static const confettiRed    = Color(0xFFE74C6F);
+  static const confettiBlue   = Color(0xFF3B82F6);
 }
 
 // ══════════════════════════════════════════════════════════════

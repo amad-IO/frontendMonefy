@@ -16,6 +16,7 @@ import '../widgets/add_page/category_area.dart';
 import '../widgets/add_page/input_row.dart';
 import '../widgets/add_page/amount_display.dart';
 import '../widgets/add_page/top_action_buttons.dart';
+import '../widgets/notifikasi__transaction.dart';
 import 'scan_page.dart';
 
 class AddPage extends StatefulWidget {
@@ -176,7 +177,6 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     );
 
     if (validationError != null) {
-      // Shake animation khusus untuk wallet
       if (_selectedWallet == null && amount > 0) {
         setState(() => _walletError = true);
         _walletShakeController.forward(from: 0);
@@ -199,7 +199,21 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       type: _type,
     );
 
-    // 3A. Mode Edit — update via API
+    // 3. Capture referensi sebelum async
+    final provider       = context.read<TransactionProvider>();
+    final walletProvider = context.read<WalletProvider>();
+    final navigator      = Navigator.of(context);
+    final messenger      = ScaffoldMessenger.of(context);
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      _showSnackBar('Token tidak ditemukan. Silakan login ulang.', AppColors.error, Icons.warning_amber_rounded);
+      return;
+    }
+
+    // 4A. Mode Edit
     if (_isEditMode) {
       final updated = widget.editTransaction!.copyWith(
         category:     category,
@@ -210,24 +224,25 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
         type:         _type,
       );
 
-      // Simpan referensi sebelum await
-      final provider   = context.read<TransactionProvider>();
-      final navigator  = Navigator.of(context);
-      final messenger  = ScaffoldMessenger.of(context);
-
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      if (token == null || token.isEmpty) {
-        if (!mounted) return;
-        _showSnackBar('Token tidak ditemukan. Silakan login ulang.', AppColors.error, Icons.warning_amber_rounded);
-        return;
-      }
-
       try {
-        await provider.updateTransactionWithApi(updated, token);
-        if (!mounted) return;
-        navigator.pop();
-        _showSnackBarOnMessenger(messenger, 'Transaksi berhasil diperbarui!', AppColors.success, Icons.check_circle_rounded);
+        // Dialog Processing → Success muncul di dalam AddPage
+        await NotifikasiTransaction.show(
+          context: context,
+          type: _type,
+          amount: AddPageHelper.formatAmount(amount.toString()),
+          category: category,
+          walletName: _selectedWallet ?? '',
+          toWalletName: _type == TransactionType.transfer ? _selectedToWallet : null,
+          apiWork: () => provider.updateTransactionWithApi(updated, token),
+          onSuccess: () {
+            navigator.pop(); // tutup AddPage
+            // Refresh di background → skeleton muncul di HomePage
+            Future.wait([
+              provider.loadAll(token),
+              walletProvider.loadWalletsFromApi(token),
+            ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+          },
+        );
       } catch (e) {
         if (!mounted) return;
         _showSnackBarOnMessenger(messenger, 'Gagal memperbarui transaksi.', AppColors.error, Icons.warning_amber_rounded);
@@ -235,20 +250,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       return;
     }
 
-    // 3B. Mode Add — tambah via API
-    // Simpan referensi context-dependent sebelum await (avoid async gap warning)
-    final provider        = context.read<TransactionProvider>();
-    final walletProvider  = context.read<WalletProvider>();  // ← untuk refresh saldo
-    final navigator       = Navigator.of(context);
-    final messenger       = ScaffoldMessenger.of(context);
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token == null || token.isEmpty) {
-      if (!mounted) return;
-      _showSnackBarOnMessenger(messenger, 'Token tidak ditemukan. Silakan login ulang.', AppColors.error, Icons.warning_amber_rounded);
-      return;
-    }
+    // 4B. Mode Add
     final walletId = _selectedWalletId ?? '';
     if (walletId.isEmpty) {
       if (!mounted) return;
@@ -267,28 +269,34 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       type:         _type,
     );
 
-    await provider.addTransactionWithApi(
-      transaction,
-      token,
-      walletId: walletId,
-      toWalletId: _selectedToWalletId,
-    );
-
-    // Refresh saldo wallet agar perubahan langsung terlihat
-    // (income/expense/transfer semua mengubah saldo wallet di backend)
-    await walletProvider.loadWalletsFromApi(token);
-
-    // Isi toWalletName untuk transaksi transfer yang baru dimuat
-    provider.enrichToWalletNames(walletProvider.wallets);
-
-    if (!mounted) return;
-    navigator.pop();
-    _showSnackBarOnMessenger(
-      messenger,
-      _type == TransactionType.transfer ? 'Transfer berhasil dicatat!' : 'Transaction added successfully!',
-      AppColors.success,
-      Icons.check_circle_rounded,
-    );
+    try {
+      // Dialog Processing → Success muncul di dalam AddPage
+      await NotifikasiTransaction.show(
+        context: context,
+        type: _type,
+        amount: AddPageHelper.formatAmount(amount.toString()),
+        category: category,
+        walletName: _selectedWallet ?? '',
+        toWalletName: _type == TransactionType.transfer ? _selectedToWallet : null,
+        apiWork: () => provider.addTransactionWithApi(
+          transaction,
+          token,
+          walletId: walletId,
+          toWalletId: _selectedToWalletId,
+        ),
+        onSuccess: () {
+          navigator.pop(); // tutup AddPage
+          // Refresh di background → skeleton muncul di HomePage
+          Future.wait([
+            provider.loadAll(token),
+            walletProvider.loadWalletsFromApi(token),
+          ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBarOnMessenger(messenger, 'Gagal menyimpan transaksi.', AppColors.error, Icons.warning_amber_rounded);
+    }
   }
 
   // ────────────────────────────────────────────

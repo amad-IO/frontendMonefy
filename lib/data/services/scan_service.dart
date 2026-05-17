@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
@@ -41,8 +42,7 @@ class ScanService {
       );
       final response = await http.Response.fromStream(streamedResponse);
 
-      print('POST /scan-receipt → ${response.statusCode}');
-      print('BODY: ${response.body}');
+      debugPrint('POST /scan-receipt → ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -56,7 +56,7 @@ class ScanService {
 
       return null;
     } catch (e) {
-      print('ScanService error: $e');
+      debugPrint('ScanService error: $e');
       return null;
     }
   }

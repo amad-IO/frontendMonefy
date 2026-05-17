@@ -235,10 +235,7 @@ class _AuthFormState extends State<AuthForm> {
                         borderRadius: BorderRadius.circular(25),
                       ),
                     ),
-                    onPressed: () {
-                      print("🔥 BUTTON AUTH DIKLIK"); // DEBUG
-                      widget.onSubmit();
-                    },
+                    onPressed: widget.onSubmit,
                     child: Text(
                       widget.buttonText,
                       style: const TextStyle(fontSize: 18),

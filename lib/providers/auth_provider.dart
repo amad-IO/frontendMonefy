@@ -32,7 +32,7 @@ class AuthProvider with ChangeNotifier {
       _username = savedUsername ?? '';
       _email = savedEmail ?? '';
       notifyListeners();
-      print('🟢 Auto-login sukses. Token: $_token');
+      debugPrint('🟢 Auto-login: token restored');
     }
   }
 
@@ -56,7 +56,7 @@ class AuthProvider with ChangeNotifier {
       await prefs.setString('username', _username ?? '');
       await prefs.setString('email', email);
 
-      print('🟢 Login sukses. Token: $_token | Username: $_username');
+      debugPrint('🟢 Login success: $_username');
     } catch (e) {
       rethrow;
     } finally {
@@ -85,7 +85,7 @@ class AuthProvider with ChangeNotifier {
       await prefs.setString('username', _username ?? '');
       await prefs.setString('email', email);
 
-      print('🟢 SignUp sukses. Token: $_token | Username: $_username');
+      debugPrint('🟢 SignUp success: $_username');
     } catch (e) {
       rethrow;
     } finally {
@@ -106,7 +106,7 @@ class AuthProvider with ChangeNotifier {
     await prefs.remove('username');
     await prefs.remove('email');
 
-    print('🔴 Logout. Token dihapus.');
+    debugPrint('🔴 Logout: token cleared');
     notifyListeners();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../data/models/scan_result.dart';
 import '../../data/models/transaction_model.dart';
 import '../../data/models/wallet_model.dart';
 import '../../providers/transaction_provider.dart';
@@ -338,14 +339,59 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _openScanPage() async {
-    final result = await showModalBottomSheet<double>(
+    final result = await showModalBottomSheet<ScanResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ScanPage(),
     );
-    if (result != null && mounted) {
-      setState(() => _amountController.text = result.toInt().toString());
+
+    if (result == null || !mounted) return;
+
+    setState(() {
+      // 1. Pre-fill nominal
+      _amountController.text = result.total.toInt().toString();
+
+      // 2. Switch tab ke tipe yang dideteksi AI (income / expense)
+      //    Transfer tidak bisa dideteksi dari struk, jadi hanya 2 kemungkinan
+      if (!_isEditMode) {
+        _typeIndex = result.isIncome ? 0 : 1;
+        // Reset kategori agar user pilih ulang sesuai tab baru
+        _selectedCategory = null;
+      }
+    });
+
+    // 3. Tampilkan snackbar ringkasan hasil scan
+    if (mounted) {
+      final typeLabel = result.isIncome ? 'Income' : 'Expense';
+      final msg = '📄 ${result.merchantName} · $typeLabel · ${result.category}';
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    msg,
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primaryPurple,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            duration: const Duration(seconds: 4),
+          ),
+        );
     }
   }
 

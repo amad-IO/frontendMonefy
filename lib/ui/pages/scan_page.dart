@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../data/models/scan_result.dart';
 import '../../data/services/scan_service.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -145,15 +146,15 @@ class _ScanPageState extends State<ScanPage> with TickerProviderStateMixin {
     if (_imageFile == null) return;
     setState(() => _state = _ScanState.loading);
 
-    final total = await ScanService.scanReceipt(_imageFile!);
+    final result = await ScanService.scanReceipt(_imageFile!);
 
     if (!mounted) return;
 
-    if (total != null) {
-      Navigator.of(context).pop(total);
+    if (result != null) {
+      Navigator.of(context).pop(result);
     } else {
       setState(() => _state = _ScanState.preview);
-      _showError('Gagal membaca total. Coba foto lebih jelas & pencahayaan cukup.');
+      _showError('Could not read the receipt. Try better lighting or a clearer photo.');
     }
   }
 
@@ -432,7 +433,7 @@ class _ScanPageState extends State<ScanPage> with TickerProviderStateMixin {
             const SizedBox(height: 20),
 
             const Text(
-              'Menganalisis struk...',
+              'Analyzing receipt...',
               style: TextStyle(
                 fontFamily: 'Nunito',
                 color: Colors.white,
@@ -444,7 +445,7 @@ class _ScanPageState extends State<ScanPage> with TickerProviderStateMixin {
             const SizedBox(height: 6),
 
             Text(
-              'AI sedang membaca total transaksi',
+              'AI is reading your transaction',
               style: TextStyle(
                 fontFamily: 'Nunito',
                 color: Colors.white.withValues(alpha: 0.55),

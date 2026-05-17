@@ -80,7 +80,7 @@ class _SavingPageState extends State<SavingPage> {
                         ),
                       ),
                       const Text(
-                        "Saving",
+                        "Whislist",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class _SavingPageState extends State<SavingPage> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    "Saving list",
+                    "Whislist",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

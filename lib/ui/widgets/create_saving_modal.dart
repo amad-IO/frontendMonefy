@@ -195,7 +195,7 @@ void showCreateSavingModal(
 
                           Navigator.pop(context);
                         },
-                        child: const Text("Create Saving"),
+                        child: const Text("Create Wishlist"),
                       ),
                     ),
 

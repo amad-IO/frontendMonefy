@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:monefy/providers/bill_provider.dart';
 import 'package:provider/provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/saving_provider.dart';
@@ -28,6 +29,7 @@ class MonefyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => SavingProvider()),
         ChangeNotifierProvider(create: (_) => WalletProvider()),
+        ChangeNotifierProvider(create: (_) => BillProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

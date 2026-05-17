@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../widgets/bills_input.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/bill_provider.dart';
+import '../widgets/bills_input.dart';
 
 class BillsPage extends StatefulWidget {
   const BillsPage({super.key});
@@ -13,36 +17,58 @@ class BillsPage extends StatefulWidget {
 class _BillsPageState extends State<BillsPage> {
   final _formKey = GlobalKey<FormState>();
 
-  /// ✅ CONTROLLERS
   final TextEditingController billNameController = TextEditingController();
-  final TextEditingController accountNumberController = TextEditingController();
+  final TextEditingController accountController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController dueDateController = TextEditingController();
 
   String? billingCycle;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     billNameController.dispose();
-    accountNumberController.dispose();
+    accountController.dispose();
     amountController.dispose();
     dueDateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSimpan() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final token = context.read<AuthProvider>().token ?? '';
+
+    setState(() => _isLoading = true);
+
+    await context.read<BillProvider>().addBill({
+      "provider": billNameController.text,
+      "account_number": accountController.text,
+      "amount": double.tryParse(amountController.text) ?? 0,
+      "due_date": dueDateController.text,
+      "cycle": billingCycle ?? "Bulanan",
+    }, token);
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
+
       body: SafeArea(
         child: Column(
           children: [
 
-            /// 🔵 HEADER
+            /// 🔥 HEADER (SAMA PERSIS)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
-              color: AppColors.primaryPurple.withOpacity(0.3),
+              color: AppColors.primaryPurple.withValues(alpha: 0.3),
               child: Row(
                 children: [
                   IconButton(
@@ -65,7 +91,7 @@ class _BillsPageState extends State<BillsPage> {
               ),
             ),
 
-            /// ⚪ BODY
+            /// 🔥 BODY (INI YANG KAMU MAU)
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -75,10 +101,11 @@ class _BillsPageState extends State<BillsPage> {
                     top: Radius.circular(30),
                   ),
                 ),
+
                 child: Stack(
                   children: [
 
-                    /// BACKGROUND
+                    /// 🔥 KONTUR (SAMA PERSIS WALLET)
                     Positioned.fill(
                       child: Opacity(
                         opacity: 0.9,
@@ -89,7 +116,7 @@ class _BillsPageState extends State<BillsPage> {
                       ),
                     ),
 
-                    /// FORM
+                    /// 🔥 FORM
                     SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Form(
@@ -100,6 +127,7 @@ class _BillsPageState extends State<BillsPage> {
 
                             const SizedBox(height: 10),
 
+                            /// 🔥 TITLE
                             const Text(
                               'Bills Details',
                               style: TextStyle(
@@ -109,67 +137,26 @@ class _BillsPageState extends State<BillsPage> {
                               ),
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 20),
 
-                            /// 🧾 BILL NAME
+                            /// 🔥 INPUT (INI PENTING)
                             BillsInput(
-                              label: 'Bill Name',
-                              hint: 'e.g., PLN, Internet',
-                              isTextOnly: true,
-                            ),
-
-                            /// 🔢 ACCOUNT NUMBER
-                            BillsInput(
-                              label: 'Account Number',
-                              hint: '0',
-                              isNumber: true,
-                            ),
-
-                            /// 💰 AMOUNT
-                            BillsInput(
-                              label: 'Amount',
-                              hint: 'e.g., 100000',
-                              isNumber: true,
-                            ),
-
-                            /// 📅 DUE DATE
-                            BillsInput(
-                              label: 'Due Date',
-                              hint: 'Pilih tanggal',
-                              isDate: true,
-                            ),
-
-                            /// 🔁 BILLING CYCLE
-                            BillsInput(
-                              label: 'Billing Cycle',
-                              hint: 'Pilih siklus',
-                              isDropdown: true,
-                              dropdownItems: const [
-                                "Bulanan",
-                                "Tahunan",
-                                "Sekali Bayar",
-                              ],
+                              billNameController: billNameController,
+                              accountController: accountController,
+                              amountController: amountController,
+                              dueDateController: dueDateController,
+                              onCycleChanged: (value) {
+                                billingCycle = value;
+                              },
                             ),
 
                             const SizedBox(height: 24),
 
-                            /// BUTTON
+                            /// 🔥 BUTTON (SAMA POLA)
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-
-                                    /// 🔥 NANTI BISA KIRIM KE API
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("Data berhasil disimpan"),
-                                      ),
-                                    );
-
-                                    Navigator.pop(context);
-                                  }
-                                },
+                                onPressed: _isLoading ? null : _handleSimpan,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primaryPurple,
                                   minimumSize: const Size(double.infinity, 50),
@@ -177,9 +164,21 @@ class _BillsPageState extends State<BillsPage> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: const Text(
+                                child: _isLoading
+                                    ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                    : const Text(
                                   'Simpan',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),

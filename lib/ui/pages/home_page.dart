@@ -14,6 +14,7 @@ import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
 import 'bills_page.dart';
+import 'list_bills_page.dart';
 
 class HomePage extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -71,10 +72,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => MainPage(
-                      initialIndex: 5, // index Bills
-                      extraPage: const BillsPage(),
-                    ),
+                    builder: (_) => const ListBillsPage(),
                   ),
                 );
               },

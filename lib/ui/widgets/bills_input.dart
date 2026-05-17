@@ -1,26 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../core/theme/app_colors.dart';
 
 class BillsInput extends StatefulWidget {
-  final String label;
-  final String hint;
-  final bool isNumber;
-  final bool isTextOnly;
-
-  final bool isDate; // ✅ BARU
-  final bool isDropdown; // ✅ BARU
-  final List<String>? dropdownItems; // ✅ BARU
+  final TextEditingController billNameController;
+  final TextEditingController accountController;
+  final TextEditingController amountController;
+  final TextEditingController dueDateController;
+  final Function(String?) onCycleChanged;
 
   const BillsInput({
     super.key,
-    required this.label,
-    required this.hint,
-    this.isNumber = false,
-    this.isTextOnly = false,
-    this.isDate = false,
-    this.isDropdown = false,
-    this.dropdownItems,
+    required this.billNameController,
+    required this.accountController,
+    required this.amountController,
+    required this.dueDateController,
+    required this.onCycleChanged,
   });
 
   @override
@@ -28,11 +21,9 @@ class BillsInput extends StatefulWidget {
 }
 
 class _BillsInputState extends State<BillsInput> {
+  String? selectedCycle;
 
-  final TextEditingController _controller = TextEditingController();
-  String? selectedValue;
-
-  /// DATE PICKER
+  /// 📅 DATE PICKER
   Future<void> _pickDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -42,123 +33,158 @@ class _BillsInputState extends State<BillsInput> {
     );
 
     if (picked != null) {
-      setState(() {
-        _controller.text =
-        "${picked.day}/${picked.month}/${picked.year}";
-      });
+      widget.dueDateController.text =
+      picked.toIso8601String().split("T")[0];
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          Text(widget.label, style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 20),
+
+          /// 🔵 TITLE
+          const Text(
+            'Bills Details',
+            style: TextStyle(
+              color: Color(0xFF694EDA),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          /// 🔤 BILL NAME
+          _buildField(
+            label: "Bill Name",
+            hint: "e.g., BCA, GoPay, Cash",
+            controller: widget.billNameController,
+          ),
+
+          /// 🔢 ACCOUNT
+          _buildField(
+            label: "Account Number",
+            hint: "0",
+            controller: widget.accountController,
+            isNumber: true,
+          ),
+
+          /// 💰 AMOUNT
+          _buildField(
+            label: "Amount",
+            hint: "e.g., 100000",
+            controller: widget.amountController,
+            isNumber: true,
+          ),
+
+          /// 📅 DUE DATE
+          _buildField(
+            label: "Due Date",
+            hint: "Select date",
+            controller: widget.dueDateController,
+            onTap: _pickDate,
+            suffix: const Icon(Icons.calendar_today, size: 18),
+          ),
+
+          /// 🔁 BILLING CYCLE
+          const SizedBox(height: 15),
+
+          const Text(
+            "Billing Cycle",
+            style: TextStyle(
+              color: Color(0xFF675B5B),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
           const SizedBox(height: 6),
 
-          /// 📅 DATE INPUT
-          if (widget.isDate)
-            TextFormField(
-              controller: _controller,
-              readOnly: true,
-              onTap: _pickDate,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '${widget.label} tidak boleh kosong';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                suffixIcon: const Icon(Icons.calendar_today),
-                filled: true,
-                fillColor: AppColors.white2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            )
-
-          /// 🔁 DROPDOWN INPUT
-          else if (widget.isDropdown)
-            DropdownButtonFormField<String>(
-              value: selectedValue,
-              items: widget.dropdownItems!
-                  .map((item) => DropdownMenuItem(
-                value: item,
-                child: Text(item),
-              ))
-                  .toList(),
+          Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6F7FB),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButton<String>(
+              value: selectedCycle,
+              hint: const Text("Select cycle"),
+              isExpanded: true,
+              underline: const SizedBox(),
+              items: const [
+                DropdownMenuItem(value: "Bulanan", child: Text("Bulanan")),
+                DropdownMenuItem(value: "Tahunan", child: Text("Tahunan")),
+                DropdownMenuItem(value: "Sekali Bayar", child: Text("Sekali Bayar")),
+              ],
               onChanged: (value) {
                 setState(() {
-                  selectedValue = value;
+                  selectedCycle = value;
                 });
+                widget.onCycleChanged(value);
               },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '${widget.label} tidak boleh kosong';
-                }
-                return null;
-              },
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                filled: true,
-                fillColor: AppColors.white2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            )
-
-          /// ✍️ DEFAULT INPUT
-          else
-            TextFormField(
-              controller: _controller,
-              keyboardType:
-              widget.isNumber ? TextInputType.number : TextInputType.text,
-              inputFormatters: [
-                if (widget.isNumber)
-                  FilteringTextInputFormatter.digitsOnly,
-                if (widget.isTextOnly)
-                  FilteringTextInputFormatter.allow(
-                    RegExp(r'[a-zA-Z\s,]'),
-                  ),
-              ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '${widget.label} tidak boleh kosong';
-                }
-
-                if (widget.isTextOnly &&
-                    RegExp(r'[0-9]').hasMatch(value)) {
-                  return 'Tidak boleh mengandung angka';
-                }
-
-                if (widget.isNumber &&
-                    !RegExp(r'^[0-9]+$').hasMatch(value)) {
-                  return 'Harus berupa angka';
-                }
-
-                return null;
-              },
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                filled: true,
-                fillColor: AppColors.white2,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
             ),
+          ),
+
+          const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  /// 🔥 FIELD STYLE FIGMA
+  Widget _buildField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    bool isNumber = false,
+    VoidCallback? onTap,
+    Widget? suffix,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        const SizedBox(height: 15),
+
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF675B5B),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6F7FB),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: TextFormField(
+            controller: controller,
+            readOnly: onTap != null,
+            onTap: onTap,
+            keyboardType:
+            isNumber ? TextInputType.number : TextInputType.text,
+            decoration: InputDecoration(
+              hintText: hint,
+              border: InputBorder.none,
+              suffixIcon: suffix,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

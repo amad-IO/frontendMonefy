@@ -39,14 +39,14 @@ class SavingList extends StatelessWidget {
 
           return _buildItem(
             context: context,
-            item: item, // 🔥 kirim full item
+            item: item, // kirim full item
           );
         },
       ),
     );
   }
 
-  /// 🔥 ITEM CARD (FIXED)
+  /// ITEM CARD (FIXED)
   Widget _buildItem({
     required BuildContext context,
     required Map<String, dynamic> item,
@@ -55,10 +55,10 @@ class SavingList extends StatelessWidget {
       onTap: () {
         showDialog(
           context: context,
-          barrierColor: Colors.black.withValues(alpha: 0.3), // 🔥 fix warning
+          barrierColor: Colors.black.withValues(alpha: 0.3), // fix warning
           builder: (context) {
             return SavingDetailDialog(
-              saving: item, // 🔥 kirim langsung semua data
+              saving: item, // kirim langsung semua data
             );
           },
         );
@@ -113,7 +113,7 @@ class SavingList extends StatelessWidget {
     );
   }
 
-  /// ➕ CREATE CARD
+  /// CREATE CARD
   Widget _buildCreateCard() {
     return GestureDetector(
       onTap: onCreateTap,
@@ -129,7 +129,7 @@ class SavingList extends StatelessWidget {
               Icon(Icons.add, size: 30, color: AppColors.primaryPurple),
               SizedBox(height: 8),
               Text(
-                "Create saving",
+                "Create Wishlist",
                 style: TextStyle(color: AppColors.primaryPurple),
               ),
             ],

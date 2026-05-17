@@ -26,7 +26,7 @@ class SavingCard extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            'Total Saving',
+            'Total Wishlist',
             style: TextStyle(
               color: AppColors.primaryPurple,
               fontSize: 16,

@@ -3,19 +3,17 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 
 class ApiService {
-  // baseUrl dibaca dari app_config.dart (lokal, tidak di-push ke GitHub)
   static const String baseUrl = AppConfig.baseUrl;
 
-  // ── Auth Headers ─────────────────────────────────────────────
-  // Semua request yang membutuhkan autentikasi menggunakan header ini.
-  // Token didapat dari AuthProvider setelah login.
+  /// 🔐 AUTH HEADER
   static Map<String, String> _authHeaders(String token) => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'Authorization': 'Bearer $token',
   };
 
-  // ── GET /transactions ────────────────────────────────────────
+  // ================= TRANSACTIONS =================
+
   Future<List<dynamic>> getTransactions(String token) async {
     try {
       final response = await http.get(
@@ -33,11 +31,6 @@ class ApiService {
     }
   }
 
-  // ── POST /transactions ───────────────────────────────────────
-  // Kirim data transaksi baru ke backend.
-  // [data] harus mengikuti format toJson() dari TransactionModel:
-  //   wallet_id, to_wallet_id, title, amount, type,
-  //   category, transaction_date, note
   Future<bool> addTransaction(Map<String, dynamic> data, String token) async {
     try {
       final response = await http.post(
@@ -51,13 +44,6 @@ class ApiService {
     }
   }
 
-  // ── DELETE /transactions/{id} ────────────────────────────────
-  // Hapus transaksi berdasarkan ID.
-  // Backend wajib memastikan transaksi milik user yang sedang login.
-  // Expected response:
-  //   200: { "message": "Transaksi berhasil dihapus" }
-  //   403: { "message": "Unauthorized" }
-  //   404: { "message": "Transaksi tidak ditemukan" }
   Future<bool> deleteTransaction(String id, String token) async {
     try {
       final response = await http.delete(
@@ -70,20 +56,11 @@ class ApiService {
     }
   }
 
-  // ── PUT /transactions/{id} ───────────────────────────────────
-  // Update transaksi yang sudah ada.
-  // [data] harus mengikuti format toJson() dari TransactionModel.
-  // Backend perlu meng-adjust saldo wallet jika amount berubah.
-  // Expected response:
-  //   200: { "message": "Berhasil!", "data": { ...TransactionModel... } }
-  //   403: { "message": "Unauthorized" }
-  //   404: { "message": "Transaksi tidak ditemukan" }
-  //   422: { "message": "Validation error", "errors": { ... } }
   Future<bool> updateTransaction(
-    String id,
-    Map<String, dynamic> data,
-    String token,
-  ) async {
+      String id,
+      Map<String, dynamic> data,
+      String token,
+      ) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/transactions/$id'),
@@ -96,12 +73,88 @@ class ApiService {
     }
   }
 
-  // ── Login ────────────────────────────────────────────────────
+  // ================= 💳 BILLS =================
+
+  /// GET ALL BILLS
+  Future<List<dynamic>> getBills(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/bills'),
+        headers: _authHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['data']; // Laravel format
+      } else {
+        throw Exception('Gagal mengambil bills: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
+  }
+
+  /// CREATE BILL
+  Future<bool> createBill(Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/bills'),
+        headers: _authHeaders(token),
+        body: json.encode(data),
+      );
+
+      return response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// UPDATE BILL (PAY / EDIT)
+  Future<void> updateBill(
+      String id, Map<String, dynamic> data, String token) async {
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/bills/$id/pay'),
+      headers: _authHeaders(token),
+      body: json.encode(data),
+    );
+
+    print("===== UPDATE BILL DEBUG =====");
+    print("URL: $baseUrl/bills/$id");
+    print("BODY: $data");
+    print("STATUS CODE: ${response.statusCode}");
+    print("RESPONSE: ${response.body}");
+    print("=============================");
+
+    if (response.statusCode != 200) {
+      throw Exception("Update bill gagal");
+    }
+  }
+
+  /// DELETE BILL
+  Future<bool> deleteBill(String id, String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/bills/$id'),
+        headers: _authHeaders(token),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ================= AUTH =================
+
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: json.encode({'email': email, 'password': password}),
       );
 
@@ -115,12 +168,15 @@ class ApiService {
     }
   }
 
-  // ── Sign up ──────────────────────────────────────────────────
-  Future<bool> signUp(String username, String email, String password) async {
+  Future<bool> signUp(
+      String username, String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/register'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: json.encode({
           'username': username,
           'email': email,

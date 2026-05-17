@@ -88,7 +88,7 @@ class SavingDetailDialog extends StatelessWidget {
                 Row(
                   children: [
 
-                    /// ✏️ EDIT
+                    /// ✏EDIT
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -104,7 +104,7 @@ class SavingDetailDialog extends StatelessWidget {
 
                     const SizedBox(width: 10),
 
-                    /// 🗑️ DELETE
+                    /// 🗑DELETE
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -127,7 +127,7 @@ class SavingDetailDialog extends StatelessWidget {
     );
   }
 
-  /// 🔥 EDIT DIALOG
+  /// EDIT DIALOG
   void _showEditDialog(BuildContext context) {
     final provider = context.read<SavingProvider>();
 
@@ -142,7 +142,7 @@ class SavingDetailDialog extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Edit Saving"),
+          title: const Text("Edit Wishlist"),
           content: StatefulBuilder(
             builder: (context, setState) {
               return Column(

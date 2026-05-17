@@ -73,7 +73,7 @@ class QuickAccess extends StatelessWidget {
               Expanded(
                 child: _QuickAccessButton(
                   svgPath: 'assets/icon/Saving.svg',
-                  label: 'Saving',
+                  label: 'Wishlist',
                   color: accentColor,
                   labelColor: colorScheme.onSurface.withValues(alpha: 0.8),
                   onTap: onSavingTap,

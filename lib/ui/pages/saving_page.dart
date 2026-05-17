@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/saving_provider.dart';
 import '../widgets/saving_card.dart';
 import '../widgets/saving_list.dart';
@@ -18,18 +20,22 @@ class _SavingPageState extends State<SavingPage> {
   @override
   void initState() {
     super.initState();
-
     Future.microtask(() {
-      context.read<SavingProvider>().fetchSavings();
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<SavingProvider>().fetchSavings(token);
+      }
     });
   }
 
-  /// 🔥 HANDLE CREATE (SUDAH 3 PARAMETER)
+  /// Handle create dengan token
   void _handleCreateSaving(String name, int target, String date) {
-    context.read<SavingProvider>().addSaving(name, target, date);
+    final token = context.read<AuthProvider>().token;
+    if (token != null) {
+      context.read<SavingProvider>().addSaving(name, target, date, token);
+    }
   }
 
-  /// 🔥 BUKA MODAL
   void _openCreateModal() {
     showCreateSavingModal(context, _handleCreateSaving);
   }
@@ -49,17 +55,9 @@ class _SavingPageState extends State<SavingPage> {
         child: Consumer<SavingProvider>(
           builder: (context, provider, child) {
 
-            /// LOADING
-            if (provider.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            /// TOTAL
             final total = provider.savings.fold<int>(
               0,
-                  (sum, item) => sum + item.amount,
+              (sum, item) => sum + item.amount,
             );
 
             return Column(
@@ -93,8 +91,11 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// TOTAL CARD
-                SavingCard(total: total),
+                /// TOTAL CARD dengan skeleton
+                Skeletonizer(
+                  enabled: provider.isLoading,
+                  child: SavingCard(total: provider.isLoading ? 999999 : total),
+                ),
 
                 const SizedBox(height: 16),
 
@@ -113,17 +114,22 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// LIST
+                /// LIST dengan skeleton
                 Expanded(
-                  child: SavingList(
-                    items: provider.savings.map((e) => {
-                      "id": e.id,
-                      "name": e.name,
-                      "amount": e.amount,
-                      "target": e.target,
-                      "date": e.date,
-                    }).toList(),
-                    onCreateTap: _openCreateModal,
+                  child: Skeletonizer(
+                    enabled: provider.isLoading,
+                    child: SavingList(
+                      items: provider.isLoading
+                          ? _dummySavings
+                          : provider.savings.map((e) => {
+                              "id": e.id,
+                              "name": e.name,
+                              "amount": e.amount,
+                              "target": e.target,
+                              "date": e.date,
+                            }).toList(),
+                      onCreateTap: _openCreateModal,
+                    ),
                   ),
                 ),
               ],
@@ -134,3 +140,10 @@ class _SavingPageState extends State<SavingPage> {
     );
   }
 }
+
+// Dummy data untuk skeleton placeholder
+const _dummySavings = [
+  {"id": 0, "name": "Laptop Baru", "amount": 1000000, "target": 5000000, "date": "2025-12-31"},
+  {"id": 1, "name": "Liburan",    "amount": 500000,  "target": 3000000, "date": "2025-06-30"},
+  {"id": 2, "name": "Gadget",     "amount": 200000,  "target": 2000000, "date": "2025-09-01"},
+];

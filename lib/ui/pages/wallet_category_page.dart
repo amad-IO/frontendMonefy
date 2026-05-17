@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/wallet_model.dart';
@@ -194,31 +195,45 @@ class _WalletCategoryPageState extends State<WalletCategoryPage> {
               ),
             )
           else
-            SizedBox(
-              height: _cardHeight(context),
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: wallets.length,
-                onPageChanged: (i) => setState(() => _selectedIndex = i),
-                itemBuilder: (ctx, i) {
-                  final wallet = wallets[i];
-                  final isActive = i == _selectedIndex;
-                  return AnimatedScale(
-                    scale: isActive ? 1.0 : 0.93,
-                    duration: const Duration(milliseconds: 280),
-                    curve: Curves.easeOut,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: WalletCard(
-                        walletName: wallet.name,
-                        balance: wallet.balance,
-                        theme: wallet.theme,
-                        isHidden: provider.isHidden,
-                        onToggleHide: provider.toggleHide,
+            Skeletonizer(
+              enabled: provider.isLoading,
+              child: SizedBox(
+                height: _cardHeight(context),
+                child: provider.isLoading
+                    // Dummy card saat loading
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: WalletCard(
+                          walletName: 'Loading',
+                          balance: 9999999,
+                          theme: WalletTheme.all[0],
+                          isHidden: false,
+                        ),
+                      )
+                    : PageView.builder(
+                        controller: _pageController,
+                        itemCount: wallets.length,
+                        onPageChanged: (i) => setState(() => _selectedIndex = i),
+                        itemBuilder: (ctx, i) {
+                          final wallet   = wallets[i];
+                          final isActive = i == _selectedIndex;
+                          return AnimatedScale(
+                            scale: isActive ? 1.0 : 0.93,
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOut,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: WalletCard(
+                                walletName: wallet.name,
+                                balance: wallet.balance,
+                                theme: wallet.theme,
+                                isHidden: provider.isHidden,
+                                onToggleHide: provider.toggleHide,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
               ),
             ),
 

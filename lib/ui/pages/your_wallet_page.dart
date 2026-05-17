@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/wallet_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/wallet_provider.dart';
 import 'create_wallet_page.dart';
 import 'wallet_category_page.dart';
@@ -15,17 +17,37 @@ import 'wallet_category_page.dart';
 /// Menampilkan total balance, kategori Cash/Bank/E-Wallet
 /// dan navigasi ke WalletCategoryPage.
 // ══════════════════════════════════════════════════════════════
-class YourWalletPage extends StatelessWidget {
+class YourWalletPage extends StatefulWidget {
   const YourWalletPage({super.key});
 
-  void _goToCreateWallet(BuildContext context) {
+  @override
+  State<YourWalletPage> createState() => _YourWalletPageState();
+}
+
+class _YourWalletPageState extends State<YourWalletPage> {
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Load wallet dari API setiap kali halaman ini dibuka
+    // Memastikan balance selalu fresh (tidak stuck di Rp0)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<WalletProvider>().loadWalletsFromApi(token);
+      }
+    });
+  }
+
+  void _goToCreateWallet() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => CreateWalletPage()),
     );
   }
 
-  void _goToCategory(BuildContext context, WalletCategory category) {
+  void _goToCategory(WalletCategory category) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -34,7 +56,6 @@ class YourWalletPage extends StatelessWidget {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     return Consumer<WalletProvider>(
@@ -47,9 +68,9 @@ class YourWalletPage extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF8B5CF6), // violet muda
-                  Color(0xFF6D28D9), // violet tengah
-                  Color(0xFF4C1D95), // indigo gelap
+                  Color(0xFF8B5CF6),
+                  Color(0xFF6D28D9),
+                  Color(0xFF4C1D95),
                 ],
                 stops: [0.0, 0.5, 1.0],
               ),
@@ -125,53 +146,62 @@ class YourWalletPage extends StatelessWidget {
 
           const SizedBox(height: 36),
 
-          // ── Label "Your total balance is" + mata ─
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(
-                'Your total balance is',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  color: Colors.white.withValues(alpha: 0.95),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
+          // ── Label + nominal (skeleton saat loading) ──
+          Skeletonizer(
+            enabled: provider.isLoading,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Label "Your total balance is" + mata
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your total balance is',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: provider.toggleHide,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        child: Icon(
+                          provider.isHidden
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          key: ValueKey(provider.isHidden),
+                          color: Colors.white.withValues(alpha: 0.85),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: provider.toggleHide,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  child: Icon(
-                    provider.isHidden
-                        ? Icons.visibility_off_rounded
-                        : Icons.visibility_off_rounded,
+
+                const SizedBox(height: 14),
+
+                // Nominal total balance
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  child: Text(
+                    provider.isLoading ? 'Rp 99.999.999' : balanceText,
                     key: ValueKey(provider.isHidden),
-                    color: Colors.white.withValues(alpha: 0.85),
-                    size: 20,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 44,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: -1.0,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // ── Total nominal ─────────────────────────
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 280),
-            child: Text(
-              balanceText,
-              key: ValueKey(provider.isHidden),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 44,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: -1.0,
-              ),
+              ],
             ),
           ),
         ],
@@ -226,7 +256,7 @@ class YourWalletPage extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: _AddWalletButton(
-                        onTap: () => _goToCreateWallet(context),
+                        onTap: _goToCreateWallet,
                       ),
                     ),
                   ),
@@ -244,24 +274,31 @@ class YourWalletPage extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Kategori items ────────────────────
-                  _CategoryTile(
-                    icon: Icons.attach_money_rounded,
-                    label: 'Cash',
-                    count: provider.byCategory(WalletCategory.cash).length,
-                    onTap: () => _goToCategory(context, WalletCategory.cash),
-                  ),
-                  _CategoryTile(
-                    icon: Icons.account_balance_rounded,
-                    label: 'Bank Accounts',
-                    count: provider.byCategory(WalletCategory.bankAccount).length,
-                    onTap: () => _goToCategory(context, WalletCategory.bankAccount),
-                  ),
-                  _CategoryTile(
-                    icon: Icons.wallet_rounded,
-                    label: 'E-Wallets',
-                    count: provider.byCategory(WalletCategory.eWallet).length,
-                    onTap: () => _goToCategory(context, WalletCategory.eWallet),
+                  // ── Kategori items (skeleton saat loading) ────
+                  Skeletonizer(
+                    enabled: provider.isLoading,
+                    child: Column(
+                      children: [
+                        _CategoryTile(
+                          icon: Icons.attach_money_rounded,
+                          label: 'Cash',
+                          count: provider.byCategory(WalletCategory.cash).length,
+                          onTap: () => _goToCategory(WalletCategory.cash),
+                        ),
+                        _CategoryTile(
+                          icon: Icons.account_balance_rounded,
+                          label: 'Bank Accounts',
+                          count: provider.byCategory(WalletCategory.bankAccount).length,
+                          onTap: () => _goToCategory(WalletCategory.bankAccount),
+                        ),
+                        _CategoryTile(
+                          icon: Icons.wallet_rounded,
+                          label: 'E-Wallets',
+                          count: provider.byCategory(WalletCategory.eWallet).length,
+                          onTap: () => _goToCategory(WalletCategory.eWallet),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

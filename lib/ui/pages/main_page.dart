@@ -11,11 +11,13 @@ import 'analytic_page.dart';
 class MainPage extends StatefulWidget {
   final int initialIndex;
   final Widget? extraPage;
+  final bool? initialAnalyticIsExpense;
 
   const MainPage({
     super.key,
     this.initialIndex = 0,
     this.extraPage,
+    this.initialAnalyticIsExpense,
   });
 
   @override
@@ -35,7 +37,10 @@ class _MainPageState extends State<MainPage> {
       const HomePage(),
       HistoryPage(onBack: () => _onItemTapped(0)),
       const _PlaceholderPage(label: 'Add'),      // FAB opens AddPage sheet.
-      AnalyticPage(onBack: () => _onItemTapped(0)),
+      AnalyticPage(
+        onBack: () => _onItemTapped(0),
+        initialIsExpense: widget.initialAnalyticIsExpense ?? true,
+      ),
       const ProfilePage(),
     ];
 

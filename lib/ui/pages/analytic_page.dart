@@ -16,8 +16,13 @@ import '../widgets/analytic/monthly_comparison_card.dart';
 
 class AnalyticPage extends StatefulWidget {
   final VoidCallback? onBack;
+  final bool initialIsExpense;
 
-  const AnalyticPage({super.key, this.onBack});
+  const AnalyticPage({
+    super.key, 
+    this.onBack,
+    this.initialIsExpense = true,
+  });
 
   @override
   State<AnalyticPage> createState() => _AnalyticPageState();
@@ -27,7 +32,13 @@ class _AnalyticPageState extends State<AnalyticPage> {
   // ── State ──────────────────────────────────────────────────
   int _filterIndex = 1; // default: Monthly (0=Weekly, 1=Monthly, 2=Yearly)
   DateTime _anchorDate = DateTime.now();
-  bool _isExpenseSelected = true;
+  late bool _isExpenseSelected;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpenseSelected = widget.initialIsExpense;
+  }
 
   /// Konversi index ke enum.
   AnalyticPeriod get _period => AnalyticPeriod.values[_filterIndex];

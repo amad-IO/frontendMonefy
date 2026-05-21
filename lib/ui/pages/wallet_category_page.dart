@@ -302,8 +302,24 @@ class _WalletCategoryPageState extends State<WalletCategoryPage> {
                     ),
 
                   // Info wallet yang dipilih
-                  if (selectedWallet != null)
+                  if (selectedWallet != null) ...[
                     _buildWalletInfo(selectedWallet, provider.isHidden),
+                    const SizedBox(height: 56), // Jarak diperbesar agar tombol lebih turun
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: _EditButton(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Fitur edit wallet belum tersedia.'),
+                              backgroundColor: Colors.orange,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -394,10 +410,18 @@ class _DeleteButtonState extends State<_DeleteButton> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.delete_rounded, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text(
+            children: [
+              SvgPicture.asset(
+                'assets/icon/delete.svg',
+                width: 18,
+                height: 18,
+                colorFilter: const ColorFilter.mode(
+                  Colors.white,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
                 'Delete',
                 style: TextStyle(
                   fontFamily: 'Nunito',
@@ -480,6 +504,67 @@ class _InfoTile extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Tombol Edit Wallet — ungu rounded dengan ikon pensil
+// ══════════════════════════════════════════════════════════════
+class _EditButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _EditButton({required this.onTap});
+
+  @override
+  State<_EditButton> createState() => _EditButtonState();
+}
+
+class _EditButtonState extends State<_EditButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.primaryPurple,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryPurple.withValues(alpha: 0.25),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.edit_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Edit Wallet',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

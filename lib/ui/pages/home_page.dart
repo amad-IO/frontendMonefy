@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:monefy/ui/pages/main_page.dart';
 import 'package:monefy/ui/pages/saving_page.dart';
 import 'package:monefy/ui/pages/your_wallet_page.dart';
+import '../../data/models/transaction_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/wallet_provider.dart';
@@ -15,6 +16,7 @@ import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
 import 'bills_page.dart';
 import 'list_bills_page.dart';
+import 'analytic_page.dart';
 
 class HomePage extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -26,6 +28,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  TransactionFilter _activeFilter = TransactionFilter.all;
 
   @override
   void initState() {
@@ -64,6 +67,28 @@ class _HomePageState extends State<HomePage> {
             _buildHeader(),
             SummaryCard(
               summary: provider.summary,
+              onIncomeTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MainPage(
+                      initialIndex: 3,
+                      initialAnalyticIsExpense: false,
+                    ),
+                  ),
+                );
+              },
+              onExpenseTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MainPage(
+                      initialIndex: 3,
+                      initialAnalyticIsExpense: true,
+                    ),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 12),
@@ -104,8 +129,9 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: HistorySection(
-                transactions: provider.transactions,
+                transactions: provider.getFiltered(_activeFilter),
                 onFilterChanged: (filter) {
+                  setState(() => _activeFilter = filter);
                 },
                 onSeeAll: () {
                 },

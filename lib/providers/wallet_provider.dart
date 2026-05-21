@@ -153,6 +153,94 @@ class WalletProvider extends ChangeNotifier {
     }
   }
 
+  // ── Update Wallet ke Backend ────────────────────────────────
+  Future<bool> updateWalletApi({
+    required String id,
+    required String name,
+    required double balance,
+    required WalletCategory category,
+    required String token,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await http.put(
+        Uri.parse('${AppConfig.baseUrl}/wallets/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'name_wallet': name,
+          'balance': balance,
+          'category': _categoryToString(category),
+        }),
+      );
+
+      debugPrint('PUT /wallets/$id → ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        // Refresh daftar wallet setelah berhasil update
+        await loadWalletsFromApi(token);
+        return true;
+      } else {
+        final msg = json.decode(response.body)['message'] ?? 'Gagal edit wallet';
+        _error = msg.toString();
+        return false;
+      }
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('❌ updateWalletApi error: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Delete Wallet di Backend ────────────────────────────────
+  Future<bool> deleteWalletApi({
+    required String id,
+    required String token,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final response = await http.delete(
+        Uri.parse('${AppConfig.baseUrl}/wallets/$id'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('DELETE /wallets/$id → ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Hapus secara lokal agar UI cepat update
+        _wallets = _wallets.where((w) => w.id != id).toList();
+        notifyListeners();
+        return true;
+      } else {
+        final msg = json.decode(response.body)['message'] ?? 'Gagal hapus wallet';
+        _error = msg.toString();
+        return false;
+      }
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('❌ deleteWalletApi error: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // ── Add wallet lokal (fallback / backward compat) ─────────
   Future<void> addWallet(WalletModel wallet) async {
     _wallets = [..._wallets, wallet];

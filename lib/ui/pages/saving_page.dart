@@ -4,7 +4,6 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/saving_provider.dart';
-import '../widgets/saving_card.dart';
 import '../widgets/saving_list.dart';
 import '../widgets/create_saving_modal.dart';
 
@@ -28,7 +27,6 @@ class _SavingPageState extends State<SavingPage> {
     });
   }
 
-  /// Handle create dengan token
   void _handleCreateSaving(String name, int target, String date) {
     final token = context.read<AuthProvider>().token;
     if (token != null) {
@@ -57,7 +55,7 @@ class _SavingPageState extends State<SavingPage> {
 
             final total = provider.savings.fold<int>(
               0,
-              (sum, item) => sum + item.amount,
+                  (sum, item) => sum + item.amount,
             );
 
             return Column(
@@ -78,7 +76,7 @@ class _SavingPageState extends State<SavingPage> {
                         ),
                       ),
                       const Text(
-                        "Whislist",
+                        "Wishlist", // FIX TYPO
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -91,10 +89,34 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// TOTAL CARD dengan skeleton
-                Skeletonizer(
-                  enabled: provider.isLoading,
-                  child: SavingCard(total: provider.isLoading ? 999999 : total),
+                /// TOTAL CARD
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(16),
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Skeletonizer(
+                    enabled: provider.isLoading,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Total Wishlist"),
+                        const SizedBox(height: 5),
+                        Text(
+                          "Rp $total",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryPurple,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 16),
@@ -103,7 +125,7 @@ class _SavingPageState extends State<SavingPage> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    "Whislist",
+                    "Wishlist",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -114,21 +136,22 @@ class _SavingPageState extends State<SavingPage> {
 
                 const SizedBox(height: 10),
 
-                /// LIST dengan skeleton
+                /// LIST
                 Expanded(
                   child: Skeletonizer(
                     enabled: provider.isLoading,
                     child: SavingList(
-                      items: provider.isLoading
-                          ? _dummySavings
-                          : provider.savings.map((e) => {
-                              "id": e.id,
-                              "name": e.name,
-                              "amount": e.amount,
-                              "target": e.target,
-                              "date": e.date,
-                            }).toList(),
-                      onCreateTap: _openCreateModal,
+                      items: provider.savings.map((e) => {
+                        "id": e.id,
+                        "name": e.name,
+                        "amount": e.amount,
+                        "target": e.target,
+                        "date": e.date,
+
+                        /// WAJIB TAMBAH INI
+                        "isDone": e.status == "terbeli",
+                      }).toList(),
+                      onAddTap: _openCreateModal,
                     ),
                   ),
                 ),
@@ -140,10 +163,3 @@ class _SavingPageState extends State<SavingPage> {
     );
   }
 }
-
-// Dummy data untuk skeleton placeholder
-const _dummySavings = [
-  {"id": 0, "name": "Laptop Baru", "amount": 1000000, "target": 5000000, "date": "2025-12-31"},
-  {"id": 1, "name": "Liburan",    "amount": 500000,  "target": 3000000, "date": "2025-06-30"},
-  {"id": 2, "name": "Gadget",     "amount": 200000,  "target": 2000000, "date": "2025-09-01"},
-];

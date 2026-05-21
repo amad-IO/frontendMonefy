@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import '../data/models/saving_model.dart';
 import '../data/services/saving_service.dart';
 
-// ══════════════════════════════════════════════════════════════
-/// SavingProvider — state manager untuk Saving (Wishlist).
-///
-/// ⚠️ Schema mismatch: Backend hanya simpan name + status.
-/// Field amount/target/date bersifat lokal (tidak persist ke backend).
-// ══════════════════════════════════════════════════════════════
 class SavingProvider extends ChangeNotifier {
   List<Saving> _savings = [];
   bool _isLoading = false;
@@ -17,7 +11,7 @@ class SavingProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // ── Fetch dari API ──────────────────────────────────────────
+  // ── FETCH ─────────────────────────────
   Future<void> fetchSavings(String token) async {
     _isLoading = true;
     _error = null;
@@ -27,8 +21,7 @@ class SavingProvider extends ChangeNotifier {
       _savings = await SavingService.getSavings(token);
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ fetchSavings error: $e');
-      // Fallback: tetap tampilkan list kosong, jangan crash
+      debugPrint('fetchSavings error: $e');
       _savings = [];
     } finally {
       _isLoading = false;
@@ -36,48 +29,49 @@ class SavingProvider extends ChangeNotifier {
     }
   }
 
-  // ── Tambah saving via API ───────────────────────────────────
-  /// Backend hanya menerima name. target/date disimpan lokal sementara.
+  // ── CREATE (FIXED) ─────────────────────────────
   Future<void> addSaving(
-    String name,
-    int target,
-    String date,
-    String token,
-  ) async {
+      String name,
+      int target,
+      String date,
+      String token,
+      ) async {
     try {
-      final created = await SavingService.createSaving(name, token);
-      // Isi field lokal yang tidak ada di backend
-      final withLocal = Saving(
-        id: created.id,
-        name: created.name,
-        amount: 0,
-        target: target,
-        date: date,
-      );
-      _savings = [..._savings, withLocal];
-      notifyListeners();
+      /// FIX: kirim target_amount ke backend
+      await SavingService.createSaving(name, target, token);
+
+      /// refresh data dari backend
+      await fetchSavings(token);
+
     } catch (e) {
-      debugPrint('❌ addSaving error: $e');
-      // Fallback: tambah lokal saja jika API gagal
-      final localSaving = Saving(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: name,
-        amount: 0,
-        target: target,
-        date: date,
-      );
-      _savings = [..._savings, localSaving];
-      notifyListeners();
+      debugPrint('addSaving error: $e');
     }
   }
 
-  // ── Delete lokal ────────────────────────────────────────────
+  // ── BUY / COMPLETE PURCHASE ─────────────────
+  Future<void> buySaving(
+      int id,
+      int walletId,
+      String token,
+      ) async {
+    try {
+      await SavingService.completePurchase(id, walletId, token);
+
+      ///  refresh setelah beli
+      await fetchSavings(token);
+
+    } catch (e) {
+      debugPrint("buySaving error: $e");
+    }
+  }
+
+  // ── DELETE (LOCAL SAJA) ─────────────────────────
   void deleteSaving(int id) {
     _savings = _savings.where((s) => s.id != id).toList();
     notifyListeners();
   }
 
-  // ── Update lokal ────────────────────────────────────────────
+  // ── UPDATE (LOCAL SAJA) ─────────────────────────
   void updateSaving(Saving updated) {
     final index = _savings.indexWhere((s) => s.id == updated.id);
     if (index != -1) {

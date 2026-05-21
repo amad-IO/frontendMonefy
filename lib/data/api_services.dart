@@ -114,7 +114,7 @@ class ApiService {
       String id, Map<String, dynamic> data, String token) async {
 
     final response = await http.put(
-      Uri.parse('$baseUrl/bills/$id/pay'),
+      Uri.parse('$baseUrl/bills/$id'),
       headers: _authHeaders(token),
       body: json.encode(data),
     );

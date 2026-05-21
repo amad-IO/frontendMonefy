@@ -34,18 +34,18 @@ class BillProvider with ChangeNotifier {
     }
   }
 
-  /// 🔥 UPDATE BILL
+  /// UPDATE BILL
   Future<void> updateBill(
       int id, Map<String, dynamic> data, String token) async {
     try {
       await _service.updateBill(id, data, token);
-      await fetchBills(token); // 🔥 auto refresh
+      await fetchBills(token); // auto refresh
     } catch (e) {
       print("Error updateBill: $e");
     }
   }
 
-  /// 🔥 PAY BILL (INI YANG DIPAKAI DI UI)
+  /// PAY BILL (INI YANG DIPAKAI DI UI)
   Future<void> payBill(int id, String token) async {
     try {
       await _service.updateBill(

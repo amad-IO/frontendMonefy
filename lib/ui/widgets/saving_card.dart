@@ -1,49 +1,97 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 
 class SavingCard extends StatelessWidget {
-  final int? total;
+  final Map<String, dynamic> item;
+  final VoidCallback? onTap;
 
-  const SavingCard({super.key, this.total});
+  const SavingCard({
+    super.key,
+    required this.item,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDone = item["isDone"] ?? false;
+
     return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.white2,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            offset: const Offset(0, 6),
-            blurRadius: 8,
-          ),
+            blurRadius: 6,
+            color: Colors.black12,
+          )
         ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          const Text(
-            'Total Wishlist',
-            style: TextStyle(
-              color: AppColors.primaryPurple,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+          /// ICON
+          Container(
+            width: 35,
+            height: 35,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD5CEF5),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(
+              Icons.attach_money,
+              color: Color(0xFF694EDA),
+              size: 18,
             ),
           ),
-          const SizedBox(height: 10),
 
-          /// KALAU BELUM ADA DATA
-          Text(
-            total == null ? "-" : "Rp. $total",
-            style: const TextStyle(
-              color: AppColors.primaryPurple,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
+          const SizedBox(width: 10),
+
+          /// TITLE
+          Expanded(
+            child: Text(
+              item["name"],
+              style: const TextStyle(
+                color: Color(0xFF694EDA),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
           ),
+
+          /// PRICE + BUTTON
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "Rp${item["target"]}",
+                style: const TextStyle(
+                  color: Color(0xFF694EDA),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+
+              GestureDetector(
+                onTap: isDone ? null : onTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDone
+                        ? Colors.grey
+                        : const Color(0xFF694EDA),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isDone ? "Done" : "Buy",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              )
+            ],
+          )
         ],
       ),
     );

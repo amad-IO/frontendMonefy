@@ -4,6 +4,7 @@ class Saving {
   final int amount;
   final int target;
   final String date;
+  final String status; // 🔥 TAMBAHAN PENTING
 
   Saving({
     this.id,
@@ -11,16 +12,26 @@ class Saving {
     required this.amount,
     required this.target,
     required this.date,
+    required this.status,
   });
 
-  /// 🔹 dari JSON
+  /// 🔹 dari JSON (FIXED)
   factory Saving.fromJson(Map<String, dynamic> json) {
     return Saving(
       id: json['id'],
       name: json['name'] ?? '',
-      amount: json['amount'] ?? 0,
-      target: json['target'] ?? 0,
+
+      /// 🔥 backend nggak punya amount → default 0
+      amount: 0,
+
+      /// 🔥 FIX: pakai target_amount dari backend
+      target: (json['target_amount'] ?? 0).toInt(),
+
+      /// 🔥 backend nggak punya date → default
       date: json['date'] ?? "-",
+
+      /// 🔥 INI KUNCI
+      status: json['status'] ?? 'belum_terbeli',
     );
   }
 
@@ -32,16 +43,18 @@ class Saving {
       "amount": amount,
       "target": target,
       "date": date,
+      "status": status,
     };
   }
 
-  /// INI YANG KURANG (WAJIB)
+  /// 🔹 copyWith
   Saving copyWith({
     int? id,
     String? name,
     int? amount,
     int? target,
     String? date,
+    String? status,
   }) {
     return Saving(
       id: id ?? this.id,
@@ -49,6 +62,7 @@ class Saving {
       amount: amount ?? this.amount,
       target: target ?? this.target,
       date: date ?? this.date,
+      status: status ?? this.status,
     );
   }
 }

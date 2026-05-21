@@ -47,7 +47,7 @@ class _ListBillsState extends State<ListBills> {
               borderRadius: BorderRadius.circular(30),
               child: SvgPicture.asset(
                 "assets/images/kontur.svg",
-                fit: BoxFit.fill,
+                fit: BoxFit.cover,
               ),
             ),
           ),

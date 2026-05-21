@@ -7,10 +7,14 @@ import '../../core/theme/app_text_styles.dart';
 
 class SummaryCard extends StatefulWidget {
   final SummaryModel summary;
+  final VoidCallback? onIncomeTap;
+  final VoidCallback? onExpenseTap;
 
   const SummaryCard({
     super.key,
     required this.summary,
+    this.onIncomeTap,
+    this.onExpenseTap,
   });
 
   @override
@@ -173,6 +177,7 @@ class _SummaryCardState extends State<SummaryCard>
                             amount: _maskedOrReal(widget.summary.totalIncome),
                             isIncome: true,
                             isCompact: true,
+                            onTap: widget.onIncomeTap,
                           ),
                           const SizedBox(height: 10),
                           _GlassSubCard(
@@ -181,6 +186,7 @@ class _SummaryCardState extends State<SummaryCard>
                             amount: _maskedOrReal(widget.summary.totalExpense),
                             isIncome: false,
                             isCompact: true,
+                            onTap: widget.onExpenseTap,
                           ),
                         ],
                       )
@@ -193,6 +199,7 @@ class _SummaryCardState extends State<SummaryCard>
                               filterLabel: _filterLabel,
                               amount: _maskedOrReal(widget.summary.totalIncome),
                               isIncome: true,
+                              onTap: widget.onIncomeTap,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -202,6 +209,7 @@ class _SummaryCardState extends State<SummaryCard>
                               filterLabel: _filterLabel,
                               amount: _maskedOrReal(widget.summary.totalExpense),
                               isIncome: false,
+                              onTap: widget.onExpenseTap,
                             ),
                           ),
                         ],
@@ -222,6 +230,7 @@ class _GlassSubCard extends StatelessWidget {
   final String amount;
   final bool isIncome;
   final bool isCompact;
+  final VoidCallback? onTap;
 
   const _GlassSubCard({
     required this.label,
@@ -229,6 +238,7 @@ class _GlassSubCard extends StatelessWidget {
     required this.amount,
     required this.isIncome,
     this.isCompact = false,
+    this.onTap,
   });
 
   Color get _arrowColor =>
@@ -241,9 +251,11 @@ class _GlassSubCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           width: double.infinity,
@@ -326,6 +338,6 @@ class _GlassSubCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }

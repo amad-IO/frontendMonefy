@@ -24,7 +24,7 @@ class HistorySection extends StatefulWidget {
 }
 
 class _HistorySectionState extends State<HistorySection> {
-  TransactionFilter _activeFilter = TransactionFilter.day;
+  TransactionFilter _activeFilter = TransactionFilter.all;
 
   static const Map<TransactionFilter, String> _filterLabels = {
     TransactionFilter.day: 'Day',

@@ -70,41 +70,58 @@ class _WalletCategoryPageState extends State<WalletCategoryPage> {
       icon: Icons.delete_rounded,
       iconColor: AppColors.error,
       iconBgColor: AppColors.error.withValues(alpha: 0.12),
-      title: 'Hapus Wallet?',
+      title: 'Delete Wallet?',
       description:
-          'Wallet "${wallet.name}" akan dihapus.\nTindakan ini tidak dapat dibatalkan.',
-      cancelLabel: 'Batal',
-      confirmLabel: 'Hapus',
+          'Wallet "${wallet.name}" will be deleted.\nThis action cannot be undone.',
+      cancelLabel: 'Cancel',
+      confirmLabel: 'Delete',
       confirmColor: AppColors.error,
       onConfirm: () async {
-        await provider.deleteWallet(wallet.id);
-
-        // Backend belum punya DELETE /wallets — reload dari API
-        // agar list kembali sinkron dengan database
         final token = auth.token;
-        if (token != null) {
-          await provider.loadWalletsFromApi(token);
-        }
+        if (token == null) return;
+
+        final success = await provider.deleteWalletApi(
+          id: wallet.id,
+          token: token,
+        );
 
         if (!mounted) return;
 
-        final remaining = provider.byCategory(widget.category);
-        if (remaining.isEmpty) {
-          navigator.maybePop();
-        } else {
-          setState(() {
-            _selectedIndex = _selectedIndex.clamp(0, remaining.length - 1);
-          });
-        }
+        if (success) {
+          final remaining = provider.byCategory(widget.category);
+          if (remaining.isEmpty) {
+            navigator.maybePop();
+          } else {
+            setState(() {
+              _selectedIndex = _selectedIndex.clamp(0, remaining.length - 1);
+            });
+          }
 
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('⚠️ Wallet dihapus dari tampilan. Hapus permanen belum tersedia.'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text('Wallet "${wallet.name}" has been deleted.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(provider.error ?? 'Failed to delete wallet.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       },
+    );
+  }
+
+  // ── Show Edit Wallet Modal ────────────────────────────────
+  void _showEditWalletModal(BuildContext context, WalletModel wallet) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _EditWalletSheet(wallet: wallet),
     );
   }
 
@@ -308,15 +325,7 @@ class _WalletCategoryPageState extends State<WalletCategoryPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: _EditButton(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Fitur edit wallet belum tersedia.'),
-                              backgroundColor: Colors.orange,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+                        onTap: () => _showEditWalletModal(context, selectedWallet),
                       ),
                     ),
                   ],
@@ -564,6 +573,201 @@ class _EditButtonState extends State<_EditButton> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Edit Wallet Bottom Sheet
+// ══════════════════════════════════════════════════════════════
+class _EditWalletSheet extends StatefulWidget {
+  final WalletModel wallet;
+  const _EditWalletSheet({required this.wallet});
+
+  @override
+  State<_EditWalletSheet> createState() => _EditWalletSheetState();
+}
+
+class _EditWalletSheetState extends State<_EditWalletSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameCtrl;
+  late TextEditingController _balanceCtrl;
+  late WalletCategory _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.wallet.name);
+    _balanceCtrl = TextEditingController(text: widget.wallet.balance.toInt().toString());
+    _selectedCategory = widget.wallet.category;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _balanceCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final provider = context.read<WalletProvider>();
+    final auth = context.read<AuthProvider>();
+    final token = auth.token;
+    
+    if (token == null) return;
+
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final success = await provider.updateWalletApi(
+      id: widget.wallet.id,
+      name: _nameCtrl.text.trim(),
+      balance: double.tryParse(_balanceCtrl.text) ?? 0,
+      category: _selectedCategory,
+      token: token,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      navigator.pop();
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Wallet successfully updated.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(provider.error ?? 'Failed to update wallet.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final provider = context.watch<WalletProvider>();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: bottomInset),
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Edit Wallet',
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            
+            // Nama Wallet
+            TextFormField(
+              controller: _nameCtrl,
+              decoration: InputDecoration(
+                labelText: 'Wallet Name',
+                prefixIcon: const Icon(Icons.account_balance_wallet_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            
+            // Saldo
+            TextFormField(
+              controller: _balanceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Balance',
+                prefixText: 'Rp ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              validator: (val) {
+                if (val == null || val.isEmpty) return 'Required';
+                if (double.tryParse(val) == null) return 'Must be a number';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            
+            // Kategori
+            DropdownButtonFormField<WalletCategory>(
+              value: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Category',
+                prefixIcon: const Icon(Icons.category_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              items: WalletCategory.values.map((cat) {
+                return DropdownMenuItem(
+                  value: cat,
+                  child: Text(cat.label),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) setState(() => _selectedCategory = val);
+              },
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Tombol Simpan
+            ElevatedButton(
+              onPressed: provider.isLoading ? null : _handleSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: provider.isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

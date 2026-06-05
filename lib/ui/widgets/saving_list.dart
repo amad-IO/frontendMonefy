@@ -9,7 +9,11 @@ class SavingList extends StatefulWidget {
   final List<Map<String, dynamic>> items;
   final VoidCallback? onAddTap;
 
-  const SavingList({super.key, this.items = const [], this.onAddTap});
+  const SavingList({
+    super.key,
+    this.items = const [],
+    this.onAddTap,
+  });
 
   @override
   State<SavingList> createState() => _SavingListState();
@@ -20,7 +24,6 @@ class _SavingListState extends State<SavingList> {
 
   @override
   Widget build(BuildContext context) {
-
     /// 🔥 FILTER DATA
     final savings = widget.items.where((item) {
       return item["isDone"] == isDone;
@@ -43,7 +46,7 @@ class _SavingListState extends State<SavingList> {
               borderRadius: BorderRadius.circular(30),
               child: SvgPicture.asset(
                 "assets/images/kontur.svg",
-                  fit: BoxFit.cover,
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -61,7 +64,9 @@ class _SavingListState extends State<SavingList> {
                     onTap: widget.onAddTap,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFD5CEF5),
                         borderRadius: BorderRadius.circular(10),
@@ -69,8 +74,7 @@ class _SavingListState extends State<SavingList> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add,
-                              size: 16, color: Colors.white),
+                          Icon(Icons.add, size: 16, color: Colors.white),
                           SizedBox(width: 5),
                           Text(
                             "Add Wishlist",
@@ -106,14 +110,12 @@ class _SavingListState extends State<SavingList> {
                           setState(() => isDone = false);
                         },
                         child: Container(
-                          padding:
-                          const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: !isDone
                                 ? Colors.white
                                 : Colors.transparent,
-                            borderRadius:
-                            BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Center(
                             child: Text(
@@ -135,14 +137,12 @@ class _SavingListState extends State<SavingList> {
                           setState(() => isDone = true);
                         },
                         child: Container(
-                          padding:
-                          const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: isDone
                                 ? Colors.white
                                 : Colors.transparent,
-                            borderRadius:
-                            BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Center(
                             child: Text(
@@ -172,9 +172,38 @@ class _SavingListState extends State<SavingList> {
               ...savings.map((item) {
                 return SavingCard(
                   item: item,
-                  onTap: () {
+                  onTap: () async {
                     final token = context.read<AuthProvider>().token!;
-                    context.read<SavingProvider>().buySaving(item["id"], 1, token);
+
+                    final walletId = await showDialog<int>(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text("Pilih Wallet"),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                title: const Text("Cash"),
+                                onTap: () => Navigator.pop(context, 1),
+                              ),
+                              ListTile(
+                                title: const Text("Bank"),
+                                onTap: () => Navigator.pop(context, 2),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+
+                    if (walletId != null) {
+                      context.read<SavingProvider>().buySaving(
+                        item["id"],
+                        walletId,
+                        token,
+                      );
+                    }
                   },
                 );
               }).toList(),

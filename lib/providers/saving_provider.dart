@@ -11,7 +11,6 @@ class SavingProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // ── FETCH ─────────────────────────────
   Future<void> fetchSavings(String token) async {
     _isLoading = true;
     _error = null;
@@ -29,7 +28,6 @@ class SavingProvider extends ChangeNotifier {
     }
   }
 
-  // ── CREATE (FIXED) ─────────────────────────────
   Future<void> addSaving(
       String name,
       int target,
@@ -37,41 +35,32 @@ class SavingProvider extends ChangeNotifier {
       String token,
       ) async {
     try {
-      /// FIX: kirim target_amount ke backend
       await SavingService.createSaving(name, target, token);
-
-      /// refresh data dari backend
       await fetchSavings(token);
-
     } catch (e) {
       debugPrint('addSaving error: $e');
     }
   }
 
-  // ── BUY / COMPLETE PURCHASE ─────────────────
+  /// 🔥 BUY DENGAN WALLET
   Future<void> buySaving(
       int id,
       int walletId,
       String token,
       ) async {
     try {
-      await SavingService.completePurchase(id, walletId, token);
-
-      ///  refresh setelah beli
+      await SavingService.buySaving(id, walletId, token);
       await fetchSavings(token);
-
     } catch (e) {
       debugPrint("buySaving error: $e");
     }
   }
 
-  // ── DELETE (LOCAL SAJA) ─────────────────────────
   void deleteSaving(int id) {
     _savings = _savings.where((s) => s.id != id).toList();
     notifyListeners();
   }
 
-  // ── UPDATE (LOCAL SAJA) ─────────────────────────
   void updateSaving(Saving updated) {
     final index = _savings.indexWhere((s) => s.id == updated.id);
     if (index != -1) {

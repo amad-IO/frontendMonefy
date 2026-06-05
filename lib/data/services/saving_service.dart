@@ -19,6 +19,7 @@ class SavingService {
     );
 
     debugPrint('GET /wishlists → ${response.statusCode}');
+    debugPrint('BODY → ${response.body}');
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body) as Map<String, dynamic>;
@@ -28,7 +29,7 @@ class SavingService {
           .map((e) => Saving.fromJson(e as Map<String, dynamic>))
           .toList();
     } else {
-      throw Exception('Failed to load savings: ${response.statusCode}');
+      throw Exception('Failed to load savings: ${response.body}');
     }
   }
 
@@ -47,7 +48,7 @@ class SavingService {
       },
       body: json.encode({
         'name': name,
-        'target_amount': target, // 🔥 FIX SESUAI BACKEND
+        'target_amount': target,
       }),
     );
 
@@ -62,38 +63,10 @@ class SavingService {
     }
   }
 
-  // ── 🔥 POST /wishlists/{id}/complete-purchase ─────────────────
-  static Future<void> completePurchase(
+  // ── 🔥 BUY (PAKAI WALLET DARI UI) ─────────────────
+  static Future<void> buySaving(
       int id,
       int walletId,
-      String token,
-      ) async {
-    final url = Uri.parse('$baseUrl/$id/complete-purchase');
-
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: json.encode({
-        'wallet_id': walletId,
-      }),
-    );
-
-    debugPrint('POST /wishlists/$id/complete-purchase → ${response.statusCode}');
-    debugPrint('BODY → ${response.body}');
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to complete purchase: ${response.body}');
-    }
-  }
-
-  // ── OPTIONAL: update status manual ─────────────────
-  static Future<bool> updateStatus(
-      int id,
-      String status,
       String token,
       ) async {
     final response = await http.put(
@@ -103,10 +76,38 @@ class SavingService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({'status': status}),
+      body: json.encode({
+        'status': 'terbeli',
+        'wallet_id': walletId,
+      }),
     );
 
     debugPrint('PUT /wishlists/$id → ${response.statusCode}');
-    return response.statusCode == 200;
+    debugPrint('BODY → ${response.body}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update wishlist: ${response.body}');
+    }
+  }
+
+  // ── DELETE ─────────────────────────────
+  static Future<void> deleteSaving(
+      int id,
+      String token,
+      ) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    debugPrint('DELETE /wishlists/$id → ${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete wishlist');
+    }
   }
 }

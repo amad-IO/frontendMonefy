@@ -4,7 +4,7 @@ class Saving {
   final int amount;
   final int target;
   final String date;
-  final String status; // 🔥 TAMBAHAN PENTING
+  final String status;
 
   Saving({
     this.id,
@@ -15,27 +15,31 @@ class Saving {
     required this.status,
   });
 
-  /// 🔹 dari JSON (FIXED)
+  /// 🔹 FROM JSON (SUDAH AMAN 100%)
   factory Saving.fromJson(Map<String, dynamic> json) {
     return Saving(
       id: json['id'],
-      name: json['name'] ?? '',
 
-      /// 🔥 backend nggak punya amount → default 0
+      /// 🔥 AMANIN STRING
+      name: json['name']?.toString() ?? '',
+
+      /// 🔥 BACKEND NGGAK ADA → DEFAULT
       amount: 0,
 
-      /// 🔥 FIX: pakai target_amount dari backend
-      target: (json['target_amount'] ?? 0).toInt(),
+      /// 🔥 FIX UTAMA (HANDLE "0.00")
+      target: int.tryParse(
+        (json['target_amount'] ?? '0').toString().split('.').first,
+      ) ?? 0,
 
-      /// 🔥 backend nggak punya date → default
-      date: json['date'] ?? "-",
+      /// 🔥 AMANIN NULL
+      date: json['date']?.toString() ?? "-",
 
-      /// 🔥 INI KUNCI
-      status: json['status'] ?? 'belum_terbeli',
+      /// 🔥 INI PENTING UNTUK ONGOING / DONE
+      status: json['status']?.toString() ?? 'belum_terbeli',
     );
   }
 
-  /// 🔹 ke JSON
+  /// 🔹 TO JSON
   Map<String, dynamic> toJson() {
     return {
       "id": id,
@@ -47,7 +51,7 @@ class Saving {
     };
   }
 
-  /// 🔹 copyWith
+  /// 🔹 COPY WITH
   Saving copyWith({
     int? id,
     String? name,

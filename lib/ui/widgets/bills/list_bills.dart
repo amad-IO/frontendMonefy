@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/bill_provider.dart';
 import 'bill_card.dart';
+import 'bill_detail_modal.dart';
 
 class ListBills extends StatefulWidget {
   final VoidCallback? onAddTap;
@@ -182,16 +183,30 @@ class _ListBillsState extends State<ListBills> {
                   title: bill.provider,
                   amount: "Rp${bill.amount}",
                   isPaid: bill.status.toLowerCase() == "paid",
-                  onTap: isUnpaid
-                      ? () async {
+
+                  /// klik card → modal
+                  onTap: () {
+                    showBillDetailModal(
+                      context,
+                      {
+                        "id": bill.id,
+                        "name": bill.provider,
+                        "account": bill.accountNumber,
+                        "amount": bill.amount,
+                        "due_date": bill.dueDate,
+                        "cycle": bill.cycle,
+                        "status": bill.status,
+                      },
+                    );
+                  },
+
+                  onPay: () async {
                     await context.read<BillProvider>().payBill(bill.id, token);
 
-                    /// PINDAH KE TAB PAID
                     setState(() {
                       isUnpaid = false;
                     });
-                  }
-                      : null,
+                  },
                 );
               }).toList(),
 

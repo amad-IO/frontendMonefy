@@ -90,6 +90,35 @@ class SavingService {
     }
   }
 
+  static Future<void> updateSaving(
+      int id,
+      String name,
+      int target,
+      String? date,
+      String token,
+      ) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode({
+        'name': name,
+        'target_amount': target,
+        'date': date,
+      }),
+    );
+
+    debugPrint('PUT UPDATE /wishlists/$id → ${response.statusCode}');
+    debugPrint('BODY → ${response.body}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update saving: ${response.body}');
+    }
+  }
+
   // ── DELETE ─────────────────────────────
   static Future<void> deleteSaving(
       int id,

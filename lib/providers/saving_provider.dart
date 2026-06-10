@@ -42,7 +42,7 @@ class SavingProvider extends ChangeNotifier {
     }
   }
 
-  /// 🔥 BUY DENGAN WALLET
+  /// BUY DENGAN WALLET
   Future<void> buySaving(
       int id,
       int walletId,
@@ -61,6 +61,15 @@ class SavingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteSavingApi(int id, String token) async {
+    try {
+      await SavingService.deleteSaving(id, token);
+      await fetchSavings(token);
+    } catch (e) {
+      debugPrint("deleteSaving error: $e");
+    }
+  }
+
   void updateSaving(Saving updated) {
     final index = _savings.indexWhere((s) => s.id == updated.id);
     if (index != -1) {
@@ -68,6 +77,21 @@ class SavingProvider extends ChangeNotifier {
       list[index] = updated;
       _savings = list;
       notifyListeners();
+    }
+  }
+
+  Future<void> updateSavingApi(
+      int id,
+      String name,
+      int target,
+      String? date,
+      String token,
+      ) async {
+    try {
+      await SavingService.updateSaving(id, name, target, date, token);
+      await fetchSavings(token);
+    } catch (e) {
+      debugPrint("updateSaving error: $e");
     }
   }
 }

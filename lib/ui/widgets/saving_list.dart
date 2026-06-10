@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/saving_provider.dart';
 import 'saving_card.dart';
 import 'package:provider/provider.dart';
+import 'saving_detail_modal.dart';
 
 class SavingList extends StatefulWidget {
   final List<Map<String, dynamic>> items;
@@ -172,38 +173,8 @@ class _SavingListState extends State<SavingList> {
               ...savings.map((item) {
                 return SavingCard(
                   item: item,
-                  onTap: () async {
-                    final token = context.read<AuthProvider>().token!;
-
-                    final walletId = await showDialog<int>(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text("Pilih Wallet"),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: const Text("Cash"),
-                                onTap: () => Navigator.pop(context, 1),
-                              ),
-                              ListTile(
-                                title: const Text("Bank"),
-                                onTap: () => Navigator.pop(context, 2),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-
-                    if (walletId != null) {
-                      context.read<SavingProvider>().buySaving(
-                        item["id"],
-                        walletId,
-                        token,
-                      );
-                    }
+                  onTap: () {
+                    showSavingDetailModal(context, item);
                   },
                 );
               }).toList(),

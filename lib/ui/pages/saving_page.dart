@@ -4,6 +4,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/saving_provider.dart';
+import '../../providers/wallet_provider.dart'; // ✅ TAMBAHAN
 import '../widgets/saving_list.dart';
 import '../widgets/create_saving_modal.dart';
 
@@ -23,6 +24,7 @@ class _SavingPageState extends State<SavingPage> {
       final token = context.read<AuthProvider>().token;
       if (token != null) {
         context.read<SavingProvider>().fetchSavings(token);
+        context.read<WalletProvider>().loadWalletsFromApi(token);
       }
     });
   }
@@ -53,10 +55,10 @@ class _SavingPageState extends State<SavingPage> {
         child: Consumer<SavingProvider>(
           builder: (context, provider, child) {
 
-            final total = provider.savings.fold<int>(
-              0,
-                  (sum, item) => sum + item.amount,
-            );
+            // FIX TOTAL
+            final total = provider.savings
+                .where((e) => e.status != "terbeli")
+                .fold<int>(0, (sum, item) => sum + item.target);
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +78,7 @@ class _SavingPageState extends State<SavingPage> {
                         ),
                       ),
                       const Text(
-                        "Wishlist", // FIX TYPO
+                        "Wishlist",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -147,8 +149,6 @@ class _SavingPageState extends State<SavingPage> {
                         "amount": e.amount,
                         "target": e.target,
                         "date": e.date,
-
-                        /// WAJIB TAMBAH INI
                         "isDone": e.status == "terbeli",
                       }).toList(),
                       onAddTap: _openCreateModal,

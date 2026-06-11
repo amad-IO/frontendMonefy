@@ -117,7 +117,7 @@ void showBillDetailModal(
 
                   const SizedBox(height: 20),
 
-                  /// UPDATE ✅ FIX DISINI
+                  /// UPDATE
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -149,7 +149,7 @@ void showBillDetailModal(
 
                   const SizedBox(height: 10),
 
-                  /// DELETE ✅ FIX DISINI
+                  /// DELETE
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(

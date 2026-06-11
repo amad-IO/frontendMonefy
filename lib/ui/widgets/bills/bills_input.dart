@@ -23,7 +23,7 @@ class BillsInput extends StatefulWidget {
 class _BillsInputState extends State<BillsInput> {
   String? selectedCycle;
 
-  /// 📅 DATE PICKER
+  /// DATE PICKER
   Future<void> _pickDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -48,7 +48,7 @@ class _BillsInputState extends State<BillsInput> {
 
           const SizedBox(height: 20),
 
-          /// 🔵 TITLE
+          /// TITLE
           const Text(
             'Bills Details',
             style: TextStyle(
@@ -60,14 +60,14 @@ class _BillsInputState extends State<BillsInput> {
 
           const SizedBox(height: 20),
 
-          /// 🔤 BILL NAME
+          /// BILL NAME
           _buildField(
             label: "Bill Name",
             hint: "e.g., BCA, GoPay, Cash",
             controller: widget.billNameController,
           ),
 
-          /// 🔢 ACCOUNT
+          /// ACCOUNT
           _buildField(
             label: "Account Number",
             hint: "0",
@@ -75,7 +75,7 @@ class _BillsInputState extends State<BillsInput> {
             isNumber: true,
           ),
 
-          /// 💰 AMOUNT
+          /// AMOUNT
           _buildField(
             label: "Amount",
             hint: "e.g., 100000",
@@ -83,7 +83,7 @@ class _BillsInputState extends State<BillsInput> {
             isNumber: true,
           ),
 
-          /// 📅 DUE DATE
+          /// DUE DATE
           _buildField(
             label: "Due Date",
             hint: "Select date",
@@ -92,7 +92,7 @@ class _BillsInputState extends State<BillsInput> {
             suffix: const Icon(Icons.calendar_today, size: 18),
           ),
 
-          /// 🔁 BILLING CYCLE
+          /// BILLING CYCLE
           const SizedBox(height: 15),
 
           const Text(
@@ -138,7 +138,7 @@ class _BillsInputState extends State<BillsInput> {
     );
   }
 
-  /// 🔥 FIELD STYLE FIGMA
+  /// FIELD STYLE FIGMA
   Widget _buildField({
     required String label,
     required String hint,

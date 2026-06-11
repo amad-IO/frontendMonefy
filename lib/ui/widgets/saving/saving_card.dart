@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/saving_provider.dart';
-import '../../providers/wallet_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/saving_provider.dart';
+import '../../../providers/wallet_provider.dart';
 
 class SavingCard extends StatelessWidget {
   final Map<String, dynamic> item;

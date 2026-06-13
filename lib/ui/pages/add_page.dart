@@ -1,30 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../data/models/scan_result.dart';
+import '../../core/theme/app_colors.dart';
 import '../../data/models/transaction_model.dart';
 import '../../data/models/wallet_model.dart';
-import '../../providers/transaction_provider.dart';
 import '../../providers/wallet_provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/utils/add_page_helper.dart';
+import '../../providers/add_page_controller.dart'; // ✅ Import Controller Baru
 
 import '../components/wallet_selector_popup.dart';
-import '../components/numpad.dart';
 import '../widgets/add_page/add_button_panel.dart';
-import '../widgets/add_page/sliding_pill.dart';
-import '../widgets/add_page/category_area.dart';
-import '../widgets/add_page/input_row.dart';
 import '../widgets/add_page/amount_display.dart';
+import '../widgets/add_page/sliding_pill.dart';
 import '../widgets/add_page/top_action_buttons.dart';
-import '../widgets/notifikasi__transaction.dart';
-import 'scan_page.dart';
+
 
 class AddPage extends StatefulWidget {
-  /// Jika diisi, AddPage berjalan dalam mode Edit.
-  /// Semua field akan di-preload dari transaksi ini.
-  /// Jika null, AddPage berjalan dalam mode Add (tambah baru).
   final TransactionModel? editTransaction;
 
   const AddPage({super.key, this.editTransaction});
@@ -34,519 +24,135 @@ class AddPage extends StatefulWidget {
 }
 
 class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
-  // ── Mode flag ──
-  bool get _isEditMode => widget.editTransaction != null;
-
-  // ── Transaction type (0=Income, 1=Expense, 2=Transfer) ──
-  int _typeIndex = 0;
-
-  TransactionType get _type {
-    switch (_typeIndex) {
-      case 1:
-        return TransactionType.expense;
-      case 2:
-        return TransactionType.transfer;
-      default:
-        return TransactionType.income;
-    }
-  }
-
-  String? _selectedCategory;
-  String? _selectedWallet; // nama wallet (untuk ditampilkan)
-  String? _selectedWalletId; // ID wallet (untuk dikirim ke backend)
-  String? _selectedToWallet; // nama to-wallet
-  String? _selectedToWalletId; // ID to-wallet
-
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _titleController = TextEditingController();
-
-  late final AnimationController _walletShakeController;
-  bool _walletError = false;
-
-  Key _filterTransferKey = UniqueKey();
-
-  // ── Konversi WalletModel → WalletOption ──
-  static WalletOption _toWalletOption(WalletModel w) {
-    final IconData icon;
-    switch (w.category) {
-      case WalletCategory.cash:
-        icon = Icons.payments_rounded;
-        break;
-      case WalletCategory.bankAccount:
-        icon = Icons.account_balance_rounded;
-        break;
-      case WalletCategory.eWallet:
-        icon = Icons.account_balance_wallet_rounded;
-        break;
-    }
-    return WalletOption(
-      name: w.name,
-      icon: icon,
-      balance: w.balance,
-      id: w.id,
-      gradient: w.theme.cardGradient, // ← warna sesuai kartu di Your Wallet
-    );
-  }
-
-  // ────────────────────────────────────────────
-  // LIFECYCLE
-  // ────────────────────────────────────────────
+  late final AddPageController _controller;
 
   @override
   void initState() {
     super.initState();
-    _walletShakeController = AnimationController(
+    // ✅ Inisialisasi controller di initState
+    _controller = AddPageController(
+      editTransaction: widget.editTransaction,
       vsync: this,
-      duration: const Duration(milliseconds: 500),
     );
-    _walletShakeController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _walletShakeController.reset();
-      }
-    });
-
-    // ── Preload data jika mode Edit ──
-    if (_isEditMode) {
-      final t = widget.editTransaction!;
-      _typeIndex = t.type == TransactionType.income
-          ? 0
-          : t.type == TransactionType.expense
-          ? 1
-          : 2;
-      _selectedCategory = t.category;
-      _selectedWallet = t.walletName.isEmpty ? null : t.walletName;
-      _selectedWalletId = t.walletId.isEmpty ? null : t.walletId;
-      _selectedToWallet = t.toWalletName.isEmpty ? null : t.toWalletName;
-      _selectedToWalletId = t.toWalletId.isEmpty ? null : t.toWalletId;
-      _amountController.text = t.amount == t.amount.truncateToDouble()
-          ? t.amount.toInt().toString()
-          : t.amount.toString();
-      _titleController.text = t.title;
-    }
   }
 
   @override
   void dispose() {
-    _walletShakeController.dispose();
-    _amountController.dispose();
-    _titleController.dispose();
+    _controller.dispose(); // ✅ Dispose controller
     super.dispose();
   }
 
-  // ────────────────────────────────────────────
-  // NUMPAD HANDLERS
-  // ────────────────────────────────────────────
-
-  void _onNumPadKeyTap(String key) {
-    final current = _amountController.text;
-    if (key == '.') {
-      if (current.contains('.')) return;
-      setState(() =>
-      _amountController.text = current.isEmpty ? '0.' : '$current.');
-      return;
-    }
-    if (key == '000') {
-      setState(() =>
-      _amountController.text = current.isEmpty ? '0' : '$current$key');
-      return;
-    }
-    if (current == '0') {
-      setState(() => _amountController.text = key);
-      return;
-    }
-    setState(() => _amountController.text = '$current$key');
-  }
-
-  void _onNumPadBackspace() {
-    final current = _amountController.text;
-    if (current.isEmpty) return;
-    setState(() {
-      _amountController.text = current.substring(0, current.length - 1);
-    });
-  }
-
-  // ────────────────────────────────────────────
-  // CONFIRM — Validasi + Simpan
-  // ────────────────────────────────────────────
-
-  Future<void> _onConfirm() async {
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
-
-    // 1. Validasi input
-    final validationError = AddPageHelper.validate(
-      amount: amount,
-      selectedWallet: _selectedWallet,
-      type: _type,
-      selectedToWallet: _selectedToWallet,
-    );
-
-    if (validationError != null) {
-      if (_selectedWallet == null && amount > 0) {
-        setState(() => _walletError = true);
-        _walletShakeController.forward(from: 0);
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() => _walletError = false);
-        });
-      }
-      _showSnackBar(
-          validationError, AppColors.error, Icons.warning_amber_rounded);
-      return;
-    }
-
-    // 2. Siapkan data
-    final category = AddPageHelper.resolveCategory(
-      type: _type,
-      selectedCategory: _selectedCategory,
-    );
-    final title = AddPageHelper.resolveTitle(
-      category: category,
-      rawTitle: _titleController.text,
-      type: _type,
-    );
-
-    // 3. Capture referensi sebelum async
-    final provider = context.read<TransactionProvider>();
-    final walletProvider = context.read<WalletProvider>();
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token == null || token.isEmpty) {
-      if (!mounted) return;
-      _showSnackBar(
-          'Token tidak ditemukan. Silakan login ulang.', AppColors.error,
-          Icons.warning_amber_rounded);
-      return;
-    }
-
-    // 4A. Mode Edit
-    if (_isEditMode) {
-      final updated = widget.editTransaction!.copyWith(
-        category: category,
-        title: title,
-        amount: amount,
-        walletName: _selectedWallet!,
-        toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ??
-            '') : '',
-        type: _type,
-      );
-
-      try {
-        // Dialog Processing → Success muncul di dalam AddPage
-        await NotifikasiTransaction.show(
-          context: context,
-          type: _type,
-          amount: AddPageHelper.formatAmount(amount.toString()),
-          category: category,
-          walletName: _selectedWallet ?? '',
-          toWalletName: _type == TransactionType.transfer
-              ? _selectedToWallet
-              : null,
-          apiWork: () => provider.updateTransactionWithApi(updated, token),
-          onSuccess: () {
-            navigator.pop(); // tutup AddPage
-            // Refresh di background → skeleton muncul di HomePage
-            Future.wait([
-              provider.loadAll(token),
-              walletProvider.loadWalletsFromApi(token),
-            ]).then((_) =>
-                provider.enrichToWalletNames(walletProvider.wallets));
-          },
-        );
-      } catch (e) {
-        if (!mounted) return;
-        _showSnackBarOnMessenger(
-            messenger, 'Gagal memperbarui transaksi.', AppColors.error,
-            Icons.warning_amber_rounded);
-      }
-      return;
-    }
-
-    // 4B. Mode Add
-    final walletId = _selectedWalletId ?? '';
-    if (walletId.isEmpty) {
-      if (!mounted) return;
-      _showSnackBarOnMessenger(
-          messenger, 'Wallet tidak valid. Silakan pilih wallet.',
-          AppColors.error, Icons.warning_amber_rounded);
-      return;
-    }
-
-    final transaction = TransactionModel(
-      id: DateTime
-          .now()
-          .millisecondsSinceEpoch
-          .toString(),
-      category: category,
-      title: title,
-      amount: amount,
-      date: DateTime.now(),
-      walletName: _selectedWallet!,
-      toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ??
-          '') : '',
-      type: _type,
-    );
-
-    try {
-      // Dialog Processing → Success muncul di dalam AddPage
-      await NotifikasiTransaction.show(
-        context: context,
-        type: _type,
-        amount: AddPageHelper.formatAmount(amount.toString()),
-        category: category,
-        walletName: _selectedWallet ?? '',
-        toWalletName: _type == TransactionType.transfer
-            ? _selectedToWallet
-            : null,
-        apiWork: () =>
-            provider.addTransactionWithApi(
-              transaction,
-              token,
-              walletId: walletId,
-              toWalletId: _selectedToWalletId,
-            ),
-        onSuccess: () {
-          navigator.pop(); // tutup AddPage
-          // Refresh di background → skeleton muncul di HomePage
-          Future.wait([
-            provider.loadAll(token),
-            walletProvider.loadWalletsFromApi(token),
-          ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
-        },
-      );
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBarOnMessenger(
-          messenger, 'Gagal menyimpan transaksi.', AppColors.error,
-          Icons.warning_amber_rounded);
-    }
-  }
-
-  // ────────────────────────────────────────────
-  // HELPERS
-  // ────────────────────────────────────────────
-
-  void _showSnackBar(String message, Color color, IconData icon) {
-    _showSnackBarOnMessenger(
-        ScaffoldMessenger.of(context), message, color, icon);
-  }
-
-  void _showSnackBarOnMessenger(ScaffoldMessengerState messenger,
-      String message,
-      Color color,
-      IconData icon,) {
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                    fontFamily: 'Nunito', fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        duration: const Duration(seconds: 2),
-      ),
+  // Helper konversi WalletModel ke opsi dropdown UI
+  static WalletOption _toWalletOption(dynamic w) {
+    // ... Logika konversi yang sama seperti sebelumnya
+    return WalletOption(
+      name: w.name,
+      icon: w.category == WalletCategory.cash
+          ? Icons.payments_rounded
+          : w.category == WalletCategory.bankAccount
+          ? Icons.account_balance_rounded
+          : Icons.account_balance_wallet_rounded,
+      balance: w.balance,
+      id: w.id,
+      gradient: w.theme.cardGradient,
     );
   }
-
-  Future<void> _openScanPage() async {
-    final result = await showModalBottomSheet<ScanResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const ScanPage(),
-    );
-
-    if (result == null || !mounted) return;
-
-    setState(() {
-      // 1. Pre-fill nominal
-      _amountController.text = result.total.toInt().toString();
-
-      // 2. Switch tab ke tipe yang dideteksi AI (income / expense)
-      //    Transfer tidak bisa dideteksi dari struk, jadi hanya 2 kemungkinan
-      if (!_isEditMode) {
-        _typeIndex = result.isIncome ? 0 : 1;
-        // Reset kategori agar user pilih ulang sesuai tab baru
-        _selectedCategory = null;
-      }
-    });
-
-    // 3. Tampilkan snackbar ringkasan hasil scan
-    if (mounted) {
-      final typeLabel = result.isIncome ? 'Income' : 'Expense';
-      final msg = '📄 ${result.merchantName} · $typeLabel · ${result.category}';
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    msg,
-                    style: const TextStyle(
-                      fontFamily: 'Nunito',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.primaryPurple,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-    }
-  }
-
-  // ────────────────────────────────────────────
-  // BUILD
-  // ────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final safeBottom = MediaQuery
-        .of(context)
-        .padding
-        .bottom;
-    final walletOptions = context
-        .watch<WalletProvider>()
-        .wallets
-        .map(_toWalletOption)
-        .toList();
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    final walletOptions = context.watch<WalletProvider>().wallets.map(_toWalletOption).toList();
 
-    return FractionallySizedBox(
-      heightFactor: 0.86,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double sx = constraints.maxWidth / 390;
-          final double sy = constraints.maxHeight / 673;
+    // ✅ Bungkus halaman dengan ChangeNotifierProvider.value agar UI mendengarkan perubahan di Controller
+    return ChangeNotifierProvider.value(
+      value: _controller,
+      child: Consumer<AddPageController>(
+        builder: (context, controller, child) {
+          return FractionallySizedBox(
+            heightFactor: 0.86,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double sx = constraints.maxWidth / 390;
+                final double sy = constraints.maxHeight / 673;
 
-          return Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: const ShapeDecoration(
-              gradient: AppColors.primaryGradient,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
-                ),
-              ),
-            ),
-            child: Stack(
-              children: [
-                // ── Tombol Back, Mic, Camera ──
-                TopActionButtons(
-                  sx: sx,
-                  sy: sy,
-                  onBack: () => Navigator.of(context).pop(),
-                  onCamera: _openScanPage,
-                ),
-
-                // ── Tab Slider (Income / Expense / Transfer) ──
-                Positioned(
-                  left: 70 * sx,
-                  right: 16 * sx,
-                  top: 23 * sy,
-                  child: SlidingPill(
-                    typeIndex: _typeIndex,
-                    sx: sx,
-                    sy: sy,
-                    onTap: (index) {
-                      setState(() {
-                        _typeIndex = index;
-                        _selectedCategory = null;
-                        _selectedToWallet = null;
-                        _titleController.clear();
-                        _filterTransferKey = UniqueKey();
-                      });
-                    },
+                return Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: const ShapeDecoration(
+                    gradient: AppColors.primaryGradient,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(25),
+                        topRight: Radius.circular(25),
+                      ),
+                    ),
                   ),
-                ),
+                  child: Stack(
+                    children: [
+                      // 1. Top Action Buttons (Back & Camera Scan)
+                      TopActionButtons(
+                        sx: sx,
+                        sy: sy,
+                        onBack: () => Navigator.of(context).pop(),
+                        onCamera: () => controller.openScanPage(context),
+                      ),
 
-                // ── Tampilan jumlah uang ──
-                Positioned(
-                  left: 40 * sx,
-                  right: 90 * sx,
-                  top: 110 * sy,
-                  child: AmountDisplay(
-                    rawAmount: _amountController.text,
-                    sx: sx,
-                    sy: sy,
-                  ),
-                ),
+                      // 2. Sliding Tab
+                      Positioned(
+                        left: 70 * sx,
+                        right: 16 * sx,
+                        top: 23 * sy,
+                        child: SlidingPill(
+                          typeIndex: controller.typeIndex,
+                          sx: sx,
+                          sy: sy,
+                          onTap: (index) => controller.setTypeIndex(index),
+                        ),
+                      ),
 
-                // ── Panel putih bawah (kategori, wallet, numpad) ──
-                // ── Panel putih bawah (kategori, wallet, numpad) ──
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 220 * sy,
-                  bottom: 0,
-                  child: AddBottomPanel(
-                    typeIndex: _typeIndex,
-                    walletOptions: walletOptions,
-                    selectedWallet: _selectedWallet,
-                    filterTransferKey: _filterTransferKey,
-                    selectedToWallet: _selectedToWallet,
-                    excludeWallet: _typeIndex == 2 ? _selectedToWallet : null,
-                    walletError: _walletError,
-                    walletShakeController: _walletShakeController,
-                    titleController: _titleController,
-                    titleEnabled: _typeIndex != 2 &&
-                        _selectedCategory == 'More',
-                    sx: sx,
-                    sy: sy,
-                    safeBottom: safeBottom,
-                    // Menghubungkan callback interaksi ke state di parent
-                    onCategorySelected: (val) =>
-                        setState(() {
-                          if (_selectedCategory == 'More' && val != 'More') {
-                            _titleController.clear();
-                          }
-                          _selectedCategory = val;
-                        }),
-                    onWalletSelected: (walletOption) =>
-                        setState(() {
-                          _selectedToWallet = walletOption.name;
-                          _selectedToWalletId = walletOption.id;
-                        }),
-                    onFromWalletSelected: (walletOption) =>
-                        setState(() {
-                          _selectedWallet = walletOption.name;
-                          _selectedWalletId = walletOption.id;
-                          _walletError = false;
-                          if (_selectedToWallet == walletOption.name) {
-                            _selectedToWallet = null;
-                            _selectedToWalletId = null;
-                          }
-                        }),
-                    onNumPadKeyTap: _onNumPadKeyTap,
-                    onNumPadBackspace: _onNumPadBackspace,
-                    onConfirm: _onConfirm,
+                      // 3. Amount Display
+                      Positioned(
+                        left: 40 * sx,
+                        right: 90 * sx,
+                        top: 110 * sy,
+                        child: AmountDisplay(
+                          rawAmount: controller.amountController.text,
+                          sx: sx,
+                          sy: sy,
+                        ),
+                      ),
+
+                      // 4. Bottom Panel Container (Numpad, Input, Category)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 220 * sy,
+                        bottom: 0,
+                        child: AddBottomPanel(
+                          typeIndex: controller.typeIndex,
+                          walletOptions: walletOptions,
+                          selectedWallet: controller.selectedWallet,
+                          filterTransferKey: controller.filterTransferKey,
+                          selectedToWallet: controller.selectedToWallet,
+                          excludeWallet: controller.type == TransactionType.transfer ? controller.selectedToWallet : null,
+                          walletError: controller.walletError,
+                          walletShakeController: controller.walletShakeController,
+                          titleController: controller.titleController,
+                          titleEnabled: controller.type != TransactionType.transfer && controller.selectedCategory == 'More',
+                          sx: sx,
+                          sy: sy,
+                          safeBottom: safeBottom,
+                          onCategorySelected: (val) => controller.setCategory(val),
+                          onWalletSelected: (walletOption) => controller.setToWallet(walletOption),
+                          onFromWalletSelected: (walletOption) => controller.setFromWallet(walletOption),
+                          onNumPadKeyTap: (key) => controller.onNumPadKeyTap(key),
+                          onNumPadBackspace: () => controller.onNumPadBackspace(),
+                          onConfirm: () => controller.onConfirm(context),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
           );
         },

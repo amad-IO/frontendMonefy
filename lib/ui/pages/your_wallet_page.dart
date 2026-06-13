@@ -186,18 +186,22 @@ class _YourWalletPageState extends State<YourWalletPage> {
                 const SizedBox(height: 14),
 
                 // Nominal total balance
+                // Nominal total balance
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 280),
-                  child: Text(
-                    provider.isLoading ? 'Rp 99.999.999' : balanceText,
-                    key: ValueKey(provider.isHidden),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 44,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -1.0,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      provider.isLoading ? 'Rp 99.999.999' : balanceText,
+                      key: ValueKey(provider.isHidden),
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 44,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -1.0,
+                      ),
                     ),
                   ),
                 ),

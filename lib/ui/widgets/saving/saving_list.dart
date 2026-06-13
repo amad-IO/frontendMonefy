@@ -25,7 +25,7 @@ class _SavingListState extends State<SavingList> {
 
   @override
   Widget build(BuildContext context) {
-    /// 🔥 FILTER DATA
+    /// FILTER DATA
     final savings = widget.items.where((item) {
       return item["isDone"] == isDone;
     }).toList();

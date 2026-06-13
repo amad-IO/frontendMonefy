@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:monefy/ui/widgets/saving/wallet_picker_modal.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/saving_provider.dart';
@@ -82,32 +83,12 @@ class SavingCard extends StatelessWidget {
                       : () async {
                     final token =
                     context.read<AuthProvider>().token!;
+                    context.read<WalletProvider>().loadWalletsFromApi(token);
                     final walletProvider =
                     context.read<WalletProvider>();
                     final wallets = walletProvider.wallets;
 
-                    final walletId = await showDialog<int>(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text("Pilih Wallet"),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: wallets.map((wallet) {
-                              return ListTile(
-                                title: Text(wallet.name),
-                                subtitle:
-                                Text("Rp ${wallet.balance}"),
-                                onTap: () {
-                                  Navigator.pop(context,
-                                      int.parse(wallet.id));
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        );
-                      },
-                    );
+                    final walletId = await showWalletPicker(context);
 
                     if (walletId != null) {
                       context.read<SavingProvider>().buySaving(

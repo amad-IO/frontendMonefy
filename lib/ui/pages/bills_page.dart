@@ -58,17 +58,18 @@ class _BillsPageState extends State<BillsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
+      // 1. Ganti dari AppColors.backgroundWhite menjadi ungu muda solid
+      backgroundColor: const Color(0xFFB7AEEB),
 
       body: SafeArea(
         child: Column(
           children: [
 
-            /// 🔥 HEADER (SAMA PERSIS)
+            /// 🔥 HEADER
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20),
-              color: AppColors.primaryPurple.withValues(alpha: 0.3),
+              color: Colors.transparent, // 2. Ubah dari warna ungu transparan (.withValues) ke transparent
               child: Row(
                 children: [
                   IconButton(

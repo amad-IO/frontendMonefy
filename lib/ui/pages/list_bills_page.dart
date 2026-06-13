@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../widgets/bills/list_bills.dart';
@@ -20,7 +21,9 @@ class _ListBillsPageState extends State<ListBillsPage> {
     super.initState();
 
     Future.microtask(() {
-      final token = context.read<AuthProvider>().token!;
+      final token = context
+          .read<AuthProvider>()
+          .token!;
       context.read<BillProvider>().fetchBills(token);
     });
   }
@@ -34,112 +37,108 @@ class _ListBillsPageState extends State<ListBillsPage> {
         .fold(0, (sum, item) => sum + item.amount);
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF694EDA),
-              Color(0xFF8F79ED),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+      // 1. Ubah background Scaffold menjadi ungu muda solid seperti SavingPage
+      backgroundColor: const Color(0xFFB7AEEB),
 
-        child: SafeArea(
-          child: Column(
-            children: [
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
 
-              /// HEADER (BERSIH TANPA SVG)
-              SizedBox(
-                height: 220,
+            // 2. Ubah header agar bersih & transparan dengan teks ungu tua (primaryPurple)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const Text(
+                    "Bills",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryPurple,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // 3. Masukkan Total Outstanding ke dalam kartu putih (Total Card)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              height: 90,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Total Outstanding Payment"),
+                  const SizedBox(height: 5),
+                  Text(
+                    "Rp ${totalUnpaid.toStringAsFixed(0)}",
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryPurple,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // 4. Tambahkan Subtitle "Bills List" (opsional agar sama persis)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Bills List",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryPurple,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // 5. Area List Bills
+            Expanded(
+              child: Container(
                 width: double.infinity,
-                child: Stack(
-                  children: [
-
-                    /// BACK BUTTON + TITLE
-                    Positioned(
-                      top: 20,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 20),
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: const Icon(Icons.arrow_back,
-                                color: Colors.white),
-                          ),
-                          const Spacer(),
-                          const Text(
-                            "Bills",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const Spacer(),
-                          const SizedBox(width: 40),
-                        ],
-                      ),
-                    ),
-
-                    /// TITLE TOTAL
-                    const Positioned(
-                      left: 40,
-                      top: 90,
-                      child: Text(
-                        "Total Outstanding Payment",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-
-                    /// TOTAL AMOUNT
-                    Positioned(
-                      left: 40,
-                      top: 120,
-                      child: Text(
-                        "Rp${totalUnpaid.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              /// LIST AREA
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF1F1F1),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(30),
-                    ),
-                  ),
-                  child: ListBills(
-                    onAddTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BillsPage(),
-                        ),
-                      );
-                    },
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F1F1),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(30),
                   ),
                 ),
+                child: ListBills(
+                  onAddTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BillsPage(),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

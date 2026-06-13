@@ -9,6 +9,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../providers/auth_provider.dart';
 import '../widgets/confirm_dialog.dart';
+import 'create_wallet_page.dart';
+import 'help_center_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -169,7 +171,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     svgPath: 'assets/icon/add.svg',
                     label: 'Add your wallet',
                     onTap: () {
-                      // TODO: navigate to AddWalletPage
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateWalletPage(),
+                        ),
+                      );
                     },
                   ),
 
@@ -179,7 +186,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     svgPath: 'assets/icon/question.svg',
                     label: 'Help center',
                     iconSize: 36,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HelpCenterPage(),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 140),

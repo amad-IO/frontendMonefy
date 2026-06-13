@@ -12,6 +12,7 @@ import '../../core/utils/add_page_helper.dart';
 
 import '../components/wallet_selector_popup.dart';
 import '../components/numpad.dart';
+import '../widgets/add_page/add_button_panel.dart';
 import '../widgets/add_page/sliding_pill.dart';
 import '../widgets/add_page/category_area.dart';
 import '../widgets/add_page/input_row.dart';
@@ -51,13 +52,13 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
   }
 
   String? _selectedCategory;
-  String? _selectedWallet;     // nama wallet (untuk ditampilkan)
-  String? _selectedWalletId;  // ID wallet (untuk dikirim ke backend)
-  String? _selectedToWallet;  // nama to-wallet
+  String? _selectedWallet; // nama wallet (untuk ditampilkan)
+  String? _selectedWalletId; // ID wallet (untuk dikirim ke backend)
+  String? _selectedToWallet; // nama to-wallet
   String? _selectedToWalletId; // ID to-wallet
 
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _titleController  = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
 
   late final AnimationController _walletShakeController;
   bool _walletError = false;
@@ -79,10 +80,10 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
         break;
     }
     return WalletOption(
-      name:     w.name,
-      icon:     icon,
-      balance:  w.balance,
-      id:       w.id,
+      name: w.name,
+      icon: icon,
+      balance: w.balance,
+      id: w.id,
       gradient: w.theme.cardGradient, // ← warna sesuai kartu di Your Wallet
     );
   }
@@ -110,12 +111,12 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       _typeIndex = t.type == TransactionType.income
           ? 0
           : t.type == TransactionType.expense
-              ? 1
-              : 2;
-      _selectedCategory  = t.category;
-      _selectedWallet    = t.walletName.isEmpty ? null : t.walletName;
-      _selectedWalletId  = t.walletId.isEmpty ? null : t.walletId;
-      _selectedToWallet  = t.toWalletName.isEmpty ? null : t.toWalletName;
+          ? 1
+          : 2;
+      _selectedCategory = t.category;
+      _selectedWallet = t.walletName.isEmpty ? null : t.walletName;
+      _selectedWalletId = t.walletId.isEmpty ? null : t.walletId;
+      _selectedToWallet = t.toWalletName.isEmpty ? null : t.toWalletName;
       _selectedToWalletId = t.toWalletId.isEmpty ? null : t.toWalletId;
       _amountController.text = t.amount == t.amount.truncateToDouble()
           ? t.amount.toInt().toString()
@@ -140,11 +141,13 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     final current = _amountController.text;
     if (key == '.') {
       if (current.contains('.')) return;
-      setState(() => _amountController.text = current.isEmpty ? '0.' : '$current.');
+      setState(() =>
+      _amountController.text = current.isEmpty ? '0.' : '$current.');
       return;
     }
     if (key == '000') {
-      setState(() => _amountController.text = current.isEmpty ? '0' : '$current$key');
+      setState(() =>
+      _amountController.text = current.isEmpty ? '0' : '$current$key');
       return;
     }
     if (current == '0') {
@@ -185,7 +188,8 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
           if (mounted) setState(() => _walletError = false);
         });
       }
-      _showSnackBar(validationError, AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBar(
+          validationError, AppColors.error, Icons.warning_amber_rounded);
       return;
     }
 
@@ -201,28 +205,31 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     );
 
     // 3. Capture referensi sebelum async
-    final provider       = context.read<TransactionProvider>();
+    final provider = context.read<TransactionProvider>();
     final walletProvider = context.read<WalletProvider>();
-    final navigator      = Navigator.of(context);
-    final messenger      = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null || token.isEmpty) {
       if (!mounted) return;
-      _showSnackBar('Token tidak ditemukan. Silakan login ulang.', AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBar(
+          'Token tidak ditemukan. Silakan login ulang.', AppColors.error,
+          Icons.warning_amber_rounded);
       return;
     }
 
     // 4A. Mode Edit
     if (_isEditMode) {
       final updated = widget.editTransaction!.copyWith(
-        category:     category,
-        title:        title,
-        amount:       amount,
-        walletName:   _selectedWallet!,
-        toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ?? '') : '',
-        type:         _type,
+        category: category,
+        title: title,
+        amount: amount,
+        walletName: _selectedWallet!,
+        toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ??
+            '') : '',
+        type: _type,
       );
 
       try {
@@ -233,7 +240,9 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
           amount: AddPageHelper.formatAmount(amount.toString()),
           category: category,
           walletName: _selectedWallet ?? '',
-          toWalletName: _type == TransactionType.transfer ? _selectedToWallet : null,
+          toWalletName: _type == TransactionType.transfer
+              ? _selectedToWallet
+              : null,
           apiWork: () => provider.updateTransactionWithApi(updated, token),
           onSuccess: () {
             navigator.pop(); // tutup AddPage
@@ -241,12 +250,15 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
             Future.wait([
               provider.loadAll(token),
               walletProvider.loadWalletsFromApi(token),
-            ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+            ]).then((_) =>
+                provider.enrichToWalletNames(walletProvider.wallets));
           },
         );
       } catch (e) {
         if (!mounted) return;
-        _showSnackBarOnMessenger(messenger, 'Gagal memperbarui transaksi.', AppColors.error, Icons.warning_amber_rounded);
+        _showSnackBarOnMessenger(
+            messenger, 'Gagal memperbarui transaksi.', AppColors.error,
+            Icons.warning_amber_rounded);
       }
       return;
     }
@@ -255,19 +267,25 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     final walletId = _selectedWalletId ?? '';
     if (walletId.isEmpty) {
       if (!mounted) return;
-      _showSnackBarOnMessenger(messenger, 'Wallet tidak valid. Silakan pilih wallet.', AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBarOnMessenger(
+          messenger, 'Wallet tidak valid. Silakan pilih wallet.',
+          AppColors.error, Icons.warning_amber_rounded);
       return;
     }
 
     final transaction = TransactionModel(
-      id:           DateTime.now().millisecondsSinceEpoch.toString(),
-      category:     category,
-      title:        title,
-      amount:       amount,
-      date:         DateTime.now(),
-      walletName:   _selectedWallet!,
-      toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ?? '') : '',
-      type:         _type,
+      id: DateTime
+          .now()
+          .millisecondsSinceEpoch
+          .toString(),
+      category: category,
+      title: title,
+      amount: amount,
+      date: DateTime.now(),
+      walletName: _selectedWallet!,
+      toWalletName: _type == TransactionType.transfer ? (_selectedToWallet ??
+          '') : '',
+      type: _type,
     );
 
     try {
@@ -278,13 +296,16 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
         amount: AddPageHelper.formatAmount(amount.toString()),
         category: category,
         walletName: _selectedWallet ?? '',
-        toWalletName: _type == TransactionType.transfer ? _selectedToWallet : null,
-        apiWork: () => provider.addTransactionWithApi(
-          transaction,
-          token,
-          walletId: walletId,
-          toWalletId: _selectedToWalletId,
-        ),
+        toWalletName: _type == TransactionType.transfer
+            ? _selectedToWallet
+            : null,
+        apiWork: () =>
+            provider.addTransactionWithApi(
+              transaction,
+              token,
+              walletId: walletId,
+              toWalletId: _selectedToWalletId,
+            ),
         onSuccess: () {
           navigator.pop(); // tutup AddPage
           // Refresh di background → skeleton muncul di HomePage
@@ -296,7 +317,9 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
       );
     } catch (e) {
       if (!mounted) return;
-      _showSnackBarOnMessenger(messenger, 'Gagal menyimpan transaksi.', AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBarOnMessenger(
+          messenger, 'Gagal menyimpan transaksi.', AppColors.error,
+          Icons.warning_amber_rounded);
     }
   }
 
@@ -305,15 +328,14 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
   // ────────────────────────────────────────────
 
   void _showSnackBar(String message, Color color, IconData icon) {
-    _showSnackBarOnMessenger(ScaffoldMessenger.of(context), message, color, icon);
+    _showSnackBarOnMessenger(
+        ScaffoldMessenger.of(context), message, color, icon);
   }
 
-  void _showSnackBarOnMessenger(
-    ScaffoldMessengerState messenger,
-    String message,
-    Color color,
-    IconData icon,
-  ) {
+  void _showSnackBarOnMessenger(ScaffoldMessengerState messenger,
+      String message,
+      Color color,
+      IconData icon,) {
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
@@ -324,7 +346,8 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    fontFamily: 'Nunito', fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -387,7 +410,8 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
             ),
             backgroundColor: AppColors.primaryPurple,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             duration: const Duration(seconds: 4),
           ),
@@ -401,8 +425,15 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final safeBottom = MediaQuery.of(context).padding.bottom;
-    final walletOptions = context.watch<WalletProvider>().wallets.map(_toWalletOption).toList();
+    final safeBottom = MediaQuery
+        .of(context)
+        .padding
+        .bottom;
+    final walletOptions = context
+        .watch<WalletProvider>()
+        .wallets
+        .map(_toWalletOption)
+        .toList();
 
     return FractionallySizedBox(
       heightFactor: 0.86,
@@ -466,120 +497,59 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
                 ),
 
                 // ── Panel putih bawah (kategori, wallet, numpad) ──
+                // ── Panel putih bawah (kategori, wallet, numpad) ──
                 Positioned(
                   left: 0,
                   right: 0,
                   top: 220 * sy,
                   bottom: 0,
-                  child: _buildBottomPanel(
+                  child: AddBottomPanel(
+                    typeIndex: _typeIndex,
+                    walletOptions: walletOptions,
+                    selectedWallet: _selectedWallet,
+                    filterTransferKey: _filterTransferKey,
+                    selectedToWallet: _selectedToWallet,
+                    excludeWallet: _typeIndex == 2 ? _selectedToWallet : null,
+                    walletError: _walletError,
+                    walletShakeController: _walletShakeController,
+                    titleController: _titleController,
+                    titleEnabled: _typeIndex != 2 &&
+                        _selectedCategory == 'More',
                     sx: sx,
                     sy: sy,
                     safeBottom: safeBottom,
-                    walletOptions: walletOptions,
+                    // Menghubungkan callback interaksi ke state di parent
+                    onCategorySelected: (val) =>
+                        setState(() {
+                          if (_selectedCategory == 'More' && val != 'More') {
+                            _titleController.clear();
+                          }
+                          _selectedCategory = val;
+                        }),
+                    onWalletSelected: (walletOption) =>
+                        setState(() {
+                          _selectedToWallet = walletOption.name;
+                          _selectedToWalletId = walletOption.id;
+                        }),
+                    onFromWalletSelected: (walletOption) =>
+                        setState(() {
+                          _selectedWallet = walletOption.name;
+                          _selectedWalletId = walletOption.id;
+                          _walletError = false;
+                          if (_selectedToWallet == walletOption.name) {
+                            _selectedToWallet = null;
+                            _selectedToWalletId = null;
+                          }
+                        }),
+                    onNumPadKeyTap: _onNumPadKeyTap,
+                    onNumPadBackspace: _onNumPadBackspace,
+                    onConfirm: _onConfirm,
                   ),
                 ),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildBottomPanel({
-    required double sx,
-    required double sy,
-    required double safeBottom,
-    required List<WalletOption> walletOptions,
-  }) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: const ShapeDecoration(
-        color: AppColors.backgroundWhite,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-        ),
-      ),
-      child: Column(
-        children: [
-          SizedBox(height: 24 * sy),
-
-          // Area pilih kategori / transfer
-          CategoryArea(
-            typeIndex: _typeIndex,
-            walletOptions: walletOptions,
-            selectedWallet: _selectedWallet,
-            filterTransferKey: _filterTransferKey,
-            onCategorySelected: (val) => setState(() {
-                  // Jika ganti dari More ke kategori lain, bersihkan title
-                  if (_selectedCategory == 'More' && val != 'More') {
-                    _titleController.clear();
-                  }
-                  _selectedCategory = val;
-                }),
-            onWalletSelected: (walletOption) => setState(() {
-              _selectedToWallet   = walletOption.name;
-              _selectedToWalletId = walletOption.id;
-            }),
-            sx: sx,
-            sy: sy,
-          ),
-
-          SizedBox(height: 24 * sy),
-
-          // Input title & pilih wallet
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 30 * sx),
-            child: SizedBox(
-              height: 40 * sy,
-              child: InputRow(
-                titleController:       _titleController,
-                selectedWallet:        _selectedWallet,
-                wallets:               walletOptions,
-                titleEnabled: _typeIndex != 2 && _selectedCategory == 'More',
-                walletError:           _walletError,
-                walletShakeController: _walletShakeController,
-                // Saat Transfer: sembunyikan To Wallet dari From selector
-                excludeWallet: _typeIndex == 2 ? _selectedToWallet : null,
-                onWalletSelected: (walletOption) {
-                  setState(() {
-                    _selectedWallet   = walletOption.name;
-                    _selectedWalletId = walletOption.id;
-                    _walletError      = false;
-                    // Safety: reset To Wallet jika kebetulan sama
-                    if (_selectedToWallet == walletOption.name) {
-                      _selectedToWallet   = null;
-                      _selectedToWalletId = null;
-                    }
-                  });
-                },
-                sx: sx,
-                sy: sy,
-              ),
-            ),
-          ),
-
-          SizedBox(height: 24 * sy),
-
-          // NumPad
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: 30 * sx,
-                right: 30 * sx,
-                bottom: safeBottom + (12 * sy),
-              ),
-              child: NumPad(
-                onKeyTap:  _onNumPadKeyTap,
-                onBackspace: _onNumPadBackspace,
-                onConfirm: _onConfirm,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

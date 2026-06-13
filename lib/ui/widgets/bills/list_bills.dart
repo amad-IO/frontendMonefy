@@ -6,6 +6,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/bill_provider.dart';
 import 'bill_card.dart';
 import 'bill_detail_modal.dart';
+import '../loading_spinner.dart';
 
 class ListBills extends StatefulWidget {
   final VoidCallback? onAddTap;
@@ -169,7 +170,7 @@ class _ListBillsState extends State<ListBills> {
 
               /// LOADING
               if (provider.isLoading)
-                const Center(child: CircularProgressIndicator()),
+                const LoadingSpinner(), // ✅ Menggunakan spinner kustom Anda
 
               /// EMPTY STATE
               if (!provider.isLoading && bills.isEmpty)
@@ -178,37 +179,34 @@ class _ListBillsState extends State<ListBills> {
                 ),
 
               /// LIST DATA
-              ...bills.map((bill) {
-                return BillCard(
-                  title: bill.provider,
-                  amount: "Rp${bill.amount}",
-                  isPaid: bill.status.toLowerCase() == "paid",
-
-                  /// klik card → modal
-                  onTap: () {
-                    showBillDetailModal(
-                      context,
-                      {
-                        "id": bill.id,
-                        "name": bill.provider,
-                        "account": bill.accountNumber,
-                        "amount": bill.amount,
-                        "due_date": bill.dueDate,
-                        "cycle": bill.cycle,
-                        "status": bill.status,
-                      },
-                    );
-                  },
-
-                  onPay: () async {
-                    await context.read<BillProvider>().payBill(bill.id, token);
-
-                    setState(() {
-                      isUnpaid = false;
-                    });
-                  },
-                );
-              }).toList(),
+              if (!provider.isLoading) // ✅ Hanya tampilkan data jika TIDAK sedang loading
+                ...bills.map((bill) {
+                  return BillCard(
+                    title: bill.provider,
+                    amount: "Rp${bill.amount}",
+                    isPaid: bill.status.toLowerCase() == "paid",
+                    onTap: () {
+                      showBillDetailModal(
+                        context,
+                        {
+                          "id": bill.id,
+                          "name": bill.provider,
+                          "account": bill.accountNumber,
+                          "amount": bill.amount,
+                          "due_date": bill.dueDate,
+                          "cycle": bill.cycle,
+                          "status": bill.status,
+                        },
+                      );
+                    },
+                    onPay: () async {
+                      await context.read<BillProvider>().payBill(bill.id, token);
+                      setState(() {
+                        isUnpaid = false;
+                      });
+                    },
+                  );
+                }).toList(),
 
               const SizedBox(height: 20),
             ],

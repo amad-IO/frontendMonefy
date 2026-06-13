@@ -47,23 +47,10 @@ class TopActionButtons extends StatelessWidget {
           ),
         ),
 
-        // MIC BUTTON
-        Positioned(
-          right: 16 * sx,
-          top: 90 * sy,
-          child: GlassCircleButton(
-            size: 44,
-            sx: sx,
-            sy: sy,
-            onTap: onMic,
-            child: Icon(Icons.mic_rounded, color: Colors.white, size: 22 * sx),
-          ),
-        ),
-
         // CAMERA / SCAN BUTTON
         Positioned(
           right: 16 * sx,
-          top: 142 * sy,
+          top: 120 * sy,
           child: GlassCircleButton(
             size: 44,
             sx: sx,

@@ -60,15 +60,15 @@ class WalletProvider extends ChangeNotifier {
           final e = entry.value as Map<String, dynamic>;
           // Inject theme_index agar WalletModel.fromJson() bisa assign tema
           e['theme_index'] = idx % WalletTheme.all.length;
-          return WalletModel.fromJson(e); // ✅ category dibaca dari field 'category' backend
+          return WalletModel.fromJson(e);
         }).toList();
       } else {
         _error = 'Gagal load wallet: ${response.statusCode}';
-        debugPrint('❌ loadWalletsFromApi: ${response.statusCode} ${response.body}');
+        debugPrint('loadWalletsFromApi: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ loadWalletsFromApi error: $e');
+      debugPrint('loadWalletsFromApi error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -145,7 +145,7 @@ class WalletProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ addWalletToBackend error: $e');
+      debugPrint('addWalletToBackend error: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -193,7 +193,7 @@ class WalletProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ updateWalletApi error: $e');
+      debugPrint('updateWalletApi error: $e');
       return false;
     } finally {
       _isLoading = false;
@@ -233,7 +233,7 @@ class WalletProvider extends ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ deleteWalletApi error: $e');
+      debugPrint('deleteWalletApi error: $e');
       return false;
     } finally {
       _isLoading = false;

@@ -5,14 +5,14 @@ import '../config/app_config.dart';
 class ApiService {
   static const String baseUrl = AppConfig.baseUrl;
 
-  /// 🔐 AUTH HEADER
+  /// AUTH HEADER
   static Map<String, String> _authHeaders(String token) => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'Authorization': 'Bearer $token',
   };
 
-  // ================= TRANSACTIONS =================
+  // = TRANSACTIONS =
 
   Future<List<dynamic>> getTransactions(String token) async {
     try {
@@ -73,7 +73,7 @@ class ApiService {
     }
   }
 
-  // ================= 💳 BILLS =================
+  // =BILLS=
 
   /// GET ALL BILLS
   Future<List<dynamic>> getBills(String token) async {
@@ -145,7 +145,7 @@ class ApiService {
     }
   }
 
-  // ================= AUTH =================
+  // =AUTH=
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {

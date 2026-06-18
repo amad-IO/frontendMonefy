@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../components/currency_formatter.dart';
 
 class BillsInput extends StatefulWidget {
   final TextEditingController billNameController;
@@ -81,6 +84,7 @@ class _BillsInputState extends State<BillsInput> {
             hint: "e.g., 100000",
             controller: widget.amountController,
             isNumber: true,
+            inputFormatters: [ThousandsSeparatorInputFormatter()],
           ),
 
           /// DUE DATE
@@ -146,6 +150,7 @@ class _BillsInputState extends State<BillsInput> {
     bool isNumber = false,
     VoidCallback? onTap,
     Widget? suffix,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,6 +182,7 @@ class _BillsInputState extends State<BillsInput> {
             onTap: onTap,
             keyboardType:
             isNumber ? TextInputType.number : TextInputType.text,
+            inputFormatters: inputFormatters,
             decoration: InputDecoration(
               hintText: hint,
               border: InputBorder.none,

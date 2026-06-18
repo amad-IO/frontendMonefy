@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/saving_provider.dart';
 import '../../../providers/wallet_provider.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class SavingCard extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -69,7 +70,7 @@ class SavingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  "Rp${item["target"]}",
+                  rupiahFormatter.format(item["target"]),
                   style: const TextStyle(
                     color: Color(0xFF694EDA),
                     fontWeight: FontWeight.bold,

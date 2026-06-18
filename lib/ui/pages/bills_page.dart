@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../widgets/bills/bills_input.dart';
+import 'package:intl/intl.dart';
 
 class BillsPage extends StatefulWidget {
   const BillsPage({super.key});
@@ -44,7 +45,7 @@ class _BillsPageState extends State<BillsPage> {
     await context.read<BillProvider>().addBill({
       "provider": billNameController.text,
       "account_number": accountController.text,
-      "amount": double.tryParse(amountController.text) ?? 0,
+      "amount": double.tryParse(amountController.text.replaceAll('.', '')) ?? 0,
       "due_date": dueDateController.text,
       "cycle": billingCycle ?? "Bulanan",
     }, token);
@@ -92,7 +93,7 @@ class _BillsPageState extends State<BillsPage> {
               ),
             ),
 
-            /// 🔥 BODY (INI YANG KAMU MAU)
+            /// BODY (INI YANG KAMU MAU)
             Expanded(
               child: Container(
                 width: double.infinity,

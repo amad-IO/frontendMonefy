@@ -4,9 +4,10 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/saving_provider.dart';
-import '../../providers/wallet_provider.dart'; // ✅ TAMBAHAN
+import '../../providers/wallet_provider.dart';
 import '../widgets/saving/saving_list.dart';
 import '../widgets/saving/create_saving_modal.dart';
+import 'package:intl/intl.dart';
 
 class SavingPage extends StatefulWidget {
   const SavingPage({super.key});
@@ -109,7 +110,7 @@ class _SavingPageState extends State<SavingPage> {
                         const Text("Total Wishlist"),
                         const SizedBox(height: 5),
                         Text(
-                          "Rp $total",
+                          "Rp ${NumberFormat('#,##0', 'id_ID').format(total)}",
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,

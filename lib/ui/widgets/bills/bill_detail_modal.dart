@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/bill_provider.dart';
-import '../loading_spinner.dart'; // ✅ Langkah 1: Import spinner kustom Anda
+import '../../components/currency_formatter.dart';
+import '../loading_spinner.dart';
 
 void showBillDetailModal(
     BuildContext context,
@@ -13,8 +16,10 @@ void showBillDetailModal(
   final nameController = TextEditingController(text: item["name"]);
   final accountController =
   TextEditingController(text: item["account"]);
-  final amountController =
-  TextEditingController(text: item["amount"].toString());
+
+  final double rawAmount = double.tryParse(item["amount"].toString()) ?? 0;
+  final String formattedAmount = NumberFormat('#,##0', 'id_ID').format(rawAmount).replaceAll(',', '.');
+  final amountController = TextEditingController(text: formattedAmount);
 
   // Potong teks tanggal agar hanya menampilkan "YYYY-MM-DD"
   final String rawDate = item["due_date"] ?? "";
@@ -34,7 +39,7 @@ void showBillDetailModal(
     selectedCycle = "Bulanan";
   }
 
-  bool isLoading = false; // ✅ Langkah 2: Tambahkan state loading
+  bool isLoading = false;
 
   showModalBottomSheet(
     context: context,
@@ -53,13 +58,13 @@ void showBillDetailModal(
                   top: Radius.circular(25),
                 ),
               ),
-              child: Stack( // ✅ Langkah 4: Bungkus dengan Stack
+              child: Stack(
                 children: [
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// DRAG HANDLE (Tetap diam di atas)
+                      /// DRAG HANDLE
                       Center(
                         child: Container(
                           width: 40,
@@ -96,7 +101,12 @@ void showBillDetailModal(
                               _field("Account Number", accountController, isNumber: true),
 
                               /// AMOUNT
-                              _field("Amount", amountController, isNumber: true),
+                              _field(
+                                "Amount",
+                                amountController,
+                                isNumber: true,
+                                inputFormatters: [ThousandsSeparatorInputFormatter()],
+                              ),
 
                               /// DATE
                               _field(
@@ -152,7 +162,7 @@ void showBillDetailModal(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                   ),
-                                  onPressed: isLoading // ✅ Langkah 3: Ubah aksi tombol update
+                                  onPressed: isLoading
                                       ? null
                                       : () async {
                                     setState(() => isLoading = true);
@@ -161,9 +171,9 @@ void showBillDetailModal(
                                       await context.read<BillProvider>().updateBill(
                                         item["id"],
                                         {
-                                          "provider": nameController.text, // ✅ Diubah menjadi "provider"
-                                          "account_number": accountController.text, // ✅ Diubah menjadi "account_number"
-                                          "amount": double.tryParse(amountController.text) ?? 0, // ✅ Gunakan double agar aman
+                                          "provider": nameController.text,
+                                          "account_number": accountController.text,
+                                          "amount": double.tryParse(amountController.text.replaceAll('.', '')) ?? 0,
                                           "due_date": dueDateController.text,
                                           "cycle": selectedCycle,
                                         },
@@ -192,7 +202,7 @@ void showBillDetailModal(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                   ),
-                                  onPressed: isLoading // ✅ Langkah 3: Ubah aksi tombol delete
+                                  onPressed: isLoading
                                       ? null
                                       : () async {
                                     setState(() => isLoading = true);
@@ -218,7 +228,6 @@ void showBillDetailModal(
                     ],
                   ),
 
-                  // ✅ Langkah 4: Overlay Loading Spinner kustom Anda di atas form
                   if (isLoading)
                     Positioned.fill(
                       child: Container(
@@ -242,6 +251,7 @@ Widget _field(
     TextEditingController controller, {
       bool isNumber = false,
       VoidCallback? onTap,
+      List<TextInputFormatter>? inputFormatters,
     }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,6 +265,7 @@ Widget _field(
         onTap: onTap,
         keyboardType:
         isNumber ? TextInputType.number : TextInputType.text,
+        inputFormatters: inputFormatters,
         decoration: InputDecoration(
           filled: true,
           fillColor: const Color(0xFFF1F1F1),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // ✅ TAMBAHAN
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../components/currency_formatter.dart';
 
 void showCreateSavingModal(
     BuildContext context,
@@ -79,11 +82,15 @@ void showCreateSavingModal(
                         const SizedBox(height: 6),
 
                         TextFormField(
-                          controller: nameController,
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            ThousandsSeparatorInputFormatter(),
+                          ],
                           validator: (v) =>
                           v == null || v.isEmpty ? "Tidak boleh kosong" : null,
                           decoration: InputDecoration(
-                            hintText: "e.g., Beli Laptop",
+                            hintText: "e.g., 5.000.000",
                             filled: true,
                             fillColor: const Color(0xFFF6F7FB),
                             border: OutlineInputBorder(

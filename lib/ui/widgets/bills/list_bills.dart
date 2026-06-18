@@ -7,6 +7,7 @@ import '../../../providers/bill_provider.dart';
 import 'bill_card.dart';
 import 'bill_detail_modal.dart';
 import '../loading_spinner.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class ListBills extends StatefulWidget {
   final VoidCallback? onAddTap;
@@ -183,7 +184,7 @@ class _ListBillsState extends State<ListBills> {
                 ...bills.map((bill) {
                   return BillCard(
                     title: bill.provider,
-                    amount: "Rp${bill.amount}",
+                    amount: rupiahFormatter.format(bill.amount),
                     isPaid: bill.status.toLowerCase() == "paid",
                     onTap: () {
                       showBillDetailModal(

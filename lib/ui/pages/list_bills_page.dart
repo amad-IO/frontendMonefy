@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -88,7 +89,7 @@ class _ListBillsPageState extends State<ListBillsPage> {
                   const Text("Total Outstanding Payment"),
                   const SizedBox(height: 5),
                   Text(
-                    "Rp ${totalUnpaid.toStringAsFixed(0)}",
+                    "Rp ${NumberFormat('#,##0', 'id_ID').format(totalUnpaid)}",
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

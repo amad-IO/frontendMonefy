@@ -127,6 +127,23 @@ class AppColors {
   static const confettiYellow = Color(0xFFF5C842);
   static const confettiRed    = Color(0xFFE74C6F);
   static const confettiBlue   = Color(0xFF3B82F6);
+
+  // ── Bills ──────────────────────────────────────────────────
+  /// Warna teks nominal bills di history card (teal-cyan)
+  static const billsColor     = Color(0xFF0891B2);
+
+  /// Background badge/icon bills di history card
+  static const billsBg        = Color(0xFFE0F7FA);
+
+  /// Gradient icon bubble bills di history card
+  static const LinearGradient billsGradient = LinearGradient(
+    colors: [Color(0xFF06B6D4), Color(0xFF0E7490)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  /// Warna ring/pulse bills (untuk animasi popup)
+  static const billsRingColor = Color(0xFF06B6D4);
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -16,8 +16,13 @@ import '../widgets/add_page/top_action_buttons.dart';
 
 class AddPage extends StatefulWidget {
   final TransactionModel? editTransaction;
+  final Map<String, dynamic>? billData;
 
-  const AddPage({super.key, this.editTransaction});
+  const AddPage({
+    super.key,
+    this.editTransaction,
+    this.billData,
+  });
 
   @override
   State<AddPage> createState() => _AddPageState();
@@ -32,6 +37,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     // ✅ Inisialisasi controller di initState
     _controller = AddPageController(
       editTransaction: widget.editTransaction,
+      billData: widget.billData,
       vsync: this,
     );
   }

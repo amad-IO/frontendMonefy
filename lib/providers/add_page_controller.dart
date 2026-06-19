@@ -7,6 +7,7 @@ import '../../core/utils/add_page_helper.dart';
 import '../../data/models/scan_result.dart';
 import '../../data/models/transaction_model.dart';
 import '../../data/models/wallet_model.dart';
+import '../../providers/bill_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '../ui/components/wallet_selector_popup.dart';
@@ -17,7 +18,14 @@ class AddPageController extends ChangeNotifier {
   final TransactionModel? editTransaction;
   final TickerProvider vsync;
 
-  AddPageController({this.editTransaction, required this.vsync}) {
+  /// Data bills jika dibuka dari Pay Now (opsional)
+  final Map<String, dynamic>? billData;
+
+  AddPageController({
+    this.editTransaction,
+    this.billData,
+    required this.vsync,
+  }) {
     _init();
   }
 
@@ -92,6 +100,17 @@ class AddPageController extends ChangeNotifier {
           ? t.amount.toInt().toString()
           : t.amount.toString();
       titleController.text = t.title;
+    }
+
+    // Pre-fill dari bills (Pay Now flow)
+    if (billData != null && !isEditMode) {
+      _typeIndex = 1; // Expense
+      _selectedCategory = 'More';
+      final amount = billData!['amount'];
+      amountController.text = (amount is double)
+          ? amount.toInt().toString()
+          : amount.toString();
+      titleController.text = 'Bills: ${billData!["provider"] ?? ""}';
     }
   }
 
@@ -300,12 +319,38 @@ class AddPageController extends ChangeNotifier {
           walletId: walletId,
           toWalletId: _selectedToWalletId,
         ),
-        onSuccess: () {
-          navigator.pop();
-          Future.wait([
-            provider.loadAll(token),
-            walletProvider.loadWalletsFromApi(token),
-          ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+        onSuccess: () async {
+          // Jika dari Pay Now Bills → kembali ke Home dulu, lalu tandai paid
+          if (billData != null) {
+            final billId = billData!['id'] as int?;
+
+            // ✅ Capture provider SEBELUM context menjadi invalid
+            BillProvider? billProvider;
+            if (billId != null && context.mounted) {
+              billProvider = context.read<BillProvider>();
+            }
+
+            // ✅ Load ulang transaksi & wallet
+            await Future.wait([
+              provider.loadAll(token),
+              walletProvider.loadWalletsFromApi(token),
+            ]);
+            provider.enrichToWalletNames(walletProvider.wallets);
+
+            // ✅ Pop ke Home/Dashboard
+            navigator.popUntil((route) => route.isFirst);
+
+            // ✅ Tandai bill sebagai paid setelah pop (async, tidak butuh context)
+            if (billId != null && billProvider != null) {
+              await billProvider.payBill(billId, token);
+            }
+          } else {
+            navigator.pop();
+            Future.wait([
+              provider.loadAll(token),
+              walletProvider.loadWalletsFromApi(token),
+            ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+          }
         },
       );
     } catch (e) {

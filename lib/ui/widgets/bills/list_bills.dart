@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../providers/bill_provider.dart';
+import '../../pages/add_page.dart';
 import 'bill_card.dart';
 import 'bill_detail_modal.dart';
 import '../loading_spinner.dart';
@@ -200,11 +201,21 @@ class _ListBillsState extends State<ListBills> {
                         },
                       );
                     },
-                    onPay: () async {
-                      await context.read<BillProvider>().payBill(bill.id, token);
-                      setState(() {
-                        isUnpaid = false;
-                      });
+                    onPay: () {
+                      // Buka AddPage sebagai bottom sheet (sesuai pola app)
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => AddPage(
+                          billData: {
+                            'id': bill.id,
+                            'provider': bill.provider,
+                            'amount': bill.amount,
+                            'cycle': bill.cycle,
+                          },
+                        ),
+                      );
                     },
                   );
                 }).toList(),

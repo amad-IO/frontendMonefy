@@ -12,6 +12,8 @@ class CardHistory extends StatelessWidget {
     required this.transaction,
   });
 
+  /// Deteksi apakah transaksi ini berasal dari pembayaran bills
+  bool get _isBills => transaction.title.toLowerCase().startsWith('bills:');
 
   String get _formattedAmount {
     final formatter = NumberFormat('#,##0', 'id_ID');
@@ -28,6 +30,7 @@ class CardHistory extends StatelessWidget {
   }
 
   Color get _amountColor {
+    if (_isBills) return AppColors.billsColor;
     switch (transaction.type) {
       case TransactionType.income:
         return AppColors.incomeGreen;
@@ -40,6 +43,12 @@ class CardHistory extends StatelessWidget {
 
   /// BoxDecoration gradient untuk semua tipe transaksi
   BoxDecoration get _iconDecoration {
+    if (_isBills) {
+      return const BoxDecoration(
+        gradient: AppColors.billsGradient,
+        shape: BoxShape.circle,
+      );
+    }
     final LinearGradient gradient;
     switch (transaction.type) {
       case TransactionType.income:
@@ -56,6 +65,7 @@ class CardHistory extends StatelessWidget {
   }
 
   IconData get _historyIcon {
+    if (_isBills) return Icons.receipt_long_rounded;
     switch (transaction.type) {
       case TransactionType.income:
         return Icons.arrow_downward_rounded;

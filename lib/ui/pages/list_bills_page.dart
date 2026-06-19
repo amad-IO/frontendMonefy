@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../data/services/notification_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../widgets/bills/list_bills.dart';
@@ -65,6 +66,28 @@ class _ListBillsPageState extends State<ListBillsPage> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryPurple,
+                    ),
+                  ),
+                  // 🔔 TOMBOL TEST NOTIFIKASI
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.notifications_active_rounded,
+                          color: AppColors.primaryPurple),
+                      tooltip: 'Test Notifikasi',
+                      onPressed: () async {
+                        await NotificationService.sendTestNotification();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  '🔔 Notifikasi dikirim! Cek notification bar.'),
+                              backgroundColor: AppColors.primaryPurple,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
                     ),
                   ),
                 ],

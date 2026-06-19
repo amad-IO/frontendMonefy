@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:monefy/providers/bill_provider.dart';
 import 'package:provider/provider.dart';
+import 'data/services/notification_service.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/saving_provider.dart';
 import 'providers/auth_provider.dart';
@@ -15,6 +16,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID');
   Intl.defaultLocale = 'id_ID';
+  await NotificationService.init();
   runApp(const MonefyApp());
 }
 
@@ -74,6 +76,7 @@ class _RootPageState extends State<_RootPage> {
         txProvider.loadAll(token),
         walletProvider.loadWalletsFromApi(token),
       ]);
+
 
       // Isi toWalletName setelah keduanya selesai
       txProvider.enrichToWalletNames(walletProvider.wallets);

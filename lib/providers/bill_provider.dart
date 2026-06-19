@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/models/bill_model.dart';
 import '../data/services/bill_service.dart';
-
+import '../data/services/notification_service.dart';
 
 class BillProvider with ChangeNotifier {
   final BillService _service = BillService();
@@ -16,6 +16,24 @@ class BillProvider with ChangeNotifier {
 
     try {
       bills = await _service.getBills(token);
+
+      // ✅ JADWALKAN ALARM TAGIHAN H-2 JATUH TEMPO
+      for (var bill in bills) {
+        final dueDate = DateTime.tryParse(bill.dueDate);
+
+        if (bill.status.toLowerCase() == "unpaid" && dueDate != null) {
+          // Jika belum bayar, jadwalkan notifikasi
+          await NotificationService.scheduleBillReminder(
+            id: bill.id,
+            title: "Tagihan Mendatang ⚠️",
+            body: "Tagihan ${bill.provider} sebesar Rp ${bill.amount} akan jatuh tempo dalam 2 hari.",
+            dueDate: dueDate,
+          );
+        } else {
+          // Jika sudah dibayar (paid), batalkan notifikasinya
+          await NotificationService.cancelReminder(bill.id);
+        }
+      }
     } catch (e) {
       print("Error fetchBills: $e");
     }
@@ -63,6 +81,9 @@ class BillProvider with ChangeNotifier {
   /// 🔥 DELETE
   Future<void> deleteBill(int id, String token) async {
     try {
+      // ✅ Batalkan alarm notifikasi untuk tagihan ini saat dihapus
+      await NotificationService.cancelReminder(id);
+
       await _service.deleteBill(id, token);
       await fetchBills(token);
     } catch (e) {

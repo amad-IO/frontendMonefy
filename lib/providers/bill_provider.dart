@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models/bill_model.dart';
@@ -72,13 +71,23 @@ class BillProvider with ChangeNotifier {
 
     try {
       bills = await _service.getBills(token);
-      await _evaluateAndScheduleAll();
     } catch (e) {
       debugPrint('❌ fetchBills error: $e');
     }
 
     isLoading = false;
     notifyListeners();
+
+    // Jadwalkan notifikasi di background — TIDAK blocking UI
+    // Dipanggil tanpa await agar main thread bebas render
+    _scheduleNotifsInBackground();
+  }
+
+  /// Jalankan scheduling di background tanpa block UI.
+  void _scheduleNotifsInBackground() {
+    Future(() => _evaluateAndScheduleAll()).catchError((e) {
+      debugPrint('❌ Notif scheduling error: $e');
+    });
   }
 
   /// Evaluasi setiap bill dan schedule notif yang tepat

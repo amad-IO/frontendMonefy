@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../widgets/card_history.dart';
@@ -24,6 +25,11 @@ class _HistoryPageState extends State<HistoryPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // ── Pagination state ──────────────────────────────────────────
+  static const int _pageSize = 20;
+  int _visibleCount = _pageSize;
+  final ScrollController _scrollController = ScrollController();
+
   static const Map<TransactionFilter, String> _filterLabels = {
     TransactionFilter.day: 'Day',
     TransactionFilter.week: 'Week',
@@ -36,18 +42,34 @@ class _HistoryPageState extends State<HistoryPage> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text.toLowerCase());
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+        _visibleCount = _pageSize; // reset pagination saat search berubah
+      });
+    });
+    // Load more items saat user mendekati 200px dari bawah list
+    _scrollController.addListener(() {
+      if (_scrollController.hasClients &&
+          _scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200) {
+        // Tambah batch berikutnya saat mendekati bawah
+        setState(() => _visibleCount += _pageSize);
+      }
     });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // penting! cegah memory leak
     super.dispose();
   }
 
   void _onFilterTap(TransactionFilter filter) {
-    setState(() => _activeFilter = filter);
+    setState(() {
+      _activeFilter = filter;
+      _visibleCount = _pageSize; // reset pagination saat filter berubah
+    });
   }
 
   List<TransactionModel> _getFilteredTransactions(TransactionProvider provider) {
@@ -62,11 +84,20 @@ class _HistoryPageState extends State<HistoryPage> {
     return Alignment(x, 0);
   }
 
+  // ── Pull-to-Refresh: force fetch dari server ─────────────────
+  Future<void> _onRefresh() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) return;
+    setState(() => _visibleCount = _pageSize); // reset pagination
+    await context.read<TransactionProvider>().loadTransactions(auth.token!);
+  }
   @override
   Widget build(BuildContext context) {
     final mediaBottom = MediaQuery.of(context).padding.bottom;
-    final provider = context.watch<TransactionProvider>();
-    final filtered = _getFilteredTransactions(provider);
+    final provider    = context.watch<TransactionProvider>();
+    final filtered    = _getFilteredTransactions(provider);
+    final visibleTxs  = filtered.take(_visibleCount).toList();
+    final hasMore     = filtered.length > _visibleCount;
 
     return Scaffold(
       // ── Layer 1: Purple background ──
@@ -254,21 +285,46 @@ class _HistoryPageState extends State<HistoryPage> {
 
                   // ── Transaction list ──
                   Expanded(
-                    child: provider.isLoading
+                    child: provider.isLoading && filtered.isEmpty
                         ? _buildSkeleton()
                         : filtered.isEmpty
                             ? _EmptyState(isSearch: _searchQuery.isNotEmpty)
-                            : ListView.builder(
-                                physics: const BouncingScrollPhysics(),
-                                padding: EdgeInsets.only(
-                                  top: 4,
-                                  bottom: 120 + mediaBottom,
+                            : RefreshIndicator(
+                                onRefresh: _onRefresh,
+                                color: AppColors.primaryPurple,
+                                child: ListView.builder(
+                                  controller: _scrollController,
+                                  physics: const BouncingScrollPhysics(
+                                    parent: AlwaysScrollableScrollPhysics(),
+                                  ),
+                                  padding: EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 120 + mediaBottom,
+                                  ),
+                                  // +1 untuk loading indicator di bawah
+                                  itemCount: visibleTxs.length + (hasMore ? 1 : 0),
+                                  itemBuilder: (context, index) {
+                                    // Loading indicator di akhir list
+                                    if (index == visibleTxs.length) {
+                                      return const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 16),
+                                        child: Center(
+                                          child: SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return CardHistory(
+                                      transaction: visibleTxs[index],
+                                    );
+                                  },
                                 ),
-                                itemCount: filtered.length,
-                                itemBuilder: (context, index) {
-                                  return CardHistory(
-                                      transaction: filtered[index]);
-                                },
                               ),
                   ),
                 ],

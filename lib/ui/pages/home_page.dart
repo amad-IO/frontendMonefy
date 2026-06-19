@@ -8,15 +8,12 @@ import 'package:monefy/ui/pages/your_wallet_page.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
-import '../../providers/wallet_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../widgets/quick_access.dart';
 import '../widgets/history_section.dart';
 import '../widgets/summary_card.dart';
-import 'bills_page.dart';
 import 'list_bills_page.dart';
-import 'analytic_page.dart';
 
 class HomePage extends StatefulWidget {
   final Function(int)? onNavigate;
@@ -30,28 +27,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   TransactionFilter _activeFilter = TransactionFilter.all;
 
-  @override
-  void initState() {
-    super.initState();
-    // Load data dari backend jika token tersedia
-    Future.microtask(() async {
-      final auth = context.read<AuthProvider>();
-      if (auth.isLoggedIn) {
-        final token = auth.token!;
-        final txProvider = context.read<TransactionProvider>();
-        final walletProvider = context.read<WalletProvider>();
-
-        // Load transaksi & wallet secara paralel
-        await Future.wait([
-          txProvider.loadAll(token),
-          walletProvider.loadWalletsFromApi(token),
-        ]);
-
-        // Isi toWalletName dari daftar wallet (backend tidak eager-load destinationWallet)
-        txProvider.enrichToWalletNames(walletProvider.wallets);
-      }
-    });
-  }
+  // initState() sengaja tidak load data dari API.
+  // Data sudah di-load oleh _RootPage._checkLogin() di main.dart
+  // sebelum halaman ini dibuild. Tidak perlu fetch ulang di sini.
 
   @override
   Widget build(BuildContext context) {

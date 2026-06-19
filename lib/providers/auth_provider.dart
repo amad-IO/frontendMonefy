@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/services/auth_service.dart';
+import '../data/services/cache_service.dart';
 import '../data/models/login_request.dart';
 import '../data/models/sign_up_request.dart';
 
@@ -106,7 +107,10 @@ class AuthProvider with ChangeNotifier {
     await prefs.remove('username');
     await prefs.remove('email');
 
-    debugPrint('🔴 Logout: token cleared');
+    // Hapus semua cache Hive agar data tidak bocor ke user lain
+    await CacheService.clearAll();
+
+    debugPrint('🔴 Logout: token + cache cleared');
     notifyListeners();
   }
 }

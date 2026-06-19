@@ -5,6 +5,7 @@ import '../data/models/analytic/analytic_models.dart';
 import '../data/services/analytics_calculator.dart';
 import '../data/services/transaction_service.dart';
 import '../data/services/dashboard_service.dart';
+import '../data/services/cache_service.dart';
 
 class TransactionProvider extends ChangeNotifier {
   final TransactionService _txService = TransactionService();
@@ -14,6 +15,34 @@ class TransactionProvider extends ChangeNotifier {
   SummaryModel? _backendSummary;
   bool _isLoading = false;
   String? _error;
+
+  // Helper untuk update summary lokal secara instan (optimistic)
+  void _updateSummaryOptimistic({
+    TransactionModel? oldTx,
+    TransactionModel? newTx,
+  }) {
+    if (_backendSummary == null) return;
+    
+    double incomeDelta = 0;
+    double expenseDelta = 0;
+    
+    if (oldTx != null) {
+      if (oldTx.type == TransactionType.income) incomeDelta -= oldTx.amount;
+      if (oldTx.type == TransactionType.expense) expenseDelta -= oldTx.amount;
+    }
+    
+    if (newTx != null) {
+      if (newTx.type == TransactionType.income) incomeDelta += newTx.amount;
+      if (newTx.type == TransactionType.expense) expenseDelta += newTx.amount;
+    }
+    
+    _backendSummary = SummaryModel(
+      totalBalance: _backendSummary!.totalBalance + incomeDelta - expenseDelta,
+      totalIncome: _backendSummary!.totalIncome + incomeDelta,
+      totalExpense: _backendSummary!.totalExpense + expenseDelta,
+      filterLabel: _backendSummary!.filterLabel,
+    );
+  }
 
   // ── Getters ────────────────────────────────────────────────────
   List<TransactionModel> get transactions => List.unmodifiable(_transactions);
@@ -38,15 +67,28 @@ class TransactionProvider extends ChangeNotifier {
         totalExpense: totalExpense,
       );
 
-  // ── Load Transactions dari Backend ─────────────────────────────
-  /// Panggil GET /transactions, update state.
+  // ── Load Transactions: Cache-first, lalu background fetch ──────
+  /// Langkah 1: load dari cache lokal → UI tampil instan.
+  /// Langkah 2: fetch dari server di background → update cache.
   Future<void> loadTransactions(String token) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    // 1. Load dari cache dulu jika ada → tampil instan
+    if (CacheService.hasTransactions()) {
+      _transactions = CacheService.getTransactions();
+      _isLoading = false;
+      _error = null;
+      notifyListeners();
+    } else {
+      // Tidak ada cache → tampil loading spinner
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
+    // 2. Fetch fresh dari server (background)
     try {
-      _transactions = await _txService.getTransactions(token);
+      final fresh = await _txService.getTransactions(token);
+      _transactions = fresh;
+      await CacheService.saveTransactions(fresh); // update cache
     } catch (e) {
       _error = e.toString();
       debugPrint('❌ loadTransactions error: $e');
@@ -100,29 +142,58 @@ class TransactionProvider extends ChangeNotifier {
     if (changed) notifyListeners();
   }
 
-  // ── Add Transaction via API ─────────────────────────────────────
+  // ── Add Transaction via API (Optimistic Update) ────────────────
+  /// Strategi:
+  /// 1. Tambah ke list lokal + cache LANGSUNG (optimistic)
+  /// 2. POST ke server di background
+  /// 3. Jika sukses → fetch ulang untuk dapat ID asli + balance update
+  /// 4. Jika gagal → rollback list + cache + lempar error ke UI
   Future<void> addTransactionWithApi(
     TransactionModel transaction,
     String token, {
     required String walletId,
     String? toWalletId,
   }) async {
-    await _txService.addTransaction(
-      token: token,
-      walletId: walletId,
-      toWalletId: toWalletId,
-      title: transaction.title.isEmpty ? transaction.category : transaction.title,
-      amount: transaction.amount,
-      type: transaction.type.name,
-      category: transaction.category,
-      date: '${transaction.date.year.toString().padLeft(4, '0')}-'
-            '${transaction.date.month.toString().padLeft(2, '0')}-'
-            '${transaction.date.day.toString().padLeft(2, '0')}',
-      note: transaction.note.isEmpty ? null : transaction.note,
-    );
+    // 1. Buat temporary transaction dengan ID sementara
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticTx = transaction.copyWith(id: tempId);
 
-    // Refresh data dari backend setelah berhasil add
-    await loadAll(token);
+    // 2. Tambah ke list lokal dan cache LANGSUNG
+    _transactions = [optimisticTx, ..._transactions];
+    _updateSummaryOptimistic(newTx: optimisticTx); // Update summary instan
+    await CacheService.addTransaction(optimisticTx);
+    notifyListeners();
+
+    try {
+      // 3. POST ke server
+      await _txService.addTransaction(
+        token: token,
+        walletId: walletId,
+        toWalletId: toWalletId,
+        title: transaction.title.isEmpty ? transaction.category : transaction.title,
+        amount: transaction.amount,
+        type: transaction.type.name,
+        category: transaction.category,
+        date: '${transaction.date.year.toString().padLeft(4, '0')}-'
+              '${transaction.date.month.toString().padLeft(2, '0')}-'
+              '${transaction.date.day.toString().padLeft(2, '0')}',
+        note: transaction.note.isEmpty ? null : transaction.note,
+      );
+
+      // 4. Sukses → fetch ulang untuk dapat ID asli dari server + balance terbaru
+      final fresh = await _txService.getTransactions(token);
+      _transactions = fresh;
+      await CacheService.saveTransactions(fresh);
+      loadSummary(token); // Sync summary dari backend
+      notifyListeners();
+    } catch (e) {
+      // 5. Gagal → rollback: hapus transaksi optimistic
+      _transactions = _transactions.where((t) => t.id != tempId).toList();
+      _updateSummaryOptimistic(oldTx: optimisticTx); // Rollback summary
+      await CacheService.deleteTransaction(tempId);
+      notifyListeners();
+      rethrow; // lempar ke UI untuk tampil snackbar error
+    }
   }
 
   // ── Update Transaction via API ─────────────────────────────────
@@ -142,19 +213,46 @@ class TransactionProvider extends ChangeNotifier {
 
     final ok = await _txService.updateTransaction(updated.id, payload, token);
     if (ok) {
-      await loadAll(token);
+      // Cari transaksi lama untuk delta summary
+      final oldTx = _transactions.firstWhere((t) => t.id == updated.id, orElse: () => updated);
+      
+      // Update lokal dan cache — tidak perlu loadAll lagi
+      updateTransaction(updated);
+      _updateSummaryOptimistic(oldTx: oldTx, newTx: updated); // Update summary instan
+      await CacheService.updateTransaction(updated);
+      loadSummary(token); // Sync summary dari backend
+      notifyListeners();
     } else {
       throw Exception('Gagal update transaksi');
     }
   }
 
-  // ── Delete Transaction via API ─────────────────────────────────
+  // ── Delete Transaction via API (Optimistic Update) ─────────────
   Future<void> deleteTransactionWithApi(String id, String token) async {
-    final ok = await _txService.deleteTransaction(id, token);
-    if (ok) {
-      await loadAll(token);
-    } else {
-      throw Exception('Gagal hapus transaksi');
+    // 1. Simpan backup untuk rollback
+    final backup = List<TransactionModel>.from(_transactions);
+    final backupSummary = _backendSummary;
+    final txToDelete = _transactions.firstWhere((t) => t.id == id);
+
+    // 2. Hapus dari list lokal dan cache LANGSUNG (optimistic)
+    _transactions = _transactions.where((t) => t.id != id).toList();
+    _updateSummaryOptimistic(oldTx: txToDelete); // Update summary instan
+    await CacheService.deleteTransaction(id);
+    notifyListeners();
+
+    try {
+      // 3. DELETE ke server
+      final ok = await _txService.deleteTransaction(id, token);
+      if (!ok) throw Exception('Gagal hapus transaksi');
+      
+      loadSummary(token); // Sync summary dari backend
+    } catch (e) {
+      // 4. Gagal → rollback
+      _transactions = backup;
+      _backendSummary = backupSummary;
+      await CacheService.saveTransactions(backup);
+      notifyListeners();
+      rethrow;
     }
   }
 

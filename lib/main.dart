@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:monefy/providers/bill_provider.dart';
 import 'package:provider/provider.dart';
 import 'data/services/notification_service.dart';
+import 'data/services/cache_service.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/saving_provider.dart';
 import 'providers/auth_provider.dart';
@@ -17,6 +18,7 @@ Future<void> main() async {
   await initializeDateFormatting('id_ID');
   Intl.defaultLocale = 'id_ID';
   await NotificationService.init();
+  await CacheService.init();  // Inisialisasi Hive cache
   runApp(const MonefyApp());
 }
 

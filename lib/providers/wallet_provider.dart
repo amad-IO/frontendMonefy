@@ -5,6 +5,7 @@ import '../config/app_config.dart';
 import '../core/theme/app_colors.dart';
 import '../data/models/wallet_model.dart';
 import '../data/models/transaction_model.dart';
+import '../data/services/cache_service.dart';
 
 // ══════════════════════════════════════════════════════════════
 /// WalletProvider — state manager untuk semua wallet.
@@ -32,14 +33,23 @@ class WalletProvider extends ChangeNotifier {
   List<WalletModel> byCategory(WalletCategory cat) =>
       _wallets.where((w) => w.category == cat).toList();
 
-  // ── Load wallet langsung dari API ───────────────────────────
-  /// Panggil GET /wallets — balance akurat dari backend.
-  /// Response: { "status": "success", "data": [ { id, name_wallet, balance, ... } ] }
+  // ── Load wallet: Cache-first, lalu background fetch ────────────
+  /// Langkah 1: load dari cache lokal → UI tampil instan.
+  /// Langkah 2: fetch dari server di background → update cache.
   Future<void> loadWalletsFromApi(String token) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    // 1. Load dari cache dulu jika ada → tampil instan
+    if (CacheService.hasWallets()) {
+      _wallets = CacheService.getWallets();
+      _isLoading = false;
+      _error = null;
+      notifyListeners();
+    } else {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
+    // 2. Fetch fresh dari server (background)
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/wallets'),
@@ -58,10 +68,10 @@ class WalletProvider extends ChangeNotifier {
         _wallets = data.asMap().entries.map((entry) {
           final idx = entry.key;
           final e = entry.value as Map<String, dynamic>;
-          // Inject theme_index agar WalletModel.fromJson() bisa assign tema
           e['theme_index'] = idx % WalletTheme.all.length;
           return WalletModel.fromJson(e);
         }).toList();
+        await CacheService.saveWallets(_wallets); // update cache
       } else {
         _error = 'Gagal load wallet: ${response.statusCode}';
         debugPrint('loadWalletsFromApi: ${response.statusCode} ${response.body}');

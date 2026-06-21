@@ -25,7 +25,7 @@ class _ListBillsState extends State<ListBills> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BillProvider>();
-    final token = context.read<AuthProvider>().token!;
+    context.read<AuthProvider>().token; // baca token agar auth listener aktif
 
     /// 🔥 FILTER DATA
     final bills = provider.bills.where((b) {

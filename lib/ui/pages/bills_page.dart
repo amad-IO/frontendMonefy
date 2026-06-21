@@ -6,7 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/bill_provider.dart';
 import '../widgets/bills/bills_input.dart';
-import 'package:intl/intl.dart';
+
 
 class BillsPage extends StatefulWidget {
   const BillsPage({super.key});

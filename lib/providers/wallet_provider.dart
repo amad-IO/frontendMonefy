@@ -147,6 +147,7 @@ class WalletProvider extends ChangeNotifier {
           theme: WalletTheme.all[_wallets.length % WalletTheme.all.length],
         );
         _wallets = [..._wallets, newWallet];
+        await CacheService.saveWallets(_wallets); // sync cache
         return true;
       } else {
         final msg = json.decode(response.body)['message'] ?? 'Gagal tambah wallet';
@@ -234,6 +235,7 @@ class WalletProvider extends ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 204) {
         // Hapus secara lokal agar UI cepat update
         _wallets = _wallets.where((w) => w.id != id).toList();
+        await CacheService.saveWallets(_wallets); // sync cache
         notifyListeners();
         return true;
       } else {

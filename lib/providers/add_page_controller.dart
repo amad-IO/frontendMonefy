@@ -6,7 +6,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/add_page_helper.dart';
 import '../../data/models/scan_result.dart';
 import '../../data/models/transaction_model.dart';
-import '../../data/models/wallet_model.dart';
 import '../../providers/bill_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/wallet_provider.dart';

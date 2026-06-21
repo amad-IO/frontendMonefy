@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/utils/currency_formatter.dart';
 import '../../components/currency_formatter.dart';
 
 class BillsInput extends StatefulWidget {

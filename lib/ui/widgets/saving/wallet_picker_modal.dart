@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../providers/wallet_provider.dart';
 import 'package:provider/provider.dart';
 
-Future<int?> showWalletPicker(BuildContext context) {
-  final wallets = context
-      .read<WalletProvider>()
-      .wallets;
 
+Future<int?> showWalletPicker(BuildContext context) {
   return showDialog<int>(
       context: context,
       builder: (context) {

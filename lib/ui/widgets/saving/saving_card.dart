@@ -87,7 +87,7 @@ class SavingCard extends StatelessWidget {
                     context.read<WalletProvider>().loadWalletsFromApi(token);
                     final walletProvider =
                     context.read<WalletProvider>();
-                    final wallets = walletProvider.wallets;
+                    // wallets tersedia melalui Consumer di wallet_picker_modal
 
                     final walletId = await showWalletPicker(context);
 

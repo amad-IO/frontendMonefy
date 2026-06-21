@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
+import '../../providers/analytic_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -18,11 +20,7 @@ class AnalyticPage extends StatefulWidget {
   final VoidCallback? onBack;
   final bool initialIsExpense;
 
-  const AnalyticPage({
-    super.key, 
-    this.onBack,
-    this.initialIsExpense = true,
-  });
+  const AnalyticPage({super.key, this.onBack, this.initialIsExpense = true});
 
   @override
   State<AnalyticPage> createState() => _AnalyticPageState();
@@ -38,10 +36,40 @@ class _AnalyticPageState extends State<AnalyticPage> {
   void initState() {
     super.initState();
     _isExpenseSelected = widget.initialIsExpense;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
   /// Konversi index ke enum.
   AnalyticPeriod get _period => AnalyticPeriod.values[_filterIndex];
+
+  String _getTrend() {
+    switch (_period) {
+      case AnalyticPeriod.weekly:
+        return 'weekly';
+      case AnalyticPeriod.monthly:
+        return 'monthly';
+      case AnalyticPeriod.yearly:
+        return 'yearly';
+    }
+  }
+
+  int _getWeekOfMonth() {
+    final firstDay = DateTime(_anchorDate.year, _anchorDate.month, 1);
+    return ((_anchorDate.day + firstDay.weekday - 2) / 7).floor() + 1;
+  }
+
+  void _loadData() {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) return;
+
+    context.read<AnalyticProvider>().loadAnalytic(
+      token: auth.token!,
+      trend: _getTrend(),
+      month: _anchorDate.month,
+      year: _anchorDate.year,
+      week: _getWeekOfMonth(),
+    );
+  }
 
   // ── Navigasi periode ──────────────────────────────────────
   void _goToPrevious() {
@@ -58,6 +86,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
           break;
       }
     });
+    _loadData();
   }
 
   void _goToNext() {
@@ -74,6 +103,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
           break;
       }
     });
+    _loadData();
   }
 
   /// Hitung rentang tanggal [start, end] berdasarkan periode aktif.
@@ -111,15 +141,33 @@ class _AnalyticPageState extends State<AnalyticPage> {
     }
   }
 
+  Future<void> _onRefresh() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) return;
+
+    await context.read<AnalyticProvider>().refresh(
+      token: auth.token!,
+      trend: _getTrend(),
+      month: _anchorDate.month,
+      year: _anchorDate.year,
+      week: _getWeekOfMonth(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<TransactionProvider>();
+    final analyticProvider = context.watch<AnalyticProvider>();
+    final transactionProvider = context.watch<TransactionProvider>();
     final (start, end) = _getDateRange();
-    final data = provider.getAnalytics(
+    final localComparison = transactionProvider.getAnalytics(
       start: start,
       end: end,
       isExpense: _isExpenseSelected,
       periodLabel: _periodLabel,
+    );
+    final data = analyticProvider.getSummary(
+      isExpense: _isExpenseSelected,
+      localComparison: localComparison,
     );
 
     return Scaffold(
@@ -180,91 +228,124 @@ class _AnalyticPageState extends State<AnalyticPage> {
                   ),
                 ],
               ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(top: 18, bottom: 120),
-                child: Column(
-                  children: [
-                    // 1. Filter tabs (Weekly / Monthly / Yearly)
-                    AnalyticFilterTabs(
-                      selectedIndex: _filterIndex,
-                      onChanged: (i) => setState(() {
-                        _filterIndex = i;
-                        // Reset ke hari ini agar langsung menampilkan
-                        // periode yang relevan saat ganti filter.
-                        _anchorDate = DateTime.now();
-                      }),
+              child: analyticProvider.isLoading && data == null
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryPurple,
+                      ),
+                    )
+                  : data == null
+                  ? _AnalyticErrorState(
+                      message: analyticProvider.error,
+                      onRetry: _loadData,
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _onRefresh,
+                      color: AppColors.primaryPurple,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: const EdgeInsets.only(top: 18, bottom: 120),
+                        child: Column(
+                          children: [
+                            AnalyticFilterTabs(
+                              selectedIndex: _filterIndex,
+                              onChanged: (i) {
+                                setState(() {
+                                  _filterIndex = i;
+                                  _anchorDate = DateTime.now();
+                                });
+                                _loadData();
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            PeriodSelector(
+                              period: _period,
+                              anchorDate: _anchorDate,
+                              onPrevious: _goToPrevious,
+                              onNext: _goToNext,
+                            ),
+                            const SizedBox(height: 16),
+                            ExpenseAlertCard(
+                              changePercent: data.changePercent,
+                              isExpense: data.isExpense,
+                            ),
+                            const SizedBox(height: 16),
+                            IncomeExpenseToggle(
+                              isExpenseSelected: _isExpenseSelected,
+                              onChanged: (value) =>
+                                  setState(() => _isExpenseSelected = value),
+                            ),
+                            const SizedBox(height: 20),
+                            DonutChartCard(
+                              totalAmount: data.activeTotal,
+                              categories: data.categories,
+                              isExpense: data.isExpense,
+                            ),
+                            const SizedBox(height: 16),
+                            CategoryBreakdownList(categories: data.categories),
+                            const SizedBox(height: 24),
+                            DailyOverviewCard(
+                              period: _period,
+                              dailyData: data.dailyData,
+                              avgIncome: data.avgIncome,
+                              avgExpense: data.avgExpense,
+                              avgSaving: data.avgSaving,
+                            ),
+                            const SizedBox(height: 16),
+                            MonthlyComparisonCard(
+                              data: data.periodComparison,
+                              isExpense: data.isExpense,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // 2. Period selector — label berubah sesuai filter
-                    PeriodSelector(
-                      period: _period,
-                      anchorDate: _anchorDate,
-                      onPrevious: _goToPrevious,
-                      onNext: _goToNext,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // 3. Alert card — warna & pesan berubah sesuai mode
-                    ExpenseAlertCard(
-                      changePercent: data.changePercent,
-                      isExpense: data.isExpense,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // 4. Income / Expense toggle
-                    IncomeExpenseToggle(
-                      isExpenseSelected: _isExpenseSelected,
-                      onChanged: (val) =>
-                          setState(() => _isExpenseSelected = val),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // 5. Donut chart — total & categories sesuai mode
-                    DonutChartCard(
-                      totalAmount: data.activeTotal,
-                      categories: data.categories,
-                      isExpense: data.isExpense,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // 6. Category breakdown — list sesuai mode
-                    CategoryBreakdownList(
-                      categories: data.categories,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // 7. Overview card — adapts to active period
-                    DailyOverviewCard(
-                      period: _period,
-                      dailyData: data.dailyData,
-                      avgIncome: data.avgIncome,
-                      avgExpense: data.avgExpense,
-                      avgSaving: data.avgSaving,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // 8. Period comparison — data sesuai mode
-                    MonthlyComparisonCard(
-                      data: data.periodComparison,
-                      isExpense: data.isExpense,
-                    ),
-
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AnalyticErrorState extends StatelessWidget {
+  final String? message;
+  final VoidCallback onRetry;
+
+  const _AnalyticErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 48,
+              color: AppColors.disabled,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message ?? 'Gagal memuat data analytic.',
+              textAlign: TextAlign.center,
+              style: AppTextStyle.caption,
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onRetry,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+              ),
+              child: const Text('Coba lagi'),
+            ),
+          ],
+        ),
       ),
     );
   }

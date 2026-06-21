@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import '../models/transaction_model.dart';
 import '../models/analytic/analytic_models.dart';
 
@@ -46,8 +47,9 @@ class AnalyticsCalculator {
         .fold(0.0, (s, t) => s + t.amount);
 
     // ── 2. Target sesuai mode ───────────────────────────────
-    final targetType =
-        isExpense ? TransactionType.expense : TransactionType.income;
+    final targetType = isExpense
+        ? TransactionType.expense
+        : TransactionType.income;
     final targetTotal = isExpense ? expense : income;
 
     // ── 3. Category breakdown ───────────────────────────────
@@ -62,12 +64,11 @@ class AnalyticsCalculator {
         name: e.key,
         amount: e.value,
         percentage: targetTotal > 0 ? (e.value / targetTotal * 100) : 0,
-        color: _colorForCategory(e.key),
+        color: AppColors.categoryColor(e.key),
         iconAsset: _iconForCategory(e.key),
         iconData: _materialIconForCategory(e.key),
       );
-    }).toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+    }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
 
     // ── 4. Daily data ───────────────────────────────────────
     final totalDays = end.difference(start).inDays + 1;
@@ -155,10 +156,10 @@ class AnalyticsCalculator {
       message: changePercent.isInfinite
           ? 'First $periodLabel — no previous data.'
           : changePercent > 0
-              ? '$comparisonLabel is higher than last $periodLabel.'
-              : changePercent < 0
-                  ? '$comparisonLabel is lower than last $periodLabel.'
-                  : 'No comparison data yet.',
+          ? '$comparisonLabel is higher than last $periodLabel.'
+          : changePercent < 0
+          ? '$comparisonLabel is lower than last $periodLabel.'
+          : 'No comparison data yet.',
       currentPeriodDaily: thisDaily,
       previousPeriodDaily: lastDaily,
       dailyAverage: dailyAvg,
@@ -186,22 +187,6 @@ class AnalyticsCalculator {
   //  Mapping ini digunakan untuk SEMUA kategori (income & expense).
   //  Jika kategori tidak ditemukan, fallback ke warna/icon default.
   // ═══════════════════════════════════════════════════════════
-
-  static Color _colorForCategory(String name) {
-    const map = {
-      // ── Expense categories ──
-      'Food & Drink': Color(0xFFFF9800),
-      'Entertainment': Color(0xFFE91E63),
-      'Transportation': Color(0xFF2196F3),
-      'Shop': Color(0xFF4CAF50),
-      // ── Income categories ──
-      'Salary': Color(0xFF7C4DFF),
-      'Freelance': Color(0xFF00BCD4),
-      'Gift': Color(0xFFFF5722),
-      'Investment': Color(0xFF009688),
-    };
-    return map[name] ?? const Color(0xFF9E9E9E);
-  }
 
   static String _iconForCategory(String name) {
     const map = {

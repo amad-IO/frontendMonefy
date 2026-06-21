@@ -5,6 +5,7 @@ import 'package:monefy/providers/bill_provider.dart';
 import 'package:provider/provider.dart';
 import 'data/services/notification_service.dart';
 import 'data/services/cache_service.dart';
+import 'providers/analytic_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/saving_provider.dart';
 import 'providers/auth_provider.dart';
@@ -18,7 +19,7 @@ Future<void> main() async {
   await initializeDateFormatting('id_ID');
   Intl.defaultLocale = 'id_ID';
   await NotificationService.init();
-  await CacheService.init();  // Inisialisasi Hive cache
+  await CacheService.init(); // Inisialisasi Hive cache
   runApp(const MonefyApp());
 }
 
@@ -34,6 +35,7 @@ class MonefyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SavingProvider()),
         ChangeNotifierProvider(create: (_) => WalletProvider()),
         ChangeNotifierProvider(create: (_) => BillProvider()),
+        ChangeNotifierProvider(create: (_) => AnalyticProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -70,7 +72,7 @@ class _RootPageState extends State<_RootPage> {
 
     if (auth.isLoggedIn) {
       final token = auth.token!;
-      final txProvider     = context.read<TransactionProvider>();
+      final txProvider = context.read<TransactionProvider>();
       final walletProvider = context.read<WalletProvider>();
 
       // Load transaksi + wallet dari API secara paralel
@@ -78,7 +80,6 @@ class _RootPageState extends State<_RootPage> {
         txProvider.loadAll(token),
         walletProvider.loadWalletsFromApi(token),
       ]);
-
 
       // Isi toWalletName setelah keduanya selesai
       txProvider.enrichToWalletNames(walletProvider.wallets);

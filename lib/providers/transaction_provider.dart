@@ -22,20 +22,20 @@ class TransactionProvider extends ChangeNotifier {
     TransactionModel? newTx,
   }) {
     if (_backendSummary == null) return;
-    
+
     double incomeDelta = 0;
     double expenseDelta = 0;
-    
+
     if (oldTx != null) {
       if (oldTx.type == TransactionType.income) incomeDelta -= oldTx.amount;
       if (oldTx.type == TransactionType.expense) expenseDelta -= oldTx.amount;
     }
-    
+
     if (newTx != null) {
       if (newTx.type == TransactionType.income) incomeDelta += newTx.amount;
       if (newTx.type == TransactionType.expense) expenseDelta += newTx.amount;
     }
-    
+
     _backendSummary = SummaryModel(
       totalBalance: _backendSummary!.totalBalance + incomeDelta - expenseDelta,
       totalIncome: _backendSummary!.totalIncome + incomeDelta,
@@ -60,7 +60,8 @@ class TransactionProvider extends ChangeNotifier {
   double get balance => totalIncome - totalExpense;
 
   /// Summary: gunakan data backend jika sudah loaded, fallback ke computed lokal
-  SummaryModel get summary => _backendSummary ??
+  SummaryModel get summary =>
+      _backendSummary ??
       SummaryModel(
         totalBalance: balance,
         totalIncome: totalIncome,
@@ -111,10 +112,7 @@ class TransactionProvider extends ChangeNotifier {
 
   // ── Load All (summary + transactions) ─────────────────────────
   Future<void> loadAll(String token) async {
-    await Future.wait([
-      loadTransactions(token),
-      loadSummary(token),
-    ]);
+    await Future.wait([loadTransactions(token), loadSummary(token)]);
   }
 
   // ── Enrich toWalletName dari daftar wallet ──────────────────────
@@ -170,13 +168,16 @@ class TransactionProvider extends ChangeNotifier {
         token: token,
         walletId: walletId,
         toWalletId: toWalletId,
-        title: transaction.title.isEmpty ? transaction.category : transaction.title,
+        title: transaction.title.isEmpty
+            ? transaction.category
+            : transaction.title,
         amount: transaction.amount,
         type: transaction.type.name,
         category: transaction.category,
-        date: '${transaction.date.year.toString().padLeft(4, '0')}-'
-              '${transaction.date.month.toString().padLeft(2, '0')}-'
-              '${transaction.date.day.toString().padLeft(2, '0')}',
+        date:
+            '${transaction.date.year.toString().padLeft(4, '0')}-'
+            '${transaction.date.month.toString().padLeft(2, '0')}-'
+            '${transaction.date.day.toString().padLeft(2, '0')}',
         note: transaction.note.isEmpty ? null : transaction.note,
       );
 
@@ -184,6 +185,7 @@ class TransactionProvider extends ChangeNotifier {
       final fresh = await _txService.getTransactions(token);
       _transactions = fresh;
       await CacheService.saveTransactions(fresh);
+      await CacheService.clearAllAnalytics();
       loadSummary(token); // Sync summary dari backend
       notifyListeners();
     } catch (e) {
@@ -205,21 +207,29 @@ class TransactionProvider extends ChangeNotifier {
       'title': updated.title,
       'amount': updated.amount,
       'category': updated.category,
-      'transaction_date': '${updated.date.year.toString().padLeft(4, '0')}-'
-                          '${updated.date.month.toString().padLeft(2, '0')}-'
-                          '${updated.date.day.toString().padLeft(2, '0')}',
+      'transaction_date':
+          '${updated.date.year.toString().padLeft(4, '0')}-'
+          '${updated.date.month.toString().padLeft(2, '0')}-'
+          '${updated.date.day.toString().padLeft(2, '0')}',
     };
     if (updated.note.isNotEmpty) payload['note'] = updated.note;
 
     final ok = await _txService.updateTransaction(updated.id, payload, token);
     if (ok) {
       // Cari transaksi lama untuk delta summary
-      final oldTx = _transactions.firstWhere((t) => t.id == updated.id, orElse: () => updated);
-      
+      final oldTx = _transactions.firstWhere(
+        (t) => t.id == updated.id,
+        orElse: () => updated,
+      );
+
       // Update lokal dan cache — tidak perlu loadAll lagi
       updateTransaction(updated);
-      _updateSummaryOptimistic(oldTx: oldTx, newTx: updated); // Update summary instan
+      _updateSummaryOptimistic(
+        oldTx: oldTx,
+        newTx: updated,
+      ); // Update summary instan
       await CacheService.updateTransaction(updated);
+      await CacheService.clearAllAnalytics();
       loadSummary(token); // Sync summary dari backend
       notifyListeners();
     } else {
@@ -244,7 +254,8 @@ class TransactionProvider extends ChangeNotifier {
       // 3. DELETE ke server
       final ok = await _txService.deleteTransaction(id, token);
       if (!ok) throw Exception('Gagal hapus transaksi');
-      
+
+      await CacheService.clearAllAnalytics();
       loadSummary(token); // Sync summary dari backend
     } catch (e) {
       // 4. Gagal → rollback

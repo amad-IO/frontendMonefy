@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -24,11 +25,28 @@ class _FilterIncomeState extends State<FilterIncome> {
   int _selectedCategoryIndex = -1;
 
   static final List<_IncomeCategoryItem> _categories = [
-    _IncomeCategoryItem('Salary', Icons.account_balance_wallet_rounded),
-    _IncomeCategoryItem('Freelance', Icons.work_rounded),
-    _IncomeCategoryItem('Gift', Icons.card_giftcard_rounded),
-    _IncomeCategoryItem('Investment', Icons.trending_up_rounded),
-    _IncomeCategoryItem('More', Icons.more_horiz_rounded),
+    _IncomeCategoryItem('Salary', 'assets/icon/income_salary_outline.svg', [
+      Color(0xFF9B87F5),
+      AppColors.primaryPurple,
+    ]),
+    _IncomeCategoryItem(
+      'Freelance',
+      'assets/icon/income_freelance_outline.svg',
+      [Color(0xFF38BDF8), AppColors.billsColor],
+    ),
+    _IncomeCategoryItem('Gift', 'assets/icon/income_gift_outline.svg', [
+      Color(0xFFFF8A76),
+      AppColors.confettiRed,
+    ]),
+    _IncomeCategoryItem(
+      'Investment',
+      'assets/icon/income_investment_outline.svg',
+      [Color(0xFF4ADE80), AppColors.scanMintDark],
+    ),
+    _IncomeCategoryItem('More', 'assets/icon/category_more_outline.svg', [
+      Color(0xFFB29CF6),
+      AppColors.primaryPurple,
+    ]),
   ];
 
   @override
@@ -45,7 +63,7 @@ class _FilterIncomeState extends State<FilterIncome> {
         clipBehavior: Clip.none,
         padding: EdgeInsets.symmetric(horizontal: 12 * sx),
         itemCount: _categories.length,
-        separatorBuilder: (_, __) => SizedBox(width: 8 * sx),
+        separatorBuilder: (_, _) => SizedBox(width: 8 * sx),
         itemBuilder: (context, index) {
           final cat = _categories[index];
           final isSelected = _selectedCategoryIndex == index;
@@ -62,37 +80,51 @@ class _FilterIncomeState extends State<FilterIncome> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: 48 * sx,
-                    height: 48 * sy,
-                    decoration: ShapeDecoration(
-                      color: isSelected
-                          ? AppColors.dashboardPurple
-                          : AppColors.white2,
-                      shape: OvalBorder(
-                        side: BorderSide(
+                  AnimatedScale(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutBack,
+                    scale: isSelected ? 1.08 : 1,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 50 * sx,
+                      height: 50 * sy,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isSelected
+                              ? cat.gradient
+                              : [
+                                  cat.gradient.first.withValues(alpha: 0.18),
+                                  cat.gradient.last.withValues(alpha: 0.08),
+                                ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        border: Border.all(
                           color: isSelected
-                              ? AppColors.primaryPurple
-                              : Colors.transparent,
-                          width: 1.5,
+                              ? AppColors.panelWhite
+                              : cat.gradient.last.withValues(alpha: 0.12),
+                          width: isSelected ? 2 : 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: cat.gradient.last.withValues(
+                              alpha: isSelected ? 0.30 : 0.12,
+                            ),
+                            blurRadius: isSelected ? 14 : 9,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
-                      shadows: const [
-                        BoxShadow(
-                          color: AppColors.subtleShadow,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+                      child: SvgPicture.asset(
+                        cat.iconAsset,
+                        width: 23 * sx,
+                        height: 23 * sy,
+                        fit: BoxFit.scaleDown,
+                        colorFilter: ColorFilter.mode(
+                          isSelected ? AppColors.panelWhite : cat.gradient.last,
+                          BlendMode.srcIn,
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        cat.icon,
-                        size: 22 * sx,
-                        color: isSelected
-                            ? AppColors.primaryPurple
-                            : AppColors.primaryPurple.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
@@ -102,8 +134,9 @@ class _FilterIncomeState extends State<FilterIncome> {
                     style: AppTextStyle.caption.copyWith(
                       fontSize: 10 * sx,
                       color: AppColors.textPrimary,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
@@ -121,6 +154,7 @@ class _FilterIncomeState extends State<FilterIncome> {
 
 class _IncomeCategoryItem {
   final String name;
-  final IconData icon;
-  const _IncomeCategoryItem(this.name, this.icon);
+  final String iconAsset;
+  final List<Color> gradient;
+  const _IncomeCategoryItem(this.name, this.iconAsset, this.gradient);
 }

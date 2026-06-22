@@ -9,6 +9,7 @@ class AddBottomPanel extends StatelessWidget {
   final int typeIndex;
   final List<WalletOption> walletOptions;
   final String? selectedWallet;
+  final String? selectedCategory;
   final Key filterTransferKey;
   final String? selectedToWallet;
   final String? excludeWallet;
@@ -33,6 +34,7 @@ class AddBottomPanel extends StatelessWidget {
     required this.typeIndex,
     required this.walletOptions,
     required this.selectedWallet,
+    required this.selectedCategory,
     required this.filterTransferKey,
     required this.selectedToWallet,
     required this.excludeWallet,
@@ -72,6 +74,7 @@ class AddBottomPanel extends StatelessWidget {
             typeIndex: typeIndex,
             walletOptions: walletOptions,
             selectedWallet: selectedWallet,
+            selectedCategory: selectedCategory,
             filterTransferKey: filterTransferKey,
             onCategorySelected: onCategorySelected,
             onWalletSelected: onWalletSelected,

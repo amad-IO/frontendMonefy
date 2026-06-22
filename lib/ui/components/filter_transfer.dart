@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'wallet_selector_popup.dart';
@@ -85,10 +86,18 @@ class _FilterTransferState extends State<FilterTransfer> {
         clipBehavior: Clip.none,
         padding: EdgeInsets.symmetric(horizontal: 12 * sx),
         itemCount: availableWallets.length,
-        separatorBuilder: (_, __) => SizedBox(width: 8 * sx),
+        separatorBuilder: (_, _) => SizedBox(width: 8 * sx),
         itemBuilder: (context, index) {
           final wallet = availableWallets[index];
           final isSelected = _selectedWallet == wallet.name;
+          final baseGradient =
+              wallet.gradient ??
+              const [Color(0xFF9B87F5), AppColors.primaryPurple];
+          final displayGradient = isSelected
+              ? baseGradient
+              : baseGradient
+                    .map((color) => color.withValues(alpha: 0.76))
+                    .toList();
 
           return GestureDetector(
             onTap: () {
@@ -101,38 +110,55 @@ class _FilterTransferState extends State<FilterTransfer> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // ── Bubble icon ──
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: 48 * sx,
-                    height: 48 * sy,
-                    decoration: ShapeDecoration(
-                      color: isSelected
-                          ? AppColors.dashboardPurple
-                          : AppColors.white2,
-                      shape: OvalBorder(
-                        side: BorderSide(
-                          color: isSelected
-                              ? AppColors.primaryPurple
-                              : Colors.transparent,
-                          width: 1.5,
+                  AnimatedScale(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutBack,
+                    scale: isSelected ? 1.08 : 1,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 50 * sx,
+                      height: 50 * sy,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: displayGradient,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ),
-                      shadows: const [
-                        BoxShadow(
-                          color: AppColors.subtleShadow,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.panelWhite,
+                          width: isSelected ? 2.5 : 1.5,
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        wallet.icon,
-                        size: 22 * sx,
-                        color: isSelected
-                            ? AppColors.primaryPurple
-                            : AppColors.primaryPurple.withValues(alpha: 0.9),
+                        boxShadow: [
+                          BoxShadow(
+                            color: baseGradient.last.withValues(
+                              alpha: isSelected ? 0.34 : 0.14,
+                            ),
+                            blurRadius: isSelected ? 15 : 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
+                      child: wallet.iconAsset != null
+                          ? SvgPicture.asset(
+                              wallet.iconAsset!,
+                              width: 23 * sx,
+                              height: 23 * sy,
+                              fit: BoxFit.scaleDown,
+                              colorFilter: ColorFilter.mode(
+                                AppColors.panelWhite.withValues(
+                                  alpha: isSelected ? 1 : 0.92,
+                                ),
+                                BlendMode.srcIn,
+                              ),
+                            )
+                          : Icon(
+                              wallet.icon,
+                              size: 23 * sx,
+                              color: AppColors.panelWhite.withValues(
+                                alpha: isSelected ? 1 : 0.92,
+                              ),
+                            ),
                     ),
                   ),
                   SizedBox(height: 6 * sy),
@@ -142,8 +168,9 @@ class _FilterTransferState extends State<FilterTransfer> {
                     style: AppTextStyle.caption.copyWith(
                       fontSize: 10 * sx,
                       color: AppColors.textPrimary,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,

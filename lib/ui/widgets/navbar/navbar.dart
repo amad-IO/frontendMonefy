@@ -27,42 +27,58 @@ class CustomNavbar extends StatelessWidget {
     final double estimatedTextHeight = labelSize * 1.05;
     final double addLabelHeight = addLabelSize;
     final double requiredItemHeight =
-      indicatorHeight +
-      indicatorSpacing +
-      (iconSize * activeIconScale) +
-      itemSpacing +
-      estimatedTextHeight;
+        indicatorHeight +
+        indicatorSpacing +
+        (iconSize * activeIconScale) +
+        itemSpacing +
+        estimatedTextHeight;
     final double rowBottomPadding = (1.5 * scale) + bottomInset;
     final double navContentHeight =
-      (requiredItemHeight + addLabelHeight + rowBottomPadding + (6 * scale));
+        (requiredItemHeight + addLabelHeight + rowBottomPadding + (6 * scale));
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final Color addLabelColor = selectedIndex == 2
         ? colorScheme.primary
         : colorScheme.onSurface.withValues(alpha: 0.45);
 
-    return Container(
+    const navbarColor = AppColors.panelWhite;
+
+    return DecoratedBox(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.09),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 32,
+            spreadRadius: 0,
+            offset: const Offset(0, -4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            spreadRadius: 0,
+            offset: const Offset(0, -1),
           ),
         ],
       ),
       child: BottomAppBar(
-        color: Theme.of(context).colorScheme.onPrimary,
+        color: navbarColor,
+        surfaceTintColor: navbarColor,
         elevation: 0,
-        shadowColor: Colors.transparent,
-        notchMargin: 16,
+        notchMargin: 10,
+        padding: EdgeInsets.zero,
         shape: const CircularNotchedRectangle(),
+        clipBehavior: Clip.none,
         child: SizedBox(
           height: navContentHeight,
           child: Stack(
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(8 * scale, 4 * scale, 8 * scale, rowBottomPadding),
+                padding: EdgeInsets.fromLTRB(
+                  8 * scale,
+                  4 * scale,
+                  8 * scale,
+                  rowBottomPadding,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -121,7 +137,7 @@ class CustomNavbar extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 1 * scale + bottomInset,
+                bottom: 8 * scale + bottomInset,
                 child: Text(
                   'Add',
                   textAlign: TextAlign.center,
@@ -155,8 +171,8 @@ class CustomNavbar extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final bool isActive = selectedIndex == index;
     final Color itemColor = isActive
-      ? colorScheme.primary
-      : colorScheme.onSurface.withValues(alpha: 0.45);
+        ? colorScheme.primary
+        : colorScheme.onSurface.withValues(alpha: 0.45);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -199,7 +215,10 @@ class CustomNavbar extends StatelessWidget {
                       transitionBuilder: (child, animation) {
                         return FadeTransition(
                           opacity: animation,
-                          child: ScaleTransition(scale: animation, child: child),
+                          child: ScaleTransition(
+                            scale: animation,
+                            child: child,
+                          ),
                         );
                       },
                       child: isActive
@@ -271,27 +290,36 @@ class CustomAddFab extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
+          gradient: AppColors.primaryGradient,
+          border: Border.all(color: AppColors.panelWhite, width: 3),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, -3),
+              color: AppColors.primaryPurple.withValues(alpha: 0.30),
+              blurRadius: 16,
+              spreadRadius: 1,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: FloatingActionButton(
-          onPressed: onPressed,
-          backgroundColor: AppColors.primaryPurple,
-          elevation: 0,
-          highlightElevation: 0,
+        child: Material(
+          color: Colors.transparent,
           shape: const CircleBorder(),
-          child: SvgPicture.asset(
-            'assets/icon/add.svg',
-            width: 30,
-            height: 30,
-            colorFilter: ColorFilter.mode(
-              Theme.of(context).colorScheme.onPrimary,
-              BlendMode.srcIn,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: const CircleBorder(),
+            splashColor: AppColors.panelWhite.withValues(alpha: 0.22),
+            highlightColor: AppColors.panelWhite.withValues(alpha: 0.10),
+            child: Center(
+              child: SvgPicture.asset(
+                'assets/icon/add.svg',
+                width: 30,
+                height: 30,
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
             ),
           ),
         ),

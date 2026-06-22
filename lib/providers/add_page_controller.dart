@@ -7,6 +7,7 @@ import '../../core/utils/add_page_helper.dart';
 import '../../data/models/scan_result.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/bill_provider.dart';
+import '../../providers/saving_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '../ui/components/wallet_selector_popup.dart';
@@ -20,9 +21,13 @@ class AddPageController extends ChangeNotifier {
   /// Data bills jika dibuka dari Pay Now (opsional)
   final Map<String, dynamic>? billData;
 
+  /// Data wishlist jika dibuka dari Buy Now (opsional)
+  final Map<String, dynamic>? savingData;
+
   AddPageController({
     this.editTransaction,
     this.billData,
+    this.savingData,
     required this.vsync,
   }) {
     _init();
@@ -110,6 +115,17 @@ class AddPageController extends ChangeNotifier {
           ? amount.toInt().toString()
           : amount.toString();
       titleController.text = 'Bills: ${billData!["provider"] ?? ""}';
+    }
+
+    // Pre-fill dari Wishlist (Buy Now flow)
+    if (savingData != null && !isEditMode) {
+      _typeIndex = 1; // Expense
+      _selectedCategory = 'More';
+      final amount = savingData!['amount'];
+      amountController.text = amount is double
+          ? amount.toInt().toString()
+          : amount.toString();
+      titleController.text = 'Wishlist: ${savingData!["name"] ?? ""}';
     }
   }
 
@@ -209,7 +225,12 @@ class AddPageController extends ChangeNotifier {
     // Tampilkan snackbar ringkasan scan
     if (context.mounted) {
       final typeLabel = result.isIncome ? 'Income' : 'Expense';
-      _showSnackBar(context, '📄 ${result.merchantName} · $typeLabel · ${result.category}', AppColors.primaryPurple, Icons.auto_awesome);
+      _showSnackBar(
+        context,
+        '📄 ${result.merchantName} · $typeLabel · ${result.category}',
+        AppColors.primaryPurple,
+        Icons.auto_awesome,
+      );
     }
   }
 
@@ -233,22 +254,42 @@ class AddPageController extends ChangeNotifier {
           notifyListeners();
         });
       }
-      _showSnackBar(context, validationError, AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBar(
+        context,
+        validationError,
+        AppColors.error,
+        Icons.warning_amber_rounded,
+      );
       return;
     }
 
-    final category = AddPageHelper.resolveCategory(type: type, selectedCategory: _selectedCategory);
-    final title = AddPageHelper.resolveTitle(category: category, rawTitle: titleController.text, type: type);
+    final category = AddPageHelper.resolveCategory(
+      type: type,
+      selectedCategory: _selectedCategory,
+    );
+    final title = AddPageHelper.resolveTitle(
+      category: category,
+      rawTitle: titleController.text,
+      type: type,
+    );
 
     final provider = context.read<TransactionProvider>();
     final walletProvider = context.read<WalletProvider>();
+    final savingProvider = savingData != null
+        ? context.read<SavingProvider>()
+        : null;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null || token.isEmpty) {
-      _showSnackBar(context, 'Token tidak ditemukan. Silakan login ulang.', AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBar(
+        context,
+        'Token tidak ditemukan. Silakan login ulang.',
+        AppColors.error,
+        Icons.warning_amber_rounded,
+      );
       return;
     }
 
@@ -259,7 +300,9 @@ class AddPageController extends ChangeNotifier {
         title: title,
         amount: amount,
         walletName: _selectedWallet!,
-        toWalletName: type == TransactionType.transfer ? (_selectedToWallet ?? '') : '',
+        toWalletName: type == TransactionType.transfer
+            ? (_selectedToWallet ?? '')
+            : '',
         type: type,
       );
 
@@ -270,18 +313,27 @@ class AddPageController extends ChangeNotifier {
           amount: AddPageHelper.formatAmount(amount.toString()),
           category: category,
           walletName: _selectedWallet ?? '',
-          toWalletName: type == TransactionType.transfer ? _selectedToWallet : null,
+          toWalletName: type == TransactionType.transfer
+              ? _selectedToWallet
+              : null,
           apiWork: () => provider.updateTransactionWithApi(updated, token),
           onSuccess: () {
             navigator.pop();
-            Future.wait([
-              provider.loadAll(token),
-              walletProvider.loadWalletsFromApi(token),
-            ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+            Future.wait(
+              [
+                provider.loadAll(token),
+                walletProvider.loadWalletsFromApi(token),
+              ],
+            ).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
           },
         );
       } catch (e) {
-        _showSnackBarOnMessenger(messenger, 'Gagal memperbarui transaksi.', AppColors.error, Icons.warning_amber_rounded);
+        _showSnackBarOnMessenger(
+          messenger,
+          'Gagal memperbarui transaksi.',
+          AppColors.error,
+          Icons.warning_amber_rounded,
+        );
       }
       return;
     }
@@ -289,7 +341,12 @@ class AddPageController extends ChangeNotifier {
     // B. Mode Tambah Baru
     final walletId = _selectedWalletId ?? '';
     if (walletId.isEmpty) {
-      _showSnackBarOnMessenger(messenger, 'Wallet tidak valid.', AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBarOnMessenger(
+        messenger,
+        'Wallet tidak valid.',
+        AppColors.error,
+        Icons.warning_amber_rounded,
+      );
       return;
     }
 
@@ -300,7 +357,9 @@ class AddPageController extends ChangeNotifier {
       amount: amount,
       date: DateTime.now(),
       walletName: _selectedWallet!,
-      toWalletName: type == TransactionType.transfer ? (_selectedToWallet ?? '') : '',
+      toWalletName: type == TransactionType.transfer
+          ? (_selectedToWallet ?? '')
+          : '',
       type: type,
     );
 
@@ -311,13 +370,31 @@ class AddPageController extends ChangeNotifier {
         amount: AddPageHelper.formatAmount(amount.toString()),
         category: category,
         walletName: _selectedWallet ?? '',
-        toWalletName: type == TransactionType.transfer ? _selectedToWallet : null,
-        apiWork: () => provider.addTransactionWithApi(
-          transaction,
-          token,
-          walletId: walletId,
-          toWalletId: _selectedToWalletId,
-        ),
+        toWalletName: type == TransactionType.transfer
+            ? _selectedToWallet
+            : null,
+        apiWork: () {
+          if (savingData != null) {
+            final savingId = savingData!['id'] as int?;
+            final parsedWalletId = int.tryParse(walletId);
+            if (savingId == null || parsedWalletId == null) {
+              throw Exception('Wishlist atau wallet tidak valid.');
+            }
+            return savingProvider!.buySaving(
+              savingId,
+              parsedWalletId,
+              token,
+              amount: amount.toInt(),
+            );
+          }
+
+          return provider.addTransactionWithApi(
+            transaction,
+            token,
+            walletId: walletId,
+            toWalletId: _selectedToWalletId,
+          );
+        },
         onSuccess: () async {
           // Jika dari Pay Now Bills → kembali ke Home dulu, lalu tandai paid
           if (billData != null) {
@@ -343,26 +420,55 @@ class AddPageController extends ChangeNotifier {
             if (billId != null && billProvider != null) {
               await billProvider.payBill(billId, token);
             }
-          } else {
-            navigator.pop();
-            Future.wait([
+          } else if (savingData != null) {
+            await Future.wait([
               provider.loadAll(token),
               walletProvider.loadWalletsFromApi(token),
-            ]).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
+            ]);
+            provider.enrichToWalletNames(walletProvider.wallets);
+            navigator.pop();
+          } else {
+            navigator.pop();
+            Future.wait(
+              [
+                provider.loadAll(token),
+                walletProvider.loadWalletsFromApi(token),
+              ],
+            ).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
           }
         },
       );
     } catch (e) {
-      _showSnackBarOnMessenger(messenger, 'Gagal menyimpan transaksi.', AppColors.error, Icons.warning_amber_rounded);
+      _showSnackBarOnMessenger(
+        messenger,
+        'Gagal menyimpan transaksi.',
+        AppColors.error,
+        Icons.warning_amber_rounded,
+      );
     }
   }
 
   // ── Helpers ──
-  void _showSnackBar(BuildContext context, String message, Color color, IconData icon) {
-    _showSnackBarOnMessenger(ScaffoldMessenger.of(context), message, color, icon);
+  void _showSnackBar(
+    BuildContext context,
+    String message,
+    Color color,
+    IconData icon,
+  ) {
+    _showSnackBarOnMessenger(
+      ScaffoldMessenger.of(context),
+      message,
+      color,
+      icon,
+    );
   }
 
-  void _showSnackBarOnMessenger(ScaffoldMessengerState messenger, String message, Color color, IconData icon) {
+  void _showSnackBarOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message,
+    Color color,
+    IconData icon,
+  ) {
     messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
@@ -373,7 +479,10 @@ class AddPageController extends ChangeNotifier {
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

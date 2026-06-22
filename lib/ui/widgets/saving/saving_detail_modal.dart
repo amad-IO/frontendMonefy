@@ -3,19 +3,19 @@ import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/saving_provider.dart';
 import '../../widgets/loading_spinner.dart'; // ✅ TAMBAHAN
+import '../bills/bills_input.dart';
 
-void showSavingDetailModal(
-    BuildContext context,
-    Map<String, dynamic> item,
-    ) {
+void showSavingDetailModal(BuildContext context, Map<String, dynamic> item) {
   final token = context.read<AuthProvider>().token!;
 
   final nameController = TextEditingController(text: item["name"]);
-  final targetController =
-  TextEditingController(text: item["target"].toString());
+  final targetController = TextEditingController(
+    text: item["target"].toString(),
+  );
 
-  DateTime? selectedDate =
-  item["date"] != null ? DateTime.tryParse(item["date"]) : null;
+  DateTime? selectedDate = item["date"] != null
+      ? DateTime.tryParse(item["date"])
+      : null;
 
   showModalBottomSheet(
     context: context,
@@ -30,9 +30,7 @@ void showSavingDetailModal(
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(25),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
 
               /// 🔥 PERBAIKAN 1: TAMBAH SCROLL (BIAR GAK OVERFLOW)
@@ -41,7 +39,6 @@ void showSavingDetailModal(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     /// DRAG HANDLE
                     Center(
                       child: Container(
@@ -109,11 +106,12 @@ void showSavingDetailModal(
 
                     GestureDetector(
                       onTap: () async {
-                        final picked = await showDatePicker(
+                        final now = DateTime.now();
+                        final picked = await showHorizontalDatePicker(
                           context: context,
                           initialDate: selectedDate ?? DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2100),
+                          minimumDate: DateTime(now.year, now.month, now.day),
+                          maximumDate: DateTime(now.year + 20, 12, 31),
                         );
 
                         if (picked != null) {
@@ -124,7 +122,9 @@ void showSavingDetailModal(
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF1F1F1),
                           borderRadius: BorderRadius.circular(12),
@@ -135,12 +135,12 @@ void showSavingDetailModal(
                             Text(
                               selectedDate != null
                                   ? "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}"
-                                  : "Pilih tanggal",
+                                  : "Choose a target date",
                             ),
                             const Text(
-                              "Pilih",
+                              "Choose",
                               style: TextStyle(color: Color(0xFF694EDA)),
-                            )
+                            ),
                           ],
                         ),
                       ),
@@ -167,7 +167,8 @@ void showSavingDetailModal(
                           if (name.isEmpty || target <= 0) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content: Text("Isi data dengan benar")),
+                                content: Text("Isi data dengan benar"),
+                              ),
                             );
                             return;
                           }
@@ -179,9 +180,7 @@ void showSavingDetailModal(
                             builder: (_) => const LoadingSpinner(),
                           );
 
-                          await context
-                              .read<SavingProvider>()
-                              .updateSavingApi(
+                          await context.read<SavingProvider>().updateSavingApi(
                             item["id"],
                             name,
                             target,
@@ -210,7 +209,6 @@ void showSavingDetailModal(
                           ),
                         ),
                         onPressed: () async {
-
                           /// 🔥 PERBAIKAN 3: LOADING DELETE
                           showDialog(
                             context: context,
@@ -218,9 +216,10 @@ void showSavingDetailModal(
                             builder: (_) => const LoadingSpinner(),
                           );
 
-                          await context
-                              .read<SavingProvider>()
-                              .deleteSavingApi(item["id"], token);
+                          await context.read<SavingProvider>().deleteSavingApi(
+                            item["id"],
+                            token,
+                          );
 
                           Navigator.pop(context);
                           Navigator.pop(context);

@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 
 /// Data model for a wallet option in the selector.
 class WalletOption {
-  final String id;     // ID dari backend (WalletModel.id)
+  final String id; // ID dari backend (WalletModel.id)
   final String name;
   final IconData icon;
+  final String? iconAsset;
   final double balance;
-  final List<Color>? gradient; // ← warna card wallet (dari WalletTheme.cardGradient)
+  final List<Color>?
+  gradient; // ← warna card wallet (dari WalletTheme.cardGradient)
 
   const WalletOption({
     this.id = '',
     required this.name,
     required this.icon,
+    this.iconAsset,
     this.balance = 0,
     this.gradient,
   });
@@ -98,10 +102,7 @@ class _WalletSelectorPopupState extends State<WalletSelectorPopup>
         final curve = Curves.easeOutCubic.transform(_animController.value);
         return Transform.translate(
           offset: Offset(0, (1 - curve) * 60),
-          child: Opacity(
-            opacity: curve.clamp(0.0, 1.0),
-            child: child,
-          ),
+          child: Opacity(opacity: curve.clamp(0.0, 1.0), child: child),
         );
       },
       child: Container(
@@ -174,7 +175,7 @@ class _WalletSelectorPopupState extends State<WalletSelectorPopup>
                       physics: const BouncingScrollPhysics(),
                       padding: EdgeInsets.zero,
                       itemCount: visibleWallets.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final wallet = visibleWallets[index];
                         final isSelected = _currentSelection == wallet.name;
@@ -186,9 +187,12 @@ class _WalletSelectorPopupState extends State<WalletSelectorPopup>
                           onTap: () {
                             setState(() => _currentSelection = wallet.name);
                             final nav = Navigator.of(context);
-                            Future.delayed(const Duration(milliseconds: 200), () {
-                              if (mounted) nav.pop(wallet.name);
-                            });
+                            Future.delayed(
+                              const Duration(milliseconds: 200),
+                              () {
+                                if (mounted) nav.pop(wallet.name);
+                              },
+                            );
                           },
                         );
                       },
@@ -234,8 +238,7 @@ class _WalletTile extends StatelessWidget {
               : AppColors.panelWhite,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color:
-                isSelected ? AppColors.primaryPurple : Colors.transparent,
+            color: isSelected ? AppColors.primaryPurple : Colors.transparent,
             width: isSelected ? 1.5 : 0,
           ),
           boxShadow: [
@@ -264,21 +267,35 @@ class _WalletTile extends StatelessWidget {
                     : null,
                 color: wallet.gradient == null
                     ? (isSelected
-                        ? AppColors.primaryPurple.withValues(alpha: 0.12)
-                        : AppColors.white2)
+                          ? AppColors.primaryPurple.withValues(alpha: 0.12)
+                          : AppColors.white2)
                     : null,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: Icon(
-                  wallet.icon,
-                  color: wallet.gradient != null
-                      ? Colors.white
-                      : (isSelected
-                          ? AppColors.primaryPurple
-                          : AppColors.textSecondary),
-                  size: 22,
-                ),
+                child: wallet.iconAsset != null
+                    ? SvgPicture.asset(
+                        wallet.iconAsset!,
+                        width: 23,
+                        height: 23,
+                        colorFilter: ColorFilter.mode(
+                          wallet.gradient != null
+                              ? AppColors.panelWhite
+                              : isSelected
+                              ? AppColors.primaryPurple
+                              : AppColors.textSecondary,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Icon(
+                        wallet.icon,
+                        color: wallet.gradient != null
+                            ? Colors.white
+                            : (isSelected
+                                  ? AppColors.primaryPurple
+                                  : AppColors.textSecondary),
+                        size: 22,
+                      ),
               ),
             ),
             const SizedBox(width: 14),
@@ -294,8 +311,9 @@ class _WalletTile extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Nunito',
                       fontSize: 15,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                       color: isSelected
                           ? AppColors.primaryPurple
                           : AppColors.textPrimary,

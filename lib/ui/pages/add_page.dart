@@ -13,15 +13,16 @@ import '../widgets/add_page/amount_display.dart';
 import '../widgets/add_page/sliding_pill.dart';
 import '../widgets/add_page/top_action_buttons.dart';
 
-
 class AddPage extends StatefulWidget {
   final TransactionModel? editTransaction;
   final Map<String, dynamic>? billData;
+  final Map<String, dynamic>? savingData;
 
   const AddPage({
     super.key,
     this.editTransaction,
     this.billData,
+    this.savingData,
   });
 
   @override
@@ -38,6 +39,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     _controller = AddPageController(
       editTransaction: widget.editTransaction,
       billData: widget.billData,
+      savingData: widget.savingData,
       vsync: this,
     );
   }
@@ -54,10 +56,13 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
     return WalletOption(
       name: w.name,
       icon: w.category == WalletCategory.cash
-          ? Icons.payments_rounded
+          ? Icons.money_outlined
           : w.category == WalletCategory.bankAccount
           ? Icons.account_balance_rounded
-          : Icons.account_balance_wallet_rounded,
+          : Icons.account_balance_wallet_outlined,
+      iconAsset: w.category == WalletCategory.cash
+          ? 'assets/icon/cash.svg'
+          : null,
       balance: w.balance,
       id: w.id,
       gradient: w.theme.cardGradient,
@@ -67,7 +72,11 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).padding.bottom;
-    final walletOptions = context.watch<WalletProvider>().wallets.map(_toWalletOption).toList();
+    final walletOptions = context
+        .watch<WalletProvider>()
+        .wallets
+        .map(_toWalletOption)
+        .toList();
 
     // ✅ Bungkus halaman dengan ChangeNotifierProvider.value agar UI mendengarkan perubahan di Controller
     return ChangeNotifierProvider.value(
@@ -137,21 +146,33 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
                           typeIndex: controller.typeIndex,
                           walletOptions: walletOptions,
                           selectedWallet: controller.selectedWallet,
+                          selectedCategory: controller.selectedCategory,
                           filterTransferKey: controller.filterTransferKey,
                           selectedToWallet: controller.selectedToWallet,
-                          excludeWallet: controller.type == TransactionType.transfer ? controller.selectedToWallet : null,
+                          excludeWallet:
+                              controller.type == TransactionType.transfer
+                              ? controller.selectedToWallet
+                              : null,
                           walletError: controller.walletError,
-                          walletShakeController: controller.walletShakeController,
+                          walletShakeController:
+                              controller.walletShakeController,
                           titleController: controller.titleController,
-                          titleEnabled: controller.type != TransactionType.transfer && controller.selectedCategory == 'More',
+                          titleEnabled:
+                              controller.type != TransactionType.transfer &&
+                              controller.selectedCategory == 'More',
                           sx: sx,
                           sy: sy,
                           safeBottom: safeBottom,
-                          onCategorySelected: (val) => controller.setCategory(val),
-                          onWalletSelected: (walletOption) => controller.setToWallet(walletOption),
-                          onFromWalletSelected: (walletOption) => controller.setFromWallet(walletOption),
-                          onNumPadKeyTap: (key) => controller.onNumPadKeyTap(key),
-                          onNumPadBackspace: () => controller.onNumPadBackspace(),
+                          onCategorySelected: (val) =>
+                              controller.setCategory(val),
+                          onWalletSelected: (walletOption) =>
+                              controller.setToWallet(walletOption),
+                          onFromWalletSelected: (walletOption) =>
+                              controller.setFromWallet(walletOption),
+                          onNumPadKeyTap: (key) =>
+                              controller.onNumPadKeyTap(key),
+                          onNumPadBackspace: () =>
+                              controller.onNumPadBackspace(),
                           onConfirm: () => controller.onConfirm(context),
                         ),
                       ),

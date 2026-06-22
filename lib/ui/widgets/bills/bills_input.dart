@@ -5,6 +5,35 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../components/currency_formatter.dart';
 
+/// Shared horizontal date picker used by Bills and Wishlist forms.
+Future<DateTime?> showHorizontalDatePicker({
+  required BuildContext context,
+  DateTime? initialDate,
+  DateTime? minimumDate,
+  DateTime? maximumDate,
+}) {
+  final now = DateTime.now();
+  final minDate = minimumDate ?? DateTime(now.year, now.month, now.day);
+  final maxDate = maximumDate ?? DateTime(now.year + 20, 12, 31);
+  final requestedDate = initialDate ?? minDate;
+  final safeInitialDate = requestedDate.isBefore(minDate)
+      ? minDate
+      : requestedDate.isAfter(maxDate)
+      ? maxDate
+      : requestedDate;
+
+  return showModalBottomSheet<DateTime>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (_) => _HorizontalDatePickerSheet(
+      initialDate: safeInitialDate,
+      minimumDate: minDate,
+      maximumDate: maxDate,
+    ),
+  );
+}
+
 class BillsInput extends StatefulWidget {
   final TextEditingController billNameController;
   final TextEditingController accountController;
@@ -36,15 +65,11 @@ class _BillsInputState extends State<BillsInput> {
         ? savedDate
         : minimumDate;
 
-    final picked = await showModalBottomSheet<DateTime>(
+    final picked = await showHorizontalDatePicker(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _HorizontalDatePickerSheet(
-        initialDate: initialDate,
-        minimumDate: minimumDate,
-        maximumDate: DateTime(now.year + 20, 12, 31),
-      ),
+      initialDate: initialDate,
+      minimumDate: minimumDate,
+      maximumDate: DateTime(now.year + 20, 12, 31),
     );
 
     if (picked != null) {
@@ -104,22 +129,6 @@ class _BillsInputState extends State<BillsInput> {
           },
         ),
         const SizedBox(height: 17),
-        _BillField(
-          label: 'Due date',
-          hint: 'Choose a due date',
-          icon: Icons.calendar_month_rounded,
-          controller: widget.dueDateController,
-          readOnly: true,
-          onTap: _pickDate,
-          suffixIcon: Icons.chevron_right_rounded,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please choose a due date.';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 17),
         _BillingCycleField(
           value: selectedCycle,
           onChanged: (value) {
@@ -127,7 +136,164 @@ class _BillsInputState extends State<BillsInput> {
             widget.onCycleChanged(value);
           },
         ),
+        const SizedBox(height: 17),
+        _DueDateSelector(
+          controller: widget.dueDateController,
+          onTap: _pickDate,
+        ),
       ],
+    );
+  }
+}
+
+class _DueDateSelector extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onTap;
+
+  const _DueDateSelector({required this.controller, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedDate = DateTime.tryParse(controller.text);
+    final hasDate = selectedDate != null;
+
+    return FormField<String>(
+      key: ValueKey(controller.text),
+      initialValue: controller.text,
+      validator: (_) =>
+          controller.text.isEmpty ? 'Please choose a due date.' : null,
+      builder: (field) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Due date',
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: AppColors.dashboardPurple,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: AppColors.primaryPurple,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: hasDate
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    DateFormat(
+                                      'EEEE',
+                                      'en_US',
+                                    ).format(selectedDate),
+                                    style: const TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryPurple,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    DateFormat(
+                                      'd MMMM yyyy',
+                                      'en_US',
+                                    ).format(selectedDate),
+                                    style: const TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'No date selected',
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Set when this bill is due',
+                                    style: TextStyle(
+                                      fontFamily: 'Nunito',
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          hasDate ? 'Change' : 'Choose',
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryPurple,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Container(height: 1, color: AppColors.divider),
+            if (field.hasError) ...[
+              const SizedBox(height: 7),
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(
+                  field.errorText!,
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 12,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -141,9 +307,6 @@ class _BillField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
   final String? prefixText;
-  final bool readOnly;
-  final VoidCallback? onTap;
-  final IconData? suffixIcon;
   final String? Function(String?)? validator;
 
   const _BillField({
@@ -155,9 +318,6 @@ class _BillField extends StatelessWidget {
     this.textInputAction,
     this.inputFormatters,
     this.prefixText,
-    this.readOnly = false,
-    this.onTap,
-    this.suffixIcon,
     this.validator,
   });
 
@@ -181,8 +341,6 @@ class _BillField extends StatelessWidget {
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           inputFormatters: inputFormatters,
-          readOnly: readOnly,
-          onTap: onTap,
           validator: validator,
           style: const TextStyle(
             fontFamily: 'Nunito',
@@ -206,9 +364,6 @@ class _BillField extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
-            suffixIcon: suffixIcon == null
-                ? null
-                : Icon(suffixIcon, color: AppColors.textSecondary, size: 21),
             filled: true,
             fillColor: AppColors.white2,
             contentPadding: const EdgeInsets.symmetric(

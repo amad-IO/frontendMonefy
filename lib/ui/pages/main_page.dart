@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/navbar/navbar.dart';
@@ -36,12 +35,12 @@ class _MainPageState extends State<MainPage> {
     _pages = [
       const HomePage(),
       HistoryPage(onBack: () => _onItemTapped(0)),
-      const _PlaceholderPage(label: 'Add'),      // FAB opens AddPage sheet.
+      const _PlaceholderPage(label: 'Add'), // FAB opens AddPage sheet.
       AnalyticPage(
         onBack: () => _onItemTapped(0),
         initialIsExpense: widget.initialAnalyticIsExpense ?? true,
       ),
-      const ProfilePage(),
+      ProfilePage(onBack: () => _onItemTapped(0)),
     ];
 
     if (widget.extraPage != null) {
@@ -110,13 +109,12 @@ class _MainPageState extends State<MainPage> {
         onItemTapped: _onItemTapped,
       ),
 
-      floatingActionButton: CustomAddFab(
-        onPressed: _showAddOverlay,
-      ),
+      floatingActionButton: CustomAddFab(onPressed: _showAddOverlay),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
+
 class _PlaceholderPage extends StatelessWidget {
   final String label;
   const _PlaceholderPage({required this.label});

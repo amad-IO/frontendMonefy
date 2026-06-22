@@ -8,6 +8,7 @@ class CategoryArea extends StatelessWidget {
   final int typeIndex;
   final List<WalletOption> walletOptions;
   final String? selectedWallet;
+  final String? selectedCategory;
   final Key filterTransferKey;
   final Function(String) onCategorySelected;
   /// Callback untuk pilih to-wallet saat Transfer mode.
@@ -21,6 +22,7 @@ class CategoryArea extends StatelessWidget {
     required this.typeIndex,
     required this.walletOptions,
     required this.selectedWallet,
+    required this.selectedCategory,
     required this.filterTransferKey,
     required this.onCategorySelected,
     required this.onWalletSelected,
@@ -43,6 +45,7 @@ class CategoryArea extends StatelessWidget {
       return FilterExpanse(
         sx: sx,
         sy: sy,
+        selectedCategory: selectedCategory,
         onCategorySelected: onCategorySelected,
       );
     } else {

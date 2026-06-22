@@ -6,258 +6,375 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../providers/auth_provider.dart';
 import '../widgets/confirm_dialog.dart';
 import 'create_wallet_page.dart';
 import 'help_center_page.dart';
+import 'list_bills_page.dart';
+import 'saving_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final VoidCallback? onBack;
+
+  const ProfilePage({super.key, this.onBack});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  File? _avatarImage;
   final ImagePicker _picker = ImagePicker();
+  File? _avatarImage;
 
   Future<void> _pickImage() async {
-    final XFile? picked = await _picker.pickImage(
+    final picked = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 512,
       maxHeight: 512,
       imageQuality: 85,
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _avatarImage = File(picked.path));
     }
   }
 
+  void _goBack() {
+    if (widget.onBack != null) {
+      widget.onBack!();
+      return;
+    }
+    Navigator.maybePop(context);
+  }
+
+  void _openPage(Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.dashboardPurple,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // ── HEADER ──────────────────────────────────────
-            _buildHeader(context),
+    final auth = context.watch<AuthProvider>();
+    final username = auth.username?.trim().isNotEmpty == true
+        ? auth.username!
+        : 'Monefy User';
+    final email = auth.email?.trim().isNotEmpty == true
+        ? auth.email!
+        : 'Keep your finances beautifully organized';
 
-            // ── BODY (white card) ───────────────────────────
-            Expanded(child: _buildBody()),
-          ],
+    return Scaffold(
+      backgroundColor: AppColors.primaryPurple,
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _ProfileHero(
+                username: username,
+                email: email,
+                avatarImage: _avatarImage,
+                onBack: _goBack,
+                onEditAvatar: _pickImage,
+              ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: AppColors.backgroundWhite,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(38),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.panelShadow,
+                        blurRadius: 20,
+                        offset: Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(38),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Opacity(
+                            opacity: 0.12,
+                            child: SvgPicture.asset(
+                              'assets/images/kontur.svg',
+                              fit: BoxFit.cover,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.decorativePurple,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ListView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 25, 20, 135),
+                          children: [
+                            _ProfileMenuCard(
+                              icon: Icons.receipt_long_rounded,
+                              title: 'Bills',
+                              subtitle: 'Track and manage your payments',
+                              onTap: () => _openPage(const ListBillsPage()),
+                            ),
+                            const SizedBox(height: 11),
+                            _ProfileMenuCard(
+                              icon: Icons.savings_rounded,
+                              title: 'Wishlist',
+                              subtitle: 'Keep your saving goals on track',
+                              onTap: () => _openPage(const SavingPage()),
+                            ),
+                            const SizedBox(height: 11),
+                            _ProfileMenuCard(
+                              icon: Icons.add_card_rounded,
+                              title: 'Add wallet',
+                              subtitle: 'Connect a new place for your money',
+                              onTap: () => _openPage(const CreateWalletPage()),
+                            ),
+                            const SizedBox(height: 11),
+                            _ProfileMenuCard(
+                              icon: Icons.help_outline_rounded,
+                              title: 'Help center',
+                              subtitle: 'Find answers and helpful guidance',
+                              onTap: () => _openPage(const HelpCenterPage()),
+                            ),
+                            const SizedBox(height: 27),
+                            _LogoutButton(onTap: _showLogoutConfirmation),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // HEADER  — purple top with back arrow + title
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: Row(
+  void _showLogoutConfirmation() {
+    ConfirmDialog.show(
+      context: context,
+      icon: Icons.logout_rounded,
+      title: 'Log out of your account?',
+      description:
+          "You'll need to sign in again to access your savings and track your finances.",
+      confirmLabel: 'Log Out',
+      confirmColor: AppColors.error,
+      onConfirm: () async {
+        await context.read<AuthProvider>().logout();
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      },
+    );
+  }
+}
+
+class _ProfileHero extends StatelessWidget {
+  final String username;
+  final String email;
+  final File? avatarImage;
+  final VoidCallback onBack;
+  final VoidCallback onEditAvatar;
+
+  const _ProfileHero({
+    required this.username,
+    required this.email,
+    required this.avatarImage,
+    required this.onBack,
+    required this.onEditAvatar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 255,
+      child: Stack(
         children: [
-          // Back button
-          GestureDetector(
-            onTap: () => Navigator.maybePop(context),
-            child: SvgPicture.asset(
-              'assets/icon/back.svg',
-              width: 35,
-              height: 35,
-              colorFilter: const ColorFilter.mode(
-                AppColors.primaryPurple,
-                BlendMode.srcIn,
-              ),
+          const Positioned.fill(child: _ProfileCheckerDecoration()),
+          Positioned(
+            left: 14,
+            right: 14,
+            top: 8,
+            child: Row(
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: onBack,
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(11),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppColors.panelWhite,
+                        size: 25,
+                      ),
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'My Profile',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.panelWhite,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 47),
+              ],
             ),
           ),
-
-          // Title centered
-          Expanded(
-            child: Text(
-              'My Profile',
-              textAlign: TextAlign.center,
-              style: AppTextStyle.heading.copyWith(
-                color: AppColors.primaryPurple,
-                fontSize: 25,
-                fontWeight: FontWeight.w700,
-              ),
+          Positioned(
+            left: 24,
+            right: 24,
+            top: 72,
+            child: Row(
+              children: [
+                _ProfileAvatar(avatarImage: avatarImage, onTap: onEditAvatar),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 28,
+                          height: 1.05,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.panelWhite,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.panelWhite.withValues(alpha: 0.82),
+                        ),
+                      ),
+                      const SizedBox(height: 13),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.panelWhite.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.panelWhite.withValues(alpha: 0.22),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.verified_rounded,
+                              size: 15,
+                              color: AppColors.panelWhite,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Monefy member',
+                              style: TextStyle(
+                                fontFamily: 'Nunito',
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.panelWhite,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-
-          // Spacer keeps title centered
-          const SizedBox(width: 24),
         ],
       ),
     );
   }
+}
 
-  // ═══════════════════════════════════════════════════════════
-  // BODY  — white rounded card with profile info + menu
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildBody() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.panelWhite,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: Stack(
-          children: [
-            // ── Kontur SVG background ──
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.9,
-                child: SvgPicture.asset(
-                  'assets/images/kontur.svg',
-                  fit: BoxFit.cover,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.decorativePurple,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
+class _ProfileAvatar extends StatelessWidget {
+  final File? avatarImage;
+  final VoidCallback onTap;
 
-            // ── Content ──
-            SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 120),
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
+  const _ProfileAvatar({required this.avatarImage, required this.onTap});
 
-                  // Avatar
-                  _buildAvatar(),
-
-                  const SizedBox(height: 16),
-
-                  // Name — dari AuthProvider
-                  Consumer<AuthProvider>(
-                    builder: (_, auth, __) => Text(
-                      auth.username ?? 'User',
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryPurple,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // Email — dari AuthProvider
-                  Consumer<AuthProvider>(
-                    builder: (_, auth, __) => Text(
-                      auth.email ?? '',
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 14,
-                        color: AppColors.disabled,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 36),
-
-                  // Menu items
-                  _buildMenuItem(
-                    svgPath: 'assets/icon/add.svg',
-                    label: 'Add your wallet',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateWalletPage(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  _buildMenuItem(
-                    svgPath: 'assets/icon/question.svg',
-                    label: 'Help center',
-                    iconSize: 36,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HelpCenterPage(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 140),
-
-                  // Logout button
-                  _buildLogoutButton(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // AVATAR  — with edit badge
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildAvatar() {
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _pickImage,
+      onTap: onTap,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // Circle avatar
           Container(
-            width: 120,
-            height: 120,
+            width: 106,
+            height: 106,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey.shade300,
-              image: _avatarImage != null
+              color: AppColors.dashboardPurple,
+              border: Border.all(color: AppColors.panelWhite, width: 4),
+              image: avatarImage != null
                   ? DecorationImage(
-                      image: FileImage(_avatarImage!),
+                      image: FileImage(avatarImage!),
                       fit: BoxFit.cover,
                     )
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.17),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: _avatarImage == null
-                ? const Icon(Icons.person, size: 60, color: Colors.white)
+            child: avatarImage == null
+                ? const Icon(
+                    Icons.person_rounded,
+                    size: 56,
+                    color: AppColors.panelWhite,
+                  )
                 : null,
           ),
-
-          // Edit badge
           Positioned(
-            bottom: 4,
-            right: 4,
+            right: -2,
+            bottom: 2,
             child: Container(
               width: 32,
               height: 32,
-              decoration: const BoxDecoration(
-                color: AppColors.badgeDark,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
+                border: Border.all(color: AppColors.panelWhite, width: 2),
               ),
               child: const Icon(
-                Icons.edit,
+                Icons.photo_camera_rounded,
                 size: 16,
-                color: Colors.white,
+                color: AppColors.panelWhite,
               ),
             ),
           ),
@@ -265,114 +382,146 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+}
 
-  // ═══════════════════════════════════════════════════════════
-  // MENU ITEM  — icon + rounded card with label
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildMenuItem({
-    required String svgPath,
-    required String label,
-    required VoidCallback onTap,
-    double iconSize = 28,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: GestureDetector(
+class _ProfileMenuCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ProfileMenuCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.panelWhite,
+      borderRadius: BorderRadius.circular(19),
+      child: InkWell(
         onTap: onTap,
-        child: Row(
-          children: [
-            // SVG icon
-            SvgPicture.asset(
-              svgPath,
-              width: iconSize,
-              height: iconSize,
-              colorFilter: const ColorFilter.mode(
-                AppColors.primaryPurple,
-                BlendMode.srcIn,
-              ),
+        borderRadius: BorderRadius.circular(19),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(19),
+            border: Border.all(
+              color: AppColors.primaryPurple.withValues(alpha: 0.07),
             ),
-
-            const SizedBox(width: 20),
-
-            // Label card
-            Expanded(
-              child: Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                decoration: BoxDecoration(
-                  color: AppColors.menuItemBg,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textTertiary,
-                  ),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.lightShadow,
+                blurRadius: 11,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 46,
+                height: 46,
+                child: Icon(icon, color: AppColors.primaryPurple, size: 23),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 10.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.disabled,
+                size: 23,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  // ═══════════════════════════════════════════════════════════
-  // LOGOUT BUTTON
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildLogoutButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
-      child: GestureDetector(
-        onTap: () {
-          ConfirmDialog.show(
-            context: context,
-            icon: Icons.help_rounded,
-            title: 'Log out of your account?',
-            description:
-                "Are you sure you want to log out of Monefy?\nYou'll need to sign in again to access your savings and track your finances.",
-            confirmLabel: 'Log Out',
-            confirmColor: AppColors.error,
-            onConfirm: () async {
-              // Logout: clear token dari memory & SharedPreferences
-              await context.read<AuthProvider>().logout();
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-          );
-        },
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.error,
-            borderRadius: BorderRadius.circular(14),
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 55,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.logout_rounded, size: 20),
+        label: const Text(
+          'Log out',
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                'assets/icon/logout.svg',
-                width: 24,
-                height: 24,
-                colorFilter: const ColorFilter.mode(
-                  Colors.white,
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Logout',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.white2,
-                ),
-              ),
-            ],
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.error,
+          backgroundColor: AppColors.panelWhite,
+          side: BorderSide(color: AppColors.error.withValues(alpha: 0.28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(17),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileCheckerDecoration extends StatelessWidget {
+  const _ProfileCheckerDecoration();
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topRight,
+      child: SizedBox(
+        width: 150,
+        height: 250,
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+          ),
+          itemCount: 15,
+          itemBuilder: (_, index) => ColoredBox(
+            color: index.isEven
+                ? AppColors.panelWhite.withValues(alpha: 0.035)
+                : AppColors.primaryPurple.withValues(alpha: 0.04),
           ),
         ),
       ),

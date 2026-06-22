@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
 class QuickAccess extends StatelessWidget {
@@ -23,7 +23,7 @@ class QuickAccess extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16,1),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 1),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -41,7 +41,7 @@ class QuickAccess extends StatelessWidget {
           Text(
             'Quick Access',
             style: AppTextStyle.title.copyWith(
-              color:accentColor,
+              color: accentColor,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -51,7 +51,7 @@ class QuickAccess extends StatelessWidget {
             children: [
               Expanded(
                 child: _QuickAccessButton(
-                  svgPath: 'assets/icon/Bills.svg',
+                  icon: Icons.receipt_long_rounded,
                   label: 'Bills',
                   color: accentColor,
                   labelColor: colorScheme.onSurface.withValues(alpha: 0.8),
@@ -61,7 +61,7 @@ class QuickAccess extends StatelessWidget {
               const SizedBox(width: 5),
               Expanded(
                 child: _QuickAccessButton(
-                  svgPath: 'assets/icon/add.svg',
+                  icon: Icons.add_card_rounded,
                   label: 'Add Wallet',
                   color: accentColor,
                   labelColor: colorScheme.onSurface.withValues(alpha: 0.8),
@@ -71,7 +71,7 @@ class QuickAccess extends StatelessWidget {
               const SizedBox(width: 5),
               Expanded(
                 child: _QuickAccessButton(
-                  svgPath: 'assets/icon/Saving.svg',
+                  icon: Icons.savings_rounded,
                   label: 'Wishlist',
                   color: accentColor,
                   labelColor: colorScheme.onSurface.withValues(alpha: 0.8),
@@ -87,14 +87,14 @@ class QuickAccess extends StatelessWidget {
 }
 
 class _QuickAccessButton extends StatefulWidget {
-  final String svgPath;
+  final IconData icon;
   final String label;
   final Color color;
   final Color? labelColor;
   final VoidCallback? onTap;
 
   const _QuickAccessButton({
-    required this.svgPath,
+    required this.icon,
     required this.label,
     required this.color,
     this.labelColor,
@@ -132,16 +132,26 @@ class _QuickAccessButtonState extends State<_QuickAccessButton> {
                   splashFactory: InkRipple.splashFactory,
                   splashColor: widget.color.withValues(alpha: 0.30),
                   highlightColor: widget.color.withValues(alpha: 0.15),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: SvgPicture.asset(
-                      widget.svgPath,
-                      width: 34,
-                      height: 34,
-                      colorFilter: ColorFilter.mode(
-                        widget.color,
-                        BlendMode.srcIn,
-                      ),
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(17),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryPurple.withValues(
+                            alpha: 0.25,
+                          ),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      widget.icon,
+                      size: 27,
+                      color: AppColors.panelWhite,
                     ),
                   ),
                 ),

@@ -35,10 +35,10 @@ class SavingService {
 
   // ── POST /wishlists ─────────────────────────────
   static Future<Saving> createSaving(
-      String name,
-      int target,
-      String token,
-      ) async {
+    String name,
+    int target,
+    String token,
+  ) async {
     final response = await http.post(
       Uri.parse(baseUrl),
       headers: {
@@ -46,10 +46,7 @@ class SavingService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({
-        'name': name,
-        'target_amount': target,
-      }),
+      body: json.encode({'name': name, 'target_amount': target}),
     );
 
     debugPrint('POST /wishlists → ${response.statusCode}');
@@ -63,12 +60,18 @@ class SavingService {
     }
   }
 
-  // ── 🔥 BUY (PAKAI WALLET DARI UI) ─────────────────
+  // ── BUY (PAKAI WALLET DARI UI) ─────────────────
   static Future<void> buySaving(
-      int id,
-      int walletId,
-      String token,
-      ) async {
+    int id,
+    int walletId,
+    String token, {
+    int? amount,
+  }) async {
+    final body = <String, dynamic>{'status': 'terbeli', 'wallet_id': walletId};
+    if (amount != null && amount > 0) {
+      body['target_amount'] = amount;
+    }
+
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
       headers: {
@@ -76,10 +79,7 @@ class SavingService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({
-        'status': 'terbeli',
-        'wallet_id': walletId,
-      }),
+      body: json.encode(body),
     );
 
     debugPrint('PUT /wishlists/$id → ${response.statusCode}');
@@ -91,12 +91,12 @@ class SavingService {
   }
 
   static Future<void> updateSaving(
-      int id,
-      String name,
-      int target,
-      String? date,
-      String token,
-      ) async {
+    int id,
+    String name,
+    int target,
+    String? date,
+    String token,
+  ) async {
     final response = await http.put(
       Uri.parse('$baseUrl/$id'),
       headers: {
@@ -104,11 +104,7 @@ class SavingService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: json.encode({
-        'name': name,
-        'target_amount': target,
-        'date': date,
-      }),
+      body: json.encode({'name': name, 'target_amount': target, 'date': date}),
     );
 
     debugPrint('PUT UPDATE /wishlists/$id → ${response.statusCode}');
@@ -120,10 +116,7 @@ class SavingService {
   }
 
   // ── DELETE ─────────────────────────────
-  static Future<void> deleteSaving(
-      int id,
-      String token,
-      ) async {
+  static Future<void> deleteSaving(int id, String token) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/$id'),
       headers: {

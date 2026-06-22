@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../data/models/wallet_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/wallet_provider.dart';
 import 'create_wallet_page.dart';
 import 'wallet_category_page.dart';
 
-// ══════════════════════════════════════════════════════════════
-/// YourWalletPage — halaman daftar wallet per kategori.
-///
-/// Menampilkan total balance, kategori Cash/Bank/E-Wallet
-/// dan navigasi ke WalletCategoryPage.
-// ══════════════════════════════════════════════════════════════
 class YourWalletPage extends StatefulWidget {
   const YourWalletPage({super.key});
 
@@ -25,12 +19,11 @@ class YourWalletPage extends StatefulWidget {
 }
 
 class _YourWalletPageState extends State<YourWalletPage> {
+  static final NumberFormat _currencyFormatter = NumberFormat('#,##0', 'id_ID');
 
   @override
   void initState() {
     super.initState();
-    // ✅ Load wallet dari API setiap kali halaman ini dibuka
-    // Memastikan balance selalu fresh (tidak stuck di Rp0)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final token = context.read<AuthProvider>().token;
@@ -40,20 +33,24 @@ class _YourWalletPageState extends State<YourWalletPage> {
     });
   }
 
-  void _goToCreateWallet() {
+  void _openCreateWallet() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => CreateWalletPage()),
+      MaterialPageRoute(builder: (_) => const CreateWalletPage()),
     );
   }
 
-  void _goToCategory(WalletCategory category) {
+  void _openCategory(WalletCategory category) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => WalletCategoryPage(category: category),
-      ),
+      MaterialPageRoute(builder: (_) => WalletCategoryPage(category: category)),
     );
+  }
+
+  double _categoryBalance(WalletProvider provider, WalletCategory category) {
+    return provider
+        .byCategory(category)
+        .fold(0, (sum, wallet) => sum + wallet.balance);
   }
 
   @override
@@ -61,27 +58,151 @@ class _YourWalletPageState extends State<YourWalletPage> {
     return Consumer<WalletProvider>(
       builder: (context, provider, _) {
         return Scaffold(
-          backgroundColor: Colors.transparent,
+          backgroundColor: AppColors.primaryPurple,
           body: Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF8B5CF6),
-                  Color(0xFF6D28D9),
-                  Color(0xFF4C1D95),
-                ],
-                stops: [0.0, 0.5, 1.0],
-              ),
+              gradient: AppColors.primaryGradient,
             ),
             child: SafeArea(
               bottom: false,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(context, provider),
-                  Expanded(child: _buildBody(context, provider)),
+                  _WalletHero(
+                    totalBalance: provider.totalBalance,
+                    walletCount: provider.wallets.length,
+                    isHidden: provider.isHidden,
+                    isLoading: provider.isLoading,
+                    onBack: () => Navigator.maybePop(context),
+                    onToggleVisibility: provider.toggleHide,
+                  ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: AppColors.backgroundWhite,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(38),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.panelShadow,
+                            blurRadius: 20,
+                            offset: Offset(0, -5),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(38),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Opacity(
+                                opacity: 0.13,
+                                child: SvgPicture.asset(
+                                  'assets/images/kontur.svg',
+                                  fit: BoxFit.cover,
+                                  colorFilter: const ColorFilter.mode(
+                                    AppColors.decorativePurple,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            ListView(
+                              physics: const BouncingScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                24,
+                                20,
+                                135,
+                              ),
+                              children: [
+                                _WalletSectionHeader(
+                                  onAddWallet: _openCreateWallet,
+                                ),
+                                const SizedBox(height: 18),
+                                Skeletonizer(
+                                  enabled: provider.isLoading,
+                                  child: Column(
+                                    children: [
+                                      _WalletCategoryCard(
+                                        iconAsset: 'assets/icon/cash.svg',
+                                        title: 'Cash',
+                                        subtitle: 'Money ready in your hands',
+                                        count: provider
+                                            .byCategory(WalletCategory.cash)
+                                            .length,
+                                        balance: _categoryBalance(
+                                          provider,
+                                          WalletCategory.cash,
+                                        ),
+                                        isHidden: provider.isHidden,
+                                        gradient: const [
+                                          Color(0xFFFF8A65),
+                                          Color(0xFFFF5722),
+                                        ],
+                                        onTap: () =>
+                                            _openCategory(WalletCategory.cash),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _WalletCategoryCard(
+                                        icon: Icons.account_balance_outlined,
+                                        title: 'Bank accounts',
+                                        subtitle:
+                                            'Your connected bank balances',
+                                        count: provider
+                                            .byCategory(
+                                              WalletCategory.bankAccount,
+                                            )
+                                            .length,
+                                        balance: _categoryBalance(
+                                          provider,
+                                          WalletCategory.bankAccount,
+                                        ),
+                                        isHidden: provider.isHidden,
+                                        gradient: const [
+                                          Color(0xFF38BDF8),
+                                          Color(0xFF2563EB),
+                                        ],
+                                        onTap: () => _openCategory(
+                                          WalletCategory.bankAccount,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _WalletCategoryCard(
+                                        icon: Icons
+                                            .account_balance_wallet_outlined,
+                                        title: 'E-wallets',
+                                        subtitle:
+                                            'Your everyday digital wallets',
+                                        count: provider
+                                            .byCategory(WalletCategory.eWallet)
+                                            .length,
+                                        balance: _categoryBalance(
+                                          provider,
+                                          WalletCategory.eWallet,
+                                        ),
+                                        isHidden: provider.isHidden,
+                                        gradient: const [
+                                          Color(0xFF9B87F5),
+                                          AppColors.primaryPurple,
+                                        ],
+                                        onTap: () => _openCategory(
+                                          WalletCategory.eWallet,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -90,319 +211,386 @@ class _YourWalletPageState extends State<YourWalletPage> {
       },
     );
   }
+}
 
-  // ══════════════════════════════════════════════════════════
-  // HEADER
-  // ══════════════════════════════════════════════════════════
-  Widget _buildHeader(BuildContext context, WalletProvider provider) {
-    // Format angka dengan NumberFormat agar tidak ada pembulatan
-    final formatter = NumberFormat('#,##0', 'id_ID');
-    final balanceText = provider.isHidden
+class _WalletHero extends StatelessWidget {
+  final double totalBalance;
+  final int walletCount;
+  final bool isHidden;
+  final bool isLoading;
+  final VoidCallback onBack;
+  final VoidCallback onToggleVisibility;
+
+  const _WalletHero({
+    required this.totalBalance,
+    required this.walletCount,
+    required this.isHidden,
+    required this.isLoading,
+    required this.onBack,
+    required this.onToggleVisibility,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = isHidden
         ? '••••••••'
-        : 'Rp${formatter.format(provider.totalBalance.toInt())}';
+        : 'Rp${_YourWalletPageState._currencyFormatter.format(totalBalance)}';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 90),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return SizedBox(
+      height: 286,
+      width: double.infinity,
+      child: Stack(
         children: [
-          // ── Back arrow + judul ───────────────────
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.maybePop(context),
-                child: SvgPicture.asset(
-                  'assets/icon/back.svg',
-                  width: 32,
-                  height: 32,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.white,
-                    BlendMode.srcIn,
+          const Positioned.fill(child: _WalletCheckerDecoration()),
+          Positioned(
+            left: 14,
+            right: 14,
+            top: 8,
+            child: Row(
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: onBack,
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(11),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppColors.panelWhite,
+                        size: 25,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Text(
-                  'Your Wallet',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyle.heading.copyWith(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.2,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        offset: Offset(0, 2),
-                        blurRadius: 4,
+                const Expanded(
+                  child: Text(
+                    'Your Wallet',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.panelWhite,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 47),
+              ],
+            ),
+          ),
+          Positioned(
+            left: 30,
+            right: 30,
+            top: 92,
+            child: Skeletonizer(
+              enabled: isLoading,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Total balance',
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.panelWhite,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Material(
+                        color: Colors.transparent,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          onTap: onToggleVisibility,
+                          customBorder: const CircleBorder(),
+                          child: Padding(
+                            padding: const EdgeInsets.all(5),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                isHidden
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
+                                key: ValueKey(isHidden),
+                                color: AppColors.panelWhite,
+                                size: 19,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(width: 32),
-            ],
-          ),
-
-          const SizedBox(height: 36),
-
-          // ── Label + nominal (skeleton saat loading) ──
-          Skeletonizer(
-            enabled: provider.isLoading,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Label "Your total balance is" + mata
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your total balance is',
-                      style: TextStyle(
-                        fontFamily: 'Nunito',
-                        color: Colors.white.withValues(alpha: 0.95),
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: provider.toggleHide,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        child: Icon(
-                          provider.isHidden
-                              ? Icons.visibility_off_rounded
-                              : Icons.visibility_rounded,
-                          key: ValueKey(provider.isHidden),
-                          color: Colors.white.withValues(alpha: 0.85),
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                // Nominal total balance
-                // Nominal total balance
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 280),
-                  child: FittedBox(
+                  const SizedBox(height: 12),
+                  FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      provider.isLoading ? 'Rp 99.999.999' : balanceText,
-                      key: ValueKey(provider.isHidden),
+                      isLoading ? 'Rp99.999.999' : balance,
                       style: const TextStyle(
                         fontFamily: 'Nunito',
-                        fontSize: 44,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -1.0,
+                        fontSize: 46,
+                        height: 1,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1.1,
+                        color: AppColors.panelWhite,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 22),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.panelWhite.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: AppColors.panelWhite.withValues(alpha: 0.20),
+                      ),
+                    ),
+                    child: Text(
+                      '$walletCount ${walletCount == 1 ? 'wallet' : 'wallets'} connected',
+                      style: const TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.panelWhite,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  // ══════════════════════════════════════════════════════════
-  // BODY
-  // ══════════════════════════════════════════════════════════
-  Widget _buildBody(BuildContext context, WalletProvider provider) {
-    final mediaBottom = MediaQuery.of(context).padding.bottom;
+class _WalletSectionHeader extends StatelessWidget {
+  final VoidCallback onAddWallet;
 
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.backgroundWhite,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: Stack(
-          children: [
-            // ── Kontur SVG ─────────────────────────────
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.55,
-                child: SvgPicture.asset(
-                  'assets/images/kontur.svg',
-                  fit: BoxFit.cover,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.decorativePurple,
-                    BlendMode.srcIn,
-                  ),
+  const _WalletSectionHeader({required this.onAddWallet});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Wallet overview',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryPurple,
                 ),
               ),
-            ),
-
-            // ── Konten ─────────────────────────────────
-            SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.only(
-                top: 20,
-                bottom: 32 + mediaBottom,
+              SizedBox(height: 2),
+              Text(
+                'Choose a category to see its wallets',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+        ),
+        Material(
+          color: AppColors.primaryPurple,
+          borderRadius: BorderRadius.circular(17),
+          child: InkWell(
+            onTap: onAddWallet,
+            borderRadius: BorderRadius.circular(17),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── Tombol Add wallet (pojok kanan) ───
-                  Padding(
-                    padding: const EdgeInsets.only(right: 20, bottom: 12),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: _AddWalletButton(
-                        onTap: _goToCreateWallet,
-                      ),
-                    ),
+                  Icon(
+                    Icons.add_card_rounded,
+                    color: AppColors.panelWhite,
+                    size: 18,
                   ),
-
-                  // ── Label "Wallet List" ───────────────
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: Text(
-                      'Wallet List',
-                      style: AppTextStyle.title.copyWith(
-                        color: AppColors.primaryPurple,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-
-                  // ── Kategori items (skeleton saat loading) ────
-                  Skeletonizer(
-                    enabled: provider.isLoading,
-                    child: Column(
-                      children: [
-                        _CategoryTile(
-                          icon: Icons.attach_money_rounded,
-                          label: 'Cash',
-                          count: provider.byCategory(WalletCategory.cash).length,
-                          onTap: () => _goToCategory(WalletCategory.cash),
-                        ),
-                        _CategoryTile(
-                          icon: Icons.account_balance_rounded,
-                          label: 'Bank Accounts',
-                          count: provider.byCategory(WalletCategory.bankAccount).length,
-                          onTap: () => _goToCategory(WalletCategory.bankAccount),
-                        ),
-                        _CategoryTile(
-                          icon: Icons.wallet_rounded,
-                          label: 'E-Wallets',
-                          count: provider.byCategory(WalletCategory.eWallet).length,
-                          onTap: () => _goToCategory(WalletCategory.eWallet),
-                        ),
-                      ],
+                  SizedBox(width: 6),
+                  Text(
+                    'Add wallet',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.panelWhite,
                     ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// Tile satu kategori — ikon ungu + label + chevron
-// ══════════════════════════════════════════════════════════════
-class _CategoryTile extends StatefulWidget {
-  final IconData icon;
-  final String label;
+class _WalletCategoryCard extends StatelessWidget {
+  final IconData? icon;
+  final String? iconAsset;
+  final String title;
+  final String subtitle;
   final int count;
+  final double balance;
+  final bool isHidden;
+  final List<Color> gradient;
   final VoidCallback onTap;
 
-  const _CategoryTile({
-    required this.icon,
-    required this.label,
+  const _WalletCategoryCard({
+    this.icon,
+    this.iconAsset,
+    required this.title,
+    required this.subtitle,
     required this.count,
+    required this.balance,
+    required this.isHidden,
+    required this.gradient,
     required this.onTap,
   });
 
   @override
-  State<_CategoryTile> createState() => _CategoryTileState();
-}
-
-class _CategoryTileState extends State<_CategoryTile> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedScale(
-          scale: _pressed ? 0.97 : 1.0,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryPurple.withValues(alpha: 0.07),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Ikon dalam kotak ungu muda
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.dashboardPurple,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    widget.icon,
-                    color: AppColors.primaryPurple,
-                    size: 22,
-                  ),
-                ),
+    final balanceText = isHidden
+        ? '••••••'
+        : 'Rp${_YourWalletPageState._currencyFormatter.format(balance)}';
 
-                const SizedBox(width: 16),
-
-                // Label
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: const TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+    return Material(
+      color: AppColors.panelWhite,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: gradient.last.withValues(alpha: 0.10)),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.lightShadow,
+                blurRadius: 14,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(17),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gradient.last.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
                     ),
-                  ),
+                  ],
                 ),
-
-                // Chevron
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.primaryPurple,
-                  size: 26,
+                alignment: Alignment.center,
+                child: iconAsset != null
+                    ? SvgPicture.asset(
+                        iconAsset!,
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(
+                          AppColors.panelWhite,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Icon(icon, color: AppColors.panelWhite, size: 25),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          balanceText,
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: gradient.last,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 10.5,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$count ${count == 1 ? 'wallet' : 'wallets'}',
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.disabled,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.disabled,
+                size: 23,
+              ),
+            ],
           ),
         ),
       ),
@@ -410,57 +598,27 @@ class _CategoryTileState extends State<_CategoryTile> {
   }
 }
 
-
-class _AddWalletButton extends StatefulWidget {
-  final VoidCallback onTap;
-  const _AddWalletButton({required this.onTap});
-
-  @override
-  State<_AddWalletButton> createState() => _AddWalletButtonState();
-}
-
-class _AddWalletButtonState extends State<_AddWalletButton> {
-  bool _pressed = false;
+class _WalletCheckerDecoration extends StatelessWidget {
+  const _WalletCheckerDecoration();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.92 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.dashboardPurple,
-            borderRadius: BorderRadius.circular(50),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryPurple.withValues(alpha: 0.15),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Align(
+      alignment: Alignment.topRight,
+      child: SizedBox(
+        width: 160,
+        height: 240,
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.add_card_rounded, color: AppColors.primaryPurple, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Add wallet',
-                style: TextStyle(
-                  fontFamily: 'Nunito',
-                  color: AppColors.primaryPurple,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-              ),
-            ],
+          itemCount: 15,
+          itemBuilder: (_, index) => ColoredBox(
+            color: index.isEven
+                ? AppColors.panelWhite.withValues(alpha: 0.035)
+                : AppColors.primaryPurple.withValues(alpha: 0.04),
           ),
         ),
       ),

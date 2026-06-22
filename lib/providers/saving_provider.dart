@@ -29,11 +29,11 @@ class SavingProvider extends ChangeNotifier {
   }
 
   Future<void> addSaving(
-      String name,
-      int target,
-      String date,
-      String token,
-      ) async {
+    String name,
+    int target,
+    String date,
+    String token,
+  ) async {
     try {
       await SavingService.createSaving(name, target, token);
       await fetchSavings(token);
@@ -44,15 +44,17 @@ class SavingProvider extends ChangeNotifier {
 
   /// BUY DENGAN WALLET
   Future<void> buySaving(
-      int id,
-      int walletId,
-      String token,
-      ) async {
+    int id,
+    int walletId,
+    String token, {
+    int? amount,
+  }) async {
     try {
-      await SavingService.buySaving(id, walletId, token);
+      await SavingService.buySaving(id, walletId, token, amount: amount);
       await fetchSavings(token);
     } catch (e) {
       debugPrint("buySaving error: $e");
+      rethrow;
     }
   }
 
@@ -81,12 +83,12 @@ class SavingProvider extends ChangeNotifier {
   }
 
   Future<void> updateSavingApi(
-      int id,
-      String name,
-      int target,
-      String? date,
-      String token,
-      ) async {
+    int id,
+    String name,
+    int target,
+    String? date,
+    String token,
+  ) async {
     try {
       await SavingService.updateSaving(id, name, target, date, token);
       await fetchSavings(token);

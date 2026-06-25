@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../loading_spinner.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/saving_provider.dart';
 import 'saving_card.dart';
 import 'saving_detail_modal.dart';
 
@@ -38,6 +41,7 @@ class _SavingListState extends State<SavingList> {
     final savings = widget.items
         .where((item) => item['isDone'] == _showCompleted)
         .toList();
+    final isInitialLoading = widget.isLoading && widget.items.isEmpty;
 
     return Stack(
       children: [
@@ -110,29 +114,46 @@ class _SavingListState extends State<SavingList> {
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 280),
-                child: widget.isLoading
-                    ? const Center(
-                        key: ValueKey('loading'),
-                        child: LoadingSpinner(),
-                      )
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.03, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: isInitialLoading
+                    ? const _WishlistSkeletonList(key: ValueKey('loading'))
                     : savings.isEmpty
-                    ? _WishlistEmptyState(
+                    ? _WishlistRefreshWrapper(
                         key: ValueKey('empty-$_showCompleted'),
-                        completed: _showCompleted,
-                        onAddTap: widget.onAddTap,
+                        child: _WishlistEmptyState(
+                          completed: _showCompleted,
+                          onAddTap: widget.onAddTap,
+                        ),
                       )
-                    : ListView.builder(
+                    : _WishlistRefreshWrapper(
                         key: ValueKey('list-$_showCompleted'),
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
-                        itemCount: savings.length,
-                        itemBuilder: (context, index) {
-                          final item = savings[index];
-                          return SavingCard(
-                            item: item,
-                            onTap: () => showSavingDetailModal(context, item),
-                          );
-                        },
+                        child: ListView.builder(
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+                          itemCount: savings.length,
+                          itemBuilder: (context, index) {
+                            final item = savings[index];
+                            return SavingCard(
+                              item: item,
+                              onTap: () => showSavingDetailModal(context, item),
+                            );
+                          },
+                        ),
                       ),
               ),
             ),
@@ -202,19 +223,47 @@ class _WishlistSegmentedControl extends StatelessWidget {
         color: AppColors.dashboardPurple.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          _SegmentItem(
-            label: 'Ongoing',
-            count: ongoingCount,
-            selected: !showCompleted,
-            onTap: () => onChanged(false),
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOutCubic,
+            alignment: showCompleted
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              heightFactor: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.panelWhite,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.lightShadow,
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          _SegmentItem(
-            label: 'Completed',
-            count: completedCount,
-            selected: showCompleted,
-            onTap: () => onChanged(true),
+          Row(
+            children: [
+              _SegmentItem(
+                label: 'Ongoing',
+                count: ongoingCount,
+                selected: !showCompleted,
+                onTap: () => onChanged(false),
+              ),
+              _SegmentItem(
+                label: 'Completed',
+                count: completedCount,
+                selected: showCompleted,
+                onTap: () => onChanged(true),
+              ),
+            ],
           ),
         ],
       ),
@@ -240,66 +289,100 @@ class _SegmentItem extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.panelWhite : Colors.transparent,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: selected
-                ? const [
-                    BoxShadow(
-                      color: AppColors.lightShadow,
-                      blurRadius: 8,
-                      offset: Offset(0, 3),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: selected
+                      ? AppColors.primaryPurple
+                      : AppColors.textSecondary,
+                ),
+                child: Text(label),
+              ),
+              const SizedBox(width: 6),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                constraints: const BoxConstraints(minWidth: 22),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.primaryPurple
+                      : AppColors.panelWhite.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$count',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Nunito',
-                    fontSize: 13,
+                    fontSize: 9,
                     fontWeight: FontWeight.w800,
                     color: selected
-                        ? AppColors.primaryPurple
+                        ? AppColors.panelWhite
                         : AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Container(
-                  constraints: const BoxConstraints(minWidth: 22),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.primaryPurple
-                        : AppColors.panelWhite.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$count',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: selected
-                          ? AppColors.panelWhite
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WishlistRefreshWrapper extends StatelessWidget {
+  final Widget child;
+
+  const _WishlistRefreshWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      color: AppColors.primaryPurple,
+      onRefresh: () async {
+        final token = context.read<AuthProvider>().token;
+        if (token == null || token.isEmpty) return;
+        await context.read<SavingProvider>().fetchSavings(token);
+      },
+      child: child,
+    );
+  }
+}
+
+class _WishlistSkeletonList extends StatelessWidget {
+  const _WishlistSkeletonList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final dummyItem = {
+      'id': 0,
+      'name': 'New Laptop',
+      'amount': 0,
+      'target': 7500000,
+      'date': '2026-12-31',
+      'isDone': false,
+    };
+
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+        itemCount: 5,
+        itemBuilder: (_, __) => SavingCard(item: dummyItem),
       ),
     );
   }
@@ -317,63 +400,71 @@ class _WishlistEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(28, 20, 28, 120),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              completed ? 'No completed goals yet' : 'Dream something lovely',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(28, 20, 28, 120),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - 140).clamp(220, 420),
             ),
-            const SizedBox(height: 7),
-            Text(
-              completed
-                  ? 'Goals you have achieved will be celebrated here.'
-                  : 'Create your first wishlist goal and start planning for it.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 12,
-                height: 1.45,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            if (!completed) ...[
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: onAddTap,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 11,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  completed ? 'No completed goals yet' : 'Dream something lovely',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text(
-                  'Add your first goal',
-                  style: TextStyle(
+                const SizedBox(height: 7),
+                Text(
+                  completed
+                      ? 'Goals you have achieved will be celebrated here.'
+                      : 'Create your first wishlist goal and start planning for it.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    height: 1.45,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
+                if (!completed) ...[
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: onAddTap,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 11,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text(
+                      'Add your first goal',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
+import '../widgets/auth_brand_header.dart';
 import '../widgets/auth_form.dart';
 import 'login_page.dart';
 import '../../providers/auth_provider.dart';
@@ -97,59 +97,60 @@ class _SignUpPageState extends State<SignUpPage> {
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  const AuthBrandHeader(),
+                  const SizedBox(height: 2),
 
-              const SizedBox(height: 40),
+                  /// FORM
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(40),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 24,
+                              offset: const Offset(0, -4),
+                            ),
+                          ],
+                        ),
+                        child: AuthForm(
+                          formKey: _formKey,
+                          title: "Sign Up",
+                          buttonText: "Sign Up",
+                          isRegister: true,
 
-              SvgPicture.asset(
-                'assets/images/moneyfy.svg',
-                width: 120,
-              ),
+                          /// CONTROLLERS
+                          usernameController: usernameController,
+                          emailController: emailController,
+                          passwordController: passwordController,
+                          confirmPasswordController: confirmPasswordController,
 
-              const SizedBox(height: 10),
-
-              const Text(
-                "Monefy.",
-                style: TextStyle(
-                  fontSize: 28,
-                  color: Color(0xFF694EDA),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              /// FORM
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(25),
-                  child: AuthForm(
-                    formKey: _formKey,
-                    title: "Sign Up",
-                    buttonText: "Sign Up",
-                    isRegister: true,
-
-                    /// CONTROLLERS
-                    usernameController: usernameController,
-                    emailController: emailController,
-                    passwordController: passwordController,
-                    confirmPasswordController: confirmPasswordController,
-
-                    /// ACTIONS
-                    onSubmit: handleRegister,
-                    onSwitch: () {
-                      Navigator.pop(context);
-                    },
+                          /// ACTIONS
+                          onSubmit: handleRegister,
+                          onSwitch: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

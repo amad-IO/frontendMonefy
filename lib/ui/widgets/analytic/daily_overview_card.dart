@@ -83,7 +83,15 @@ class DailyOverviewCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── Chart ────────────────────────────────────────
-          _buildChartArea(),
+          TweenAnimationBuilder<double>(
+            key: ValueKey(
+              '${period}_${dailyData.map((d) => '${d.income}:${d.expense}:${d.saving}').join('|')}',
+            ),
+            tween: Tween<double>(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.easeOutCubic,
+            builder: (context, progress, _) => _buildChartArea(progress),
+          ),
 
           const SizedBox(height: 12),
 
@@ -107,9 +115,9 @@ class DailyOverviewCard extends StatelessWidget {
   //  Chart area — scrollable untuk monthly
   // ═══════════════════════════════════════════════════════════
 
-  Widget _buildChartArea() {
-    final barData = _prepareBarData();
-    final maxY = _getMaxY(barData);
+  Widget _buildChartArea(double progress) {
+    final barData = _prepareBarData(progress);
+    final maxY = _getMaxY(_prepareBarData(1));
 
     // Lebar chart: monthly butuh scroll, yang lain tidak
     final double chartWidth;
@@ -187,19 +195,19 @@ class DailyOverviewCard extends StatelessWidget {
   //  Prepare bar data sesuai period
   // ═══════════════════════════════════════════════════════════
 
-  List<BarChartGroupData> _prepareBarData() {
+  List<BarChartGroupData> _prepareBarData(double progress) {
     switch (period) {
       case AnalyticPeriod.weekly:
-        return _weeklyBars();
+        return _weeklyBars(progress);
       case AnalyticPeriod.monthly:
-        return _monthlyBars();
+        return _monthlyBars(progress);
       case AnalyticPeriod.yearly:
-        return _yearlyBars();
+        return _yearlyBars(progress);
     }
   }
 
   /// Weekly: 7 bar (Senin - Minggu)
-  List<BarChartGroupData> _weeklyBars() {
+  List<BarChartGroupData> _weeklyBars(double progress) {
     // dailyData sudah berisi 7 hari (atau kurang jika belum lengkap)
     return List.generate(7, (i) {
       double inc = 0, exp = 0, sav = 0;
@@ -208,24 +216,24 @@ class DailyOverviewCard extends StatelessWidget {
         exp = dailyData[i].expense;
         sav = dailyData[i].saving.clamp(0.0, double.infinity).toDouble();
       }
-      return _makeGroup(i, inc, exp, sav);
+      return _makeGroup(i, inc * progress, exp * progress, sav * progress);
     });
   }
 
   /// Monthly: 1 bar per tanggal
-  List<BarChartGroupData> _monthlyBars() {
+  List<BarChartGroupData> _monthlyBars(double progress) {
     return List.generate(dailyData.length, (i) {
       return _makeGroup(
         i,
-        dailyData[i].income,
-        dailyData[i].expense,
-        dailyData[i].saving.clamp(0.0, double.infinity).toDouble(),
+        dailyData[i].income * progress,
+        dailyData[i].expense * progress,
+        dailyData[i].saving.clamp(0.0, double.infinity).toDouble() * progress,
       );
     });
   }
 
   /// Yearly: 12 bar (Jan - Dec), aggregate dailyData per bulan
-  List<BarChartGroupData> _yearlyBars() {
+  List<BarChartGroupData> _yearlyBars(double progress) {
     // Aggregate by month (1-12)
     final Map<int, double> monthIncome = {};
     final Map<int, double> monthExpense = {};
@@ -240,7 +248,7 @@ class DailyOverviewCard extends StatelessWidget {
       final inc = monthIncome[month] ?? 0;
       final exp = monthExpense[month] ?? 0;
       final sav = (inc - exp).clamp(0.0, double.infinity).toDouble();
-      return _makeGroup(i, inc, exp, sav);
+      return _makeGroup(i, inc * progress, exp * progress, sav * progress);
     });
   }
 

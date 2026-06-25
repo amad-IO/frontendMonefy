@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../data/models/transaction_model.dart';
 import 'card_history.dart';
 
 class HistorySection extends StatefulWidget {
   final List<TransactionModel> transactions;
+  final bool isLoading;
+  final bool showPendingSkeleton;
 
   final void Function(TransactionFilter filter)? onFilterChanged;
 
@@ -14,6 +17,8 @@ class HistorySection extends StatefulWidget {
   const HistorySection({
     super.key,
     required this.transactions,
+    this.isLoading = false,
+    this.showPendingSkeleton = false,
     this.onFilterChanged,
     this.onSeeAll,
     this.maxItems = 8,
@@ -52,9 +57,15 @@ class _HistorySectionState extends State<HistorySection> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final mediaBottom = MediaQuery.of(context).padding.bottom;
-    final bool showSeeAll = widget.transactions.length > widget.maxItems;
-    final displayList = widget.transactions.length > widget.maxItems
-        ? widget.transactions.sublist(0, widget.maxItems)
+    final visibleTransactionLimit = widget.showPendingSkeleton
+        ? widget.maxItems - 1
+        : widget.maxItems;
+    final clampedLimit = visibleTransactionLimit < 0
+        ? 0
+        : visibleTransactionLimit;
+    final bool showSeeAll = widget.transactions.length > clampedLimit;
+    final displayList = widget.transactions.length > clampedLimit
+        ? widget.transactions.sublist(0, clampedLimit)
         : widget.transactions;
 
     return Container(
@@ -115,9 +126,12 @@ class _HistorySectionState extends State<HistorySection> {
                                 fontSize: 13,
                                 color: isActive
                                     ? colorScheme.onPrimary
-                                    : colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontWeight:
-                                    isActive ? FontWeight.w800 : FontWeight.w700,
+                                    : colorScheme.onSurface.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                fontWeight: isActive
+                                    ? FontWeight.w800
+                                    : FontWeight.w700,
                               ),
                               child: Text(_filterLabels[filter] ?? 'All'),
                             ),
@@ -134,50 +148,120 @@ class _HistorySectionState extends State<HistorySection> {
           const SizedBox(height: 12),
 
           Expanded(
-            child: displayList.isEmpty
-                ? _EmptyState()
-                : ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: EdgeInsets.only(bottom: 120 + mediaBottom),
-                    itemCount: displayList.length + (showSeeAll ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (showSeeAll && index == displayList.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: GestureDetector(
-                            onTap: widget.onSeeAll,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'See all transactions',
-                                  style: (textTheme.bodySmall ??
-                                          const TextStyle())
-                                      .copyWith(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 14,
-                                  color: colorScheme.primary,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
+            child: widget.isLoading
+                ? const _HistorySkeletonList()
+                : displayList.isEmpty && !widget.showPendingSkeleton
+                    ? _EmptyState()
+                    : ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.only(bottom: 120 + mediaBottom),
+                        itemCount: displayList.length +
+                            (widget.showPendingSkeleton ? 1 : 0) +
+                            (showSeeAll ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (widget.showPendingSkeleton && index == 0) {
+                            return const _PendingHistorySkeletonItem();
+                          }
 
-                      return CardHistory(transaction: displayList[index]);
-                    },
-                  ),
+                          final transactionIndex = index -
+                              (widget.showPendingSkeleton ? 1 : 0);
+
+                          if (showSeeAll &&
+                              transactionIndex == displayList.length) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: GestureDetector(
+                                onTap: widget.onSeeAll,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'See all transactions',
+                                      style:
+                                          (textTheme.bodySmall ??
+                                                  const TextStyle())
+                                              .copyWith(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 14,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return CardHistory(
+                            transaction: displayList[transactionIndex],
+                          );
+                        },
+                      ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PendingHistorySkeletonItem extends StatelessWidget {
+  const _PendingHistorySkeletonItem();
+
+  @override
+  Widget build(BuildContext context) {
+    final dummy = TransactionModel(
+      id: 'pending',
+      category: 'Processing',
+      title: 'Syncing',
+      amount: 150000,
+      date: DateTime.now(),
+      walletName: 'Main Wallet',
+      type: TransactionType.expense,
+    );
+
+    return IgnorePointer(
+      child: Skeletonizer(
+        enabled: true,
+        child: CardHistory(transaction: dummy),
+      ),
+    );
+  }
+}
+
+class _HistorySkeletonList extends StatelessWidget {
+  const _HistorySkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    final dummy = TransactionModel(
+      id: '0',
+      category: 'Shopping',
+      title: 'Loading',
+      amount: 150000,
+      date: DateTime.now(),
+      walletName: 'Main Wallet',
+      type: TransactionType.expense,
+    );
+
+    return IgnorePointer(
+      child: Skeletonizer(
+        enabled: true,
+        child: ListView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.only(
+            bottom: 120 + MediaQuery.of(context).padding.bottom,
+          ),
+          itemCount: 6,
+          itemBuilder: (_, __) => CardHistory(transaction: dummy),
+        ),
       ),
     );
   }

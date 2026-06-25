@@ -6,16 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/services/scan_service.dart';
 
-// ══════════════════════════════════════════════════════════════════════════════
-/// ScanPage — bottom-sheet receipt scanner (75 % tinggi, light theme).
-///
-/// Flow:
-///   live    → live camera preview di viewfinder
-///   preview → tampil preview foto + Retake / Confirm
-///   loading → kirim ke backend AI → tunggu total
-///
-/// Return via: Navigator.pop(context, double total)
-// ══════════════════════════════════════════════════════════════════════════════
+
 enum _ScanState { live, preview, loading }
 
 class ScanPage extends StatefulWidget {

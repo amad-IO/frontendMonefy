@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -36,6 +37,7 @@ class AuthService {
       await prefs.setString('token', auth.token);
 
       debugPrint('Auth: token saved for ${request.email}');
+      debugPrint('Auth: avatar from login = ${auth.avatar}'); // 👈 cek avatar
 
       return auth;
     } else {
@@ -83,6 +85,57 @@ class AuthService {
       } else {
         throw Exception(data["message"] ?? "Sign up gagal");
       }
+    }
+  }
+
+  // =========================
+  // GET PROFILE
+  // =========================
+  /// GET /api/profile → kembalikan { name, email, avatar }
+  Future<Map<String, dynamic>> getProfile(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/profile'),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      debugPrint('Profile fetched: ${data['name']}');
+      return data;
+    } else {
+      throw Exception('Gagal memuat profil (${response.statusCode})');
+    }
+  }
+
+  // =========================
+  // UPLOAD AVATAR
+  // =========================
+  /// POST /api/profile/avatar (multipart/form-data)
+  /// → Response: { status, message, avatar: 'https://...' }
+  Future<String> uploadAvatar(String token, File imageFile) async {
+    final uri = Uri.parse('$baseUrl/profile/avatar');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      })
+      ..files.add(await http.MultipartFile.fromPath(
+        'avatar', // nama field sesuai validasi backend
+        imageFile.path,
+      ));
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final data = json.decode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200 && data['status'] == 'success') {
+      debugPrint('Avatar uploaded: ${data['avatar']}');
+      return data['avatar'] as String; // URL Supabase
+    } else {
+      throw Exception(data['message'] ?? 'Gagal upload foto');
     }
   }
 }

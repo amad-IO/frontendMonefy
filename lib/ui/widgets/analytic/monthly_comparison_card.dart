@@ -95,9 +95,21 @@ class MonthlyComparisonCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Area chart
-          SizedBox(
-            height: 140,
-            child: LineChart(_buildAreaChart()),
+          TweenAnimationBuilder<double>(
+            key: ValueKey(
+              '${isExpense}_${data.currentPeriodDaily.join(',')}_${data.percentageChange}',
+            ),
+            tween: Tween<double>(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.easeOutCubic,
+            builder: (context, progress, _) {
+              return SizedBox(
+                height: 140,
+                child: LineChart(
+                  _buildAreaChart(progress),
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 16),
@@ -118,13 +130,17 @@ class MonthlyComparisonCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      rupiahFormatter.format(data.dailyAverage),
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      child: Text(
+                        rupiahFormatter.format(data.dailyAverage),
+                        key: ValueKey(data.dailyAverage),
+                        style: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ],
@@ -153,13 +169,17 @@ class MonthlyComparisonCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        rupiahFormatter.format(data.projectedTotal),
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 260),
+                        child: Text(
+                          rupiahFormatter.format(data.projectedTotal),
+                          key: ValueKey(data.projectedTotal),
+                          style: const TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -196,10 +216,10 @@ class MonthlyComparisonCard extends StatelessWidget {
     );
   }
 
-  LineChartData _buildAreaChart() {
+  LineChartData _buildAreaChart(double progress) {
     final spots = <FlSpot>[];
     for (int i = 0; i < data.currentPeriodDaily.length; i++) {
-      spots.add(FlSpot(i.toDouble(), data.currentPeriodDaily[i]));
+      spots.add(FlSpot(i.toDouble(), data.currentPeriodDaily[i] * progress));
     }
 
     final maxVal = data.currentPeriodDaily.isEmpty

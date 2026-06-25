@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/bill_provider.dart';
 import '../../pages/add_page.dart';
-import '../loading_spinner.dart';
 import 'bill_card.dart';
 import 'bill_detail_modal.dart';
 
@@ -26,6 +27,7 @@ class _ListBillsState extends State<ListBills> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BillProvider>();
+    final isInitialLoading = provider.isLoading && provider.bills.isEmpty;
     final unpaidCount = provider.bills
         .where((bill) => bill.status.toLowerCase() == 'unpaid')
         .length;
@@ -110,55 +112,70 @@ class _ListBillsState extends State<ListBills> {
                 duration: const Duration(milliseconds: 280),
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeIn,
-                child: provider.isLoading
-                    ? const Center(
-                        key: ValueKey('loading'),
-                        child: LoadingSpinner(),
-                      )
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.03, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: isInitialLoading
+                    ? const _BillsSkeletonList(key: ValueKey('loading'))
                     : bills.isEmpty
-                    ? _BillsEmptyState(
+                    ? _BillsRefreshWrapper(
                         key: ValueKey('empty-$_showUnpaid'),
-                        isUnpaid: _showUnpaid,
-                        onAddTap: widget.onAddTap,
+                        child: _BillsEmptyState(
+                          isUnpaid: _showUnpaid,
+                          onAddTap: widget.onAddTap,
+                        ),
                       )
-                    : ListView.builder(
+                    : _BillsRefreshWrapper(
                         key: ValueKey('list-$_showUnpaid'),
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
-                        itemCount: bills.length,
-                        itemBuilder: (context, index) {
-                          final bill = bills[index];
-                          return BillCard(
-                            title: bill.provider,
-                            accountNumber: bill.accountNumber,
-                            amount: rupiahFormatter.format(bill.amount),
-                            dueDate: bill.dueDate,
-                            cycle: bill.cycle,
-                            isPaid: bill.status.toLowerCase() == 'paid',
-                            onTap: () => showBillDetailModal(context, {
-                              'id': bill.id,
-                              'name': bill.provider,
-                              'account': bill.accountNumber,
-                              'amount': bill.amount,
-                              'due_date': bill.dueDate,
-                              'cycle': bill.cycle,
-                              'status': bill.status,
-                            }),
-                            onPay: () => showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => AddPage(
-                                billData: {
-                                  'id': bill.id,
-                                  'provider': bill.provider,
-                                  'amount': bill.amount,
-                                  'cycle': bill.cycle,
-                                },
+                        child: ListView.builder(
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+                          itemCount: bills.length,
+                          itemBuilder: (context, index) {
+                            final bill = bills[index];
+                            return BillCard(
+                              title: bill.provider,
+                              accountNumber: bill.accountNumber,
+                              amount: rupiahFormatter.format(bill.amount),
+                              dueDate: bill.dueDate,
+                              cycle: bill.cycle,
+                              isPaid: bill.status.toLowerCase() == 'paid',
+                              onTap: () => showBillDetailModal(context, {
+                                'id': bill.id,
+                                'name': bill.provider,
+                                'account': bill.accountNumber,
+                                'amount': bill.amount,
+                                'due_date': bill.dueDate,
+                                'cycle': bill.cycle,
+                                'status': bill.status,
+                              }),
+                              onPay: () => showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => AddPage(
+                                  billData: {
+                                    'id': bill.id,
+                                    'provider': bill.provider,
+                                    'amount': bill.amount,
+                                    'cycle': bill.cycle,
+                                  },
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
               ),
             ),
@@ -228,19 +245,45 @@ class _BillSegmentedControl extends StatelessWidget {
         color: AppColors.dashboardPurple.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          _SegmentItem(
-            label: 'Unpaid',
-            count: unpaidCount,
-            selected: showUnpaid,
-            onTap: () => onChanged(true),
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOutCubic,
+            alignment: showUnpaid ? Alignment.centerLeft : Alignment.centerRight,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              heightFactor: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.panelWhite,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.lightShadow,
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          _SegmentItem(
-            label: 'Paid',
-            count: paidCount,
-            selected: !showUnpaid,
-            onTap: () => onChanged(false),
+          Row(
+            children: [
+              _SegmentItem(
+                label: 'Unpaid',
+                count: unpaidCount,
+                selected: showUnpaid,
+                onTap: () => onChanged(true),
+              ),
+              _SegmentItem(
+                label: 'Paid',
+                count: paidCount,
+                selected: !showUnpaid,
+                onTap: () => onChanged(false),
+              ),
+            ],
           ),
         ],
       ),
@@ -266,66 +309,97 @@ class _SegmentItem extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.panelWhite : Colors.transparent,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: selected
-                ? const [
-                    BoxShadow(
-                      color: AppColors.lightShadow,
-                      blurRadius: 8,
-                      offset: Offset(0, 3),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: selected
+                      ? AppColors.primaryPurple
+                      : AppColors.textSecondary,
+                ),
+                child: Text(label),
+              ),
+              const SizedBox(width: 6),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                constraints: const BoxConstraints(minWidth: 22),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColors.primaryPurple
+                      : AppColors.panelWhite.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$count',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Nunito',
-                    fontSize: 13,
+                    fontSize: 9,
                     fontWeight: FontWeight.w800,
                     color: selected
-                        ? AppColors.primaryPurple
+                        ? AppColors.panelWhite
                         : AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Container(
-                  constraints: const BoxConstraints(minWidth: 22),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.primaryPurple
-                        : AppColors.panelWhite.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$count',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: selected
-                          ? AppColors.panelWhite
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BillsRefreshWrapper extends StatelessWidget {
+  final Widget child;
+
+  const _BillsRefreshWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      color: AppColors.primaryPurple,
+      onRefresh: () async {
+        final token = context.read<AuthProvider>().token;
+        if (token == null || token.isEmpty) return;
+        await context.read<BillProvider>().fetchBills(token);
+      },
+      child: child,
+    );
+  }
+}
+
+class _BillsSkeletonList extends StatelessWidget {
+  const _BillsSkeletonList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+        itemCount: 5,
+        itemBuilder: (_, __) => const BillCard(
+          title: 'Electricity Bill',
+          accountNumber: '1234567890',
+          amount: 'Rp450.000',
+          dueDate: '2026-06-24',
+          cycle: 'Bulanan',
+          isPaid: false,
         ),
       ),
     );

@@ -32,7 +32,12 @@ class AnalyticService {
     ).replace(queryParameters: queryParameters);
     final categoryUri = Uri.parse(
       '${AppConfig.baseUrl}/analytics/top-categories',
-    ).replace(queryParameters: {'trend': trend});
+    ).replace(queryParameters: {
+      'trend': trend,
+      'month': month.toString(),
+      'year':  year.toString(),
+      if (trend == 'weekly') 'week': week.toString(),
+    });
 
     debugPrint('📊 Fetch analytic: $trend $year/$month week=$week');
 

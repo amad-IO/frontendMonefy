@@ -24,7 +24,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
-  File? _avatarImage;
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickImage(
@@ -33,8 +32,21 @@ class _ProfilePageState extends State<ProfilePage> {
       maxHeight: 512,
       imageQuality: 85,
     );
-    if (picked != null && mounted) {
-      setState(() => _avatarImage = File(picked.path));
+    if (picked == null || !mounted) return;
+
+    final auth = context.read<AuthProvider>();
+    try {
+      // uploadAvatar sudah handle optimistic UI di provider
+      await auth.uploadAvatar(File(picked.path));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal upload foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -71,7 +83,9 @@ class _ProfilePageState extends State<ProfilePage> {
               _ProfileHero(
                 username: username,
                 email: email,
-                avatarImage: _avatarImage,
+                localFile: auth.localAvatarFile,  // optimistic
+                avatarUrl: auth.avatarUrl,         // dari server/cache
+                isUploading: auth.isUploadingAvatar,
                 onBack: _goBack,
                 onEditAvatar: _pickImage,
               ),
@@ -179,14 +193,18 @@ class _ProfilePageState extends State<ProfilePage> {
 class _ProfileHero extends StatelessWidget {
   final String username;
   final String email;
-  final File? avatarImage;
+  final File? localFile;       // optimistic UI
+  final String? avatarUrl;     // URL dari server/cache
+  final bool isUploading;
   final VoidCallback onBack;
   final VoidCallback onEditAvatar;
 
   const _ProfileHero({
     required this.username,
     required this.email,
-    required this.avatarImage,
+    required this.localFile,
+    required this.avatarUrl,
+    required this.isUploading,
     required this.onBack,
     required this.onEditAvatar,
   });
@@ -242,7 +260,12 @@ class _ProfileHero extends StatelessWidget {
             top: 72,
             child: Row(
               children: [
-                _ProfileAvatar(avatarImage: avatarImage, onTap: onEditAvatar),
+                _ProfileAvatar(
+                  localFile: localFile,
+                  avatarUrl: avatarUrl,
+                  isUploading: isUploading,
+                  onTap: onEditAvatar,
+                ),
                 const SizedBox(width: 18),
                 Expanded(
                   child: Column(
@@ -319,10 +342,17 @@ class _ProfileHero extends StatelessWidget {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  final File? avatarImage;
+  final File? localFile;
+  final String? avatarUrl;
+  final bool isUploading;
   final VoidCallback onTap;
 
-  const _ProfileAvatar({required this.avatarImage, required this.onTap});
+  const _ProfileAvatar({
+    required this.localFile,
+    required this.avatarUrl,
+    required this.isUploading,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -331,6 +361,7 @@ class _ProfileAvatar extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
+          // Avatar circle
           Container(
             width: 106,
             height: 106,
@@ -338,12 +369,6 @@ class _ProfileAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppColors.dashboardPurple,
               border: Border.all(color: AppColors.panelWhite, width: 4),
-              image: avatarImage != null
-                  ? DecorationImage(
-                      image: FileImage(avatarImage!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.17),
@@ -352,32 +377,89 @@ class _ProfileAvatar extends StatelessWidget {
                 ),
               ],
             ),
-            child: avatarImage == null
-                ? const Icon(
-                    Icons.person_rounded,
-                    size: 56,
-                    color: AppColors.panelWhite,
-                  )
-                : null,
-          ),
-          Positioned(
-            right: -2,
-            bottom: 2,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.panelWhite, width: 2),
-              ),
-              child: const Icon(
-                Icons.photo_camera_rounded,
-                size: 16,
-                color: AppColors.panelWhite,
-              ),
+            child: ClipOval(
+              child: localFile != null
+                  // ① File lokal — optimistic
+                  ? Image.file(
+                      localFile!,
+                      width: 106,
+                      height: 106,
+                      fit: BoxFit.cover,
+                    )
+                  : avatarUrl != null && avatarUrl!.isNotEmpty
+                      // ② URL dari Supabase
+                      ? Image.network(
+                          avatarUrl!,
+                          width: 106,
+                          height: 106,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (_, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.panelWhite,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.person_rounded,
+                            size: 56,
+                            color: AppColors.panelWhite,
+                          ),
+                        )
+                      // ③ Default — belum ada foto
+                      : const Icon(
+                          Icons.person_rounded,
+                          size: 56,
+                          color: AppColors.panelWhite,
+                        ),
             ),
           ),
+          // Loading indicator saat upload
+          if (isUploading)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.45),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.panelWhite,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          // Tombol kamera
+          if (!isUploading)
+            Positioned(
+              right: -2,
+              bottom: 2,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.panelWhite, width: 2),
+                ),
+                child: const Icon(
+                  Icons.photo_camera_rounded,
+                  size: 16,
+                  color: AppColors.panelWhite,
+                ),
+              ),
+            ),
         ],
       ),
     );

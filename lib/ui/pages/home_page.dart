@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:monefy/ui/pages/main_page.dart';
 import 'package:monefy/ui/pages/saving_page.dart';
 import 'package:monefy/ui/pages/your_wallet_page.dart';
+import '../../data/models/summary_model.dart';
 import '../../data/models/transaction_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -27,20 +29,50 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   TransactionFilter _activeFilter = TransactionFilter.all;
+  bool _waitingForInitialLoad = true;
 
-  // initState() sengaja tidak load data dari API.
-  // Data sudah di-load oleh _RootPage._checkLogin() di main.dart
-  // sebelum halaman ini dibuild. Tidak perlu fetch ulang di sini.
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadInitialData());
+  }
+
+  Future<void> _loadInitialData() async {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) {
+      if (mounted) setState(() => _waitingForInitialLoad = false);
+      return;
+    }
+
+    final txProvider = context.read<TransactionProvider>();
+    if (txProvider.isLoading) {
+      if (mounted) setState(() => _waitingForInitialLoad = false);
+      return;
+    }
+
+    final token = auth.token!;
+    final walletProvider = context.read<WalletProvider>();
+    try {
+      await Future.wait([
+        txProvider.loadAll(token),
+        walletProvider.loadWalletsFromApi(token),
+      ]);
+      txProvider.enrichToWalletNames(walletProvider.wallets);
+    } finally {
+      if (mounted) setState(() => _waitingForInitialLoad = false);
+    }
+  }
 
   // ── Pull-to-Refresh: force fetch fresh dari server ────────────
   Future<void> _onRefresh() async {
     final auth = context.read<AuthProvider>();
     if (!auth.isLoggedIn) return;
     final token = auth.token!;
-    final txProvider     = context.read<TransactionProvider>();
+    final txProvider = context.read<TransactionProvider>();
     final walletProvider = context.read<WalletProvider>();
     await Future.wait([
-      txProvider.loadTransactions(token),
+      txProvider.loadAll(token),
       walletProvider.loadWalletsFromApi(token),
     ]);
     txProvider.enrichToWalletNames(walletProvider.wallets);
@@ -49,6 +81,16 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TransactionProvider>();
+    final isInitialLoading =
+        provider.transactions.isEmpty &&
+        (_waitingForInitialLoad || provider.isDashboardFreshLoading);
+    final summary = isInitialLoading
+        ? SummaryModel(
+            totalBalance: 99999999,
+            totalIncome: 25000000,
+            totalExpense: 12500000,
+          )
+        : provider.summary;
 
     return Scaffold(
       backgroundColor: AppColors.dashboardPurple,
@@ -66,30 +108,37 @@ class _HomePageState extends State<HomePage> {
               child: Column(
           children: [
             _buildHeader(),
-            SummaryCard(
-              summary: provider.summary,
-              onIncomeTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MainPage(
-                      initialIndex: 3,
-                      initialAnalyticIsExpense: false,
-                    ),
-                  ),
-                );
-              },
-              onExpenseTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MainPage(
-                      initialIndex: 3,
-                      initialAnalyticIsExpense: true,
-                    ),
-                  ),
-                );
-              },
+            Skeletonizer(
+              enabled: isInitialLoading,
+              child: SummaryCard(
+                summary: summary,
+                onIncomeTap: isInitialLoading
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MainPage(
+                              initialIndex: 3,
+                              initialAnalyticIsExpense: false,
+                            ),
+                          ),
+                        );
+                      },
+                onExpenseTap: isInitialLoading
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MainPage(
+                              initialIndex: 3,
+                              initialAnalyticIsExpense: true,
+                            ),
+                          ),
+                        );
+                      },
+              ),
             ),
 
             const SizedBox(height: 12),
@@ -131,6 +180,8 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: HistorySection(
                 transactions: provider.getFiltered(_activeFilter),
+                isLoading: isInitialLoading,
+                showPendingSkeleton: provider.hasPendingHistorySkeleton,
                 onFilterChanged: (filter) {
                   setState(() => _activeFilter = filter);
                 },

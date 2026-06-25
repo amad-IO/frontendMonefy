@@ -20,71 +20,90 @@ class CategoryBreakdownList extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: categories.map((cat) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Row(
-              children: [
-                // Category icon — reusable widget
-                CategoryIcon(category: cat),
-
-                const SizedBox(width: 12),
-
-                // Name + progress bar
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        cat.name,
-                        style: const TextStyle(
-                          fontFamily: 'Nunito',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: cat.percentage / 100,
-                          backgroundColor: AppColors.divider,
-                          valueColor: AlwaysStoppedAnimation(cat.color),
-                          minHeight: 6,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                // Percentage + amount
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+          return TweenAnimationBuilder<double>(
+            key: ValueKey('${cat.name}_${cat.percentage}_${cat.amount}'),
+            tween: Tween<double>(
+              begin: 0,
+              end: (cat.percentage / 100).clamp(0.0, 1.0).toDouble(),
+            ),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Row(
                   children: [
-                    Text(
-                      '${cat.percentage.toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: cat.color,
+                    // Category icon — reusable widget
+                    CategoryIcon(category: cat),
+
+                    const SizedBox(width: 12),
+
+                    // Name + progress bar
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cat.name,
+                            style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Progress bar
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: value,
+                              backgroundColor: AppColors.divider,
+                              valueColor: AlwaysStoppedAnimation(cat.color),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      rupiahFormatter.format(cat.amount),
-                      style: const TextStyle(
-                        fontFamily: 'Nunito',
-                        fontSize: 11,
-                        color: AppColors.disabled,
-                      ),
+
+                    const SizedBox(width: 12),
+
+                    // Percentage + amount
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 240),
+                          child: Text(
+                            '${cat.percentage.toStringAsFixed(0)}%',
+                            key: ValueKey('${cat.name}_${cat.percentage}'),
+                            style: TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: cat.color,
+                            ),
+                          ),
+                        ),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 240),
+                          child: Text(
+                            rupiahFormatter.format(cat.amount),
+                            key: ValueKey('${cat.name}_${cat.amount}'),
+                            style: const TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 11,
+                              color: AppColors.disabled,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         }).toList(),
       ),

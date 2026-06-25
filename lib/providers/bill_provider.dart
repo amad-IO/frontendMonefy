@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models/bill_model.dart';
 import '../data/services/bill_service.dart';
+import '../data/services/cache_service.dart';
 import '../data/services/notification_service.dart';
 
 class BillProvider with ChangeNotifier {
@@ -64,22 +65,44 @@ class BillProvider with ChangeNotifier {
     return false;
   }
 
-  // ── GET ALL BILLS ─────────────────────────────────────────────
+  // ── GET ALL BILLS (cache-first) ─────────────────────────────
   Future<void> fetchBills(String token) async {
-    isLoading = true;
-    notifyListeners();
+    // 1. Tampil cache dulu agar UI instan
+    final cached = CacheService.getBills();
+    if (cached.isNotEmpty) {
+      bills = cached;
+      isLoading = false;
+      notifyListeners();
 
-    try {
-      bills = await _service.getBills(token);
-    } catch (e) {
-      debugPrint('❌ fetchBills error: $e');
+      // Jika cache masih fresh (< 5 menit), cukup background refresh
+      if (CacheService.hasFreshBills()) {
+        _fetchFromServer(token);
+        return;
+      }
+    } else {
+      // Cache kosong: tampil loading
+      isLoading = true;
+      notifyListeners();
     }
 
-    isLoading = false;
-    notifyListeners();
+    // 2. Fetch dari server (blocking hanya jika cache kosong)
+    await _fetchFromServer(token);
+  }
+
+  /// Internal: fetch bills dari server, update cache & UI
+  Future<void> _fetchFromServer(String token) async {
+    try {
+      final fresh = await _service.getBills(token);
+      bills = fresh;
+      await CacheService.saveBills(fresh);
+    } catch (e) {
+      debugPrint('❌ _fetchFromServer bills error: $e');
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
 
     // Jadwalkan notifikasi di background — TIDAK blocking UI
-    // Dipanggil tanpa await agar main thread bebas render
     _scheduleNotifsInBackground();
   }
 
@@ -129,58 +152,104 @@ class BillProvider with ChangeNotifier {
     }
   }
 
-  // ── ADD BILL ──────────────────────────────────────────────────
+  // ── ADD BILL (optimistic) ────────────────────────────────
   Future<void> addBill(Map<String, dynamic> data, String token) async {
     try {
+      // POST ke server dulu, lalu refresh cache
       await _service.createBill(data, token);
-      await fetchBills(token);
+      // Background refresh untuk dapat ID asli dari server
+      _fetchFromServer(token);
     } catch (e) {
       debugPrint('❌ addBill error: $e');
     }
   }
 
-  // ── UPDATE BILL ───────────────────────────────────────────────
+  // ── UPDATE BILL (optimistic) ─────────────────────────────
   Future<void> updateBill(int id, Map<String, dynamic> data, String token) async {
+    // Optimistic: update lokal dulu agar UI responsif
+    final oldBills = List<Bill>.from(bills);
+    bills = bills.map((b) {
+      if (b.id != id) return b;
+      return Bill(
+        id: b.id,
+        provider: (data['provider'] as String?) ?? b.provider,
+        accountNumber: (data['account_number'] as String?) ?? b.accountNumber,
+        amount: data['amount'] != null
+            ? double.tryParse(data['amount'].toString()) ?? b.amount
+            : b.amount,
+        dueDate: (data['due_date'] as String?) ?? b.dueDate,
+        cycle: (data['cycle'] as String?) ?? b.cycle,
+        status: (data['status'] as String?) ?? b.status,
+      );
+    }).toList();
+    notifyListeners();
+
     try {
-      // Cancel semua notif lama sebelum reschedule
       await NotificationService.cancelAllReminders(id);
       await _clearLastPaid(id);
-
       await _service.updateBill(id, data, token);
-      await fetchBills(token); // fetchBills akan reschedule otomatis
+      await CacheService.saveBills(bills);
+      // Background refresh untuk sinkronisasi data server
+      _fetchFromServer(token);
     } catch (e) {
+      // Rollback jika gagal
+      bills = oldBills;
+      notifyListeners();
       debugPrint('❌ updateBill error: $e');
     }
   }
 
-  // ── PAY BILL ──────────────────────────────────────────────────
+  // ── PAY BILL (optimistic) ───────────────────────────────
   Future<void> payBill(int id, String token) async {
+    // Optimistic: update status 'paid' lokal dulu
+    final bill = bills.firstWhere((b) => b.id == id, orElse: () => bills.first);
+    final optimisticBill = Bill(
+      id: bill.id,
+      provider: bill.provider,
+      accountNumber: bill.accountNumber,
+      amount: bill.amount,
+      dueDate: bill.dueDate,
+      cycle: bill.cycle,
+      status: 'paid',
+    );
+    bills = bills.map((b) => b.id == id ? optimisticBill : b).toList();
+    notifyListeners();
+    await CacheService.updateBill(optimisticBill);
+
     try {
       await _service.updateBill(id, {'status': 'paid'}, token);
-
-      // Simpan periode terakhir bayar ke HP (Opsi B)
-      final bill = bills.firstWhere((b) => b.id == id, orElse: () => bills.first);
       await _saveLastPaid(id, bill.cycle);
-
-      // Cancel overdue, biarkan H-2/H-1/H-0 untuk bulan depan
       await NotificationService.cancelOverdue(id);
-
-      await fetchBills(token);
+      // Background refresh untuk sinkronisasi
+      _fetchFromServer(token);
     } catch (e) {
+      // Rollback jika gagal
+      bills = bills.map((b) => b.id == id ? bill : b).toList();
+      await CacheService.updateBill(bill);
+      notifyListeners();
       debugPrint('❌ payBill error: $e');
     }
   }
 
-  // ── DELETE BILL ───────────────────────────────────────────────
+  // ── DELETE BILL (optimistic) ─────────────────────────────
   Future<void> deleteBill(int id, String token) async {
+    // Optimistic: hapus dari list lokal dulu
+    final oldBills = List<Bill>.from(bills);
+    bills = bills.where((b) => b.id != id).toList();
+    notifyListeners();
+    await CacheService.deleteBill(id);
+
     try {
-      // Cancel SEMUA notifikasi + hapus data SharedPreferences
       await NotificationService.cancelAllReminders(id);
       await _clearLastPaid(id);
-
       await _service.deleteBill(id, token);
-      await fetchBills(token);
+      // Background refresh untuk konfirmasi server
+      _fetchFromServer(token);
     } catch (e) {
+      // Rollback jika gagal
+      bills = oldBills;
+      await CacheService.saveBills(oldBills);
+      notifyListeners();
       debugPrint('❌ deleteBill error: $e');
     }
   }

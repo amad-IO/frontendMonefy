@@ -1,5 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/analytic/analytic_chart_data.dart';
+import '../models/bill_model.dart';
 import '../models/transaction_model.dart';
 import '../models/wallet_model.dart';
 
@@ -8,6 +9,8 @@ import '../models/wallet_model.dart';
 /// Box yang digunakan:
 /// - 'transactions' : List transaksi (max 200 item terbaru)
 /// - 'wallets'      : List wallet user
+/// - 'bills'        : List bills user (max 25 item, TTL 5 menit)
+/// - 'analytics'    : Data analytic per periode
 ///
 /// Cara pakai:
 /// 1. Panggil CacheService.init() sekali di main() sebelum runApp()
@@ -18,7 +21,9 @@ class CacheService {
   static const String _txBox = 'transactions';
   static const String _walletBox = 'wallets';
   static const String _analyticBox = 'analytics';
+  static const String _billBox = 'bills';
   static const int _maxTx = 200; // maksimum transaksi di cache
+  static const int _billTtlMinutes = 5; // cache bills kadaluarsa 5 menit
 
   // ── Inisialisasi (panggil sekali di main()) ─────────────────────
   static Future<void> init() async {
@@ -26,6 +31,7 @@ class CacheService {
     await Hive.openBox<dynamic>(_txBox);
     await Hive.openBox<dynamic>(_walletBox);
     await Hive.openBox<dynamic>(_analyticBox);
+    await Hive.openBox<dynamic>(_billBox);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -130,6 +136,67 @@ class CacheService {
     await Hive.box<dynamic>(_txBox).clear();
     await Hive.box<dynamic>(_walletBox).clear();
     await Hive.box<dynamic>(_analyticBox).clear();
+    await Hive.box<dynamic>(_billBox).clear();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BILLS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Simpan list bills ke cache beserta timestamp fetch.
+  static Future<void> saveBills(List<Bill> bills) async {
+    final box = Hive.box<dynamic>(_billBox);
+    final list = bills.map((b) => _billToMap(b)).toList();
+    await box.put('data', list);
+    await box.put('fetched_at', DateTime.now().toIso8601String());
+  }
+
+  /// Baca bills dari cache. Return [] jika cache kosong atau error.
+  static List<Bill> getBills() {
+    final box = Hive.box<dynamic>(_billBox);
+    final raw = box.get('data');
+    if (raw == null) return [];
+    try {
+      return (raw as List)
+          .map((e) => Bill.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Cek apakah cache bills ada dan belum kadaluarsa (TTL 5 menit).
+  static bool hasFreshBills() {
+    final box = Hive.box<dynamic>(_billBox);
+    if (!box.containsKey('data')) return false;
+    final fetchedAt = DateTime.tryParse(box.get('fetched_at') ?? '');
+    if (fetchedAt == null) return false;
+    return DateTime.now().difference(fetchedAt).inMinutes < _billTtlMinutes;
+  }
+
+  /// Cek apakah cache bills ada (meski sudah stale).
+  /// Dipakai untuk cache-first — tampil stale dulu sambil background fetch.
+  static bool hasBills() {
+    return Hive.box<dynamic>(_billBox).containsKey('data');
+  }
+
+  /// Update 1 bill di cache berdasarkan id (untuk optimistic update).
+  static Future<void> updateBill(Bill updated) async {
+    final current = getBills();
+    final newList = current.map((b) => b.id == updated.id ? updated : b).toList();
+    await saveBills(newList);
+  }
+
+  /// Hapus 1 bill dari cache berdasarkan id (untuk optimistic delete).
+  static Future<void> deleteBill(int id) async {
+    final current = getBills();
+    final newList = current.where((b) => b.id != id).toList();
+    await saveBills(newList);
+  }
+
+  /// Hapus cache bills saja.
+  static Future<void> clearBills() async {
+    await Hive.box<dynamic>(_billBox).clear();
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -199,5 +266,17 @@ class CacheService {
         '${t.date.day.toString().padLeft(2, '0')}',
     'created_at': t.date.toIso8601String(),
     'note': t.note,
+  };
+
+  /// Konversi Bill ke plain Map yang aman disimpan di Hive.
+  /// Field name cocok dengan Bill.fromJson() agar bisa di-parse kembali.
+  static Map<String, dynamic> _billToMap(Bill b) => {
+    'id': b.id,
+    'provider': b.provider,
+    'account_number': b.accountNumber,
+    'amount': b.amount,
+    'due_date': b.dueDate,
+    'cycle': b.cycle,
+    'status': b.status,
   };
 }

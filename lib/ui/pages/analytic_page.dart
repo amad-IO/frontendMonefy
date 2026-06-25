@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../providers/analytic_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -229,11 +230,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
                 ],
               ),
               child: analyticProvider.isLoading && data == null
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryPurple,
-                      ),
-                    )
+                  ? const _AnalyticSkeleton()
                   : data == null
                   ? _AnalyticErrorState(
                       message: analyticProvider.error,
@@ -306,6 +303,121 @@ class _AnalyticPageState extends State<AnalyticPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AnalyticSkeleton extends StatelessWidget {
+  const _AnalyticSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      enabled: true,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 18, bottom: 120),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: const [
+                  Expanded(child: _SkeletonBox(height: 44, radius: 20)),
+                  SizedBox(width: 8),
+                  Expanded(child: _SkeletonBox(height: 44, radius: 20)),
+                  SizedBox(width: 8),
+                  Expanded(child: _SkeletonBox(height: 44, radius: 20)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 52),
+              child: _SkeletonBox(height: 32, radius: 16),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SkeletonBox(height: 86, radius: 20),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 80),
+              child: _SkeletonBox(height: 42, radius: 18),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: const [
+                    _SkeletonBox(width: 160, height: 160, radius: 80),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _SkeletonBox(height: 14, radius: 7),
+                          SizedBox(height: 12),
+                          _SkeletonBox(height: 14, radius: 7),
+                          SizedBox(height: 12),
+                          _SkeletonBox(height: 14, radius: 7),
+                          SizedBox(height: 12),
+                          _SkeletonBox(height: 14, radius: 7),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SkeletonBox(height: 160, radius: 20),
+            ),
+            const SizedBox(height: 24),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SkeletonBox(height: 260, radius: 20),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: _SkeletonBox(height: 260, radius: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  final double? width;
+  final double height;
+  final double radius;
+
+  const _SkeletonBox({
+    this.width,
+    required this.height,
+    required this.radius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }

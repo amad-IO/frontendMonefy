@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_provider.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/add_page_helper.dart';
@@ -72,6 +72,8 @@ class AddPageController extends ChangeNotifier {
   late final AnimationController walletShakeController;
   bool _walletError = false;
   bool get walletError => _walletError;
+  bool _isSubmitting = false;
+  bool get isSubmitting => _isSubmitting;
 
   Key _filterTransferKey = UniqueKey();
   Key get filterTransferKey => _filterTransferKey;
@@ -236,6 +238,8 @@ class AddPageController extends ChangeNotifier {
 
   // ── Confirm / Save Action ──
   Future<void> onConfirm(BuildContext context) async {
+    if (_isSubmitting) return;
+
     final amount = double.tryParse(amountController.text.trim()) ?? 0;
 
     final validationError = AddPageHelper.validate(
@@ -278,11 +282,12 @@ class AddPageController extends ChangeNotifier {
     final savingProvider = savingData != null
         ? context.read<SavingProvider>()
         : null;
+    final billProvider = billData != null ? context.read<BillProvider>() : null;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    // Ambil token dari AuthProvider (in-memory) - lebih cepat dari SharedPreferences.
+    final token = context.read<AuthProvider>().token;
     if (token == null || token.isEmpty) {
       _showSnackBar(
         context,
@@ -363,6 +368,9 @@ class AddPageController extends ChangeNotifier {
       type: type,
     );
 
+    _isSubmitting = true;
+    notifyListeners();
+
     try {
       await NotifikasiTransaction.show(
         context: context,
@@ -373,69 +381,46 @@ class AddPageController extends ChangeNotifier {
         toWalletName: type == TransactionType.transfer
             ? _selectedToWallet
             : null,
-        apiWork: () {
+        apiWork: () async {
           if (savingData != null) {
             final savingId = savingData!['id'] as int?;
             final parsedWalletId = int.tryParse(walletId);
             if (savingId == null || parsedWalletId == null) {
               throw Exception('Wishlist atau wallet tidak valid.');
             }
-            return savingProvider!.buySaving(
+            await savingProvider!.buySaving(
               savingId,
               parsedWalletId,
               token,
               amount: amount.toInt(),
             );
+          } else {
+            await provider.addTransactionWithApi(
+              transaction,
+              token,
+              walletId: walletId,
+              toWalletId: _selectedToWalletId,
+              optimisticHistory: false,
+            );
           }
-
-          return provider.addTransactionWithApi(
-            transaction,
-            token,
-            walletId: walletId,
-            toWalletId: _selectedToWalletId,
-          );
         },
-        onSuccess: () async {
-          // Jika dari Pay Now Bills → kembali ke Home dulu, lalu tandai paid
+        onSuccess: () {
+          provider.showPendingHistorySkeleton();
+          navigator.popUntil((route) => route.isFirst);
+
           if (billData != null) {
             final billId = billData!['id'] as int?;
-
-            // ✅ Capture provider SEBELUM context menjadi invalid
-            BillProvider? billProvider;
-            if (billId != null && context.mounted) {
-              billProvider = context.read<BillProvider>();
-            }
-
-            // ✅ Load ulang transaksi & wallet
-            await Future.wait([
-              provider.loadAll(token),
-              walletProvider.loadWalletsFromApi(token),
-            ]);
-            provider.enrichToWalletNames(walletProvider.wallets);
-
-            // ✅ Pop ke Home/Dashboard
-            navigator.popUntil((route) => route.isFirst);
-
-            // ✅ Tandai bill sebagai paid setelah pop (async, tidak butuh context)
             if (billId != null && billProvider != null) {
-              await billProvider.payBill(billId, token);
+              billProvider.payBill(billId, token);
             }
-          } else if (savingData != null) {
-            await Future.wait([
-              provider.loadAll(token),
-              walletProvider.loadWalletsFromApi(token),
-            ]);
-            provider.enrichToWalletNames(walletProvider.wallets);
-            navigator.pop();
-          } else {
-            navigator.pop();
-            Future.wait(
-              [
-                provider.loadAll(token),
-                walletProvider.loadWalletsFromApi(token),
-              ],
-            ).then((_) => provider.enrichToWalletNames(walletProvider.wallets));
           }
+
+          Future.wait([
+            provider.loadAll(token),
+            walletProvider.loadWalletsFromApi(token),
+          ]).then((_) {
+            provider.enrichToWalletNames(walletProvider.wallets);
+          }).whenComplete(provider.hidePendingHistorySkeleton);
         },
       );
     } catch (e) {
@@ -445,6 +430,8 @@ class AddPageController extends ChangeNotifier {
         AppColors.error,
         Icons.warning_amber_rounded,
       );
+    } finally {
+      _isSubmitting = false;
     }
   }
 

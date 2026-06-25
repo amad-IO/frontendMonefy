@@ -33,6 +33,18 @@ class WalletProvider extends ChangeNotifier {
   List<WalletModel> byCategory(WalletCategory cat) =>
       _wallets.where((w) => w.category == cat).toList();
 
+  // ── Load dari cache lokal saja (sinkron, tanpa network) ────────
+  /// Dipakai saat startup cache-first untuk tampil UI instan.
+  /// Tidak memanggil notifyListeners karena dipanggil sebelum widget tree siap.
+  void loadFromCache() {
+    final cached = CacheService.getWallets();
+    if (cached.isNotEmpty) {
+      _wallets = cached;
+      _isLoading = false;
+      _error = null;
+    }
+  }
+
   // ── Load wallet: Cache-first, lalu background fetch ────────────
   /// Langkah 1: load dari cache lokal → UI tampil instan.
   /// Langkah 2: fetch dari server di background → update cache.

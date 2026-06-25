@@ -14,6 +14,8 @@ class TransactionProvider extends ChangeNotifier {
   List<TransactionModel> _transactions = [];
   SummaryModel? _backendSummary;
   bool _isLoading = false;
+  bool _isSummaryLoading = false;
+  bool _hasPendingHistorySkeleton = false;
   String? _error;
 
   // Helper untuk update summary lokal secara instan (optimistic)
@@ -47,7 +49,39 @@ class TransactionProvider extends ChangeNotifier {
   // ── Getters ────────────────────────────────────────────────────
   List<TransactionModel> get transactions => List.unmodifiable(_transactions);
   bool get isLoading => _isLoading;
+  bool get isSummaryLoading => _isSummaryLoading;
+  bool get hasPendingHistorySkeleton => _hasPendingHistorySkeleton;
   String? get error => _error;
+
+  void showPendingHistorySkeleton() {
+    if (_hasPendingHistorySkeleton) return;
+    _hasPendingHistorySkeleton = true;
+    notifyListeners();
+  }
+
+  void hidePendingHistorySkeleton() {
+    if (!_hasPendingHistorySkeleton) return;
+    _hasPendingHistorySkeleton = false;
+    notifyListeners();
+  }
+
+  /// True hanya saat loading DAN belum ada data sama sekali (fresh load pertama kali).
+  /// Gunakan ini untuk skeleton/shimmer agar tidak berkedip saat background refresh.
+  bool get isFreshLoading => _isLoading && _transactions.isEmpty;
+  bool get isDashboardFreshLoading =>
+      isFreshLoading || (_isSummaryLoading && _backendSummary == null);
+
+  // ── Load dari cache lokal saja (sinkron, tanpa network) ────────
+  /// Dipakai saat startup cache-first untuk tampil UI instan.
+  /// Tidak memanggil notifyListeners karena dipanggil sebelum widget tree siap.
+  void loadFromCache() {
+    final cached = CacheService.getTransactions();
+    if (cached.isNotEmpty) {
+      _transactions = cached;
+      _isLoading = false;
+      _error = null;
+    }
+  }
 
   double get totalIncome => _transactions
       .where((t) => t.type == TransactionType.income)
@@ -102,11 +136,16 @@ class TransactionProvider extends ChangeNotifier {
   // ── Load Summary dari Backend ──────────────────────────────────
   /// Panggil GET /dashboard/summary, update _backendSummary.
   Future<void> loadSummary(String token) async {
+    _isSummaryLoading = true;
+    notifyListeners();
     try {
       _backendSummary = await _dashService.getSummary(token);
       notifyListeners();
     } catch (e) {
       debugPrint('❌ loadSummary error: $e');
+    } finally {
+      _isSummaryLoading = false;
+      notifyListeners();
     }
   }
 
@@ -151,16 +190,20 @@ class TransactionProvider extends ChangeNotifier {
     String token, {
     required String walletId,
     String? toWalletId,
+    bool optimisticHistory = true,
   }) async {
     // 1. Buat temporary transaction dengan ID sementara
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final optimisticTx = transaction.copyWith(id: tempId);
 
-    // 2. Tambah ke list lokal dan cache LANGSUNG
-    _transactions = [optimisticTx, ..._transactions];
-    _updateSummaryOptimistic(newTx: optimisticTx); // Update summary instan
-    await CacheService.addTransaction(optimisticTx);
-    notifyListeners();
+    // 2. Tambah ke list lokal dan cache LANGSUNG, kecuali UI sedang
+    // memakai skeleton pending sebagai placeholder optimistic.
+    if (optimisticHistory) {
+      _transactions = [optimisticTx, ..._transactions];
+      _updateSummaryOptimistic(newTx: optimisticTx); // Update summary instan
+      await CacheService.addTransaction(optimisticTx);
+      notifyListeners();
+    }
 
     try {
       // 3. POST ke server
@@ -181,19 +224,22 @@ class TransactionProvider extends ChangeNotifier {
         note: transaction.note.isEmpty ? null : transaction.note,
       );
 
-      // 4. Sukses → fetch ulang untuk dapat ID asli dari server + balance terbaru
-      final fresh = await _txService.getTransactions(token);
-      _transactions = fresh;
-      await CacheService.saveTransactions(fresh);
+      // Optimistic update sudah memasukkan transaksi ke list dengan temp ID.
+      // Background sync via onSuccess (loadAll) akan:
+      //   1. Replace temp ID dengan real ID dari server
+      //   2. Update cache dengan data fresh
+      // Tidak perlu GET /transactions di sini — hemat ~300-800ms loading panel.
       await CacheService.clearAllAnalytics();
-      loadSummary(token); // Sync summary dari backend
+      loadSummary(token); // Sync summary dari backend (fire-and-forget)
       notifyListeners();
     } catch (e) {
-      // 5. Gagal → rollback: hapus transaksi optimistic
-      _transactions = _transactions.where((t) => t.id != tempId).toList();
-      _updateSummaryOptimistic(oldTx: optimisticTx); // Rollback summary
-      await CacheService.deleteTransaction(tempId);
-      notifyListeners();
+      if (optimisticHistory) {
+        // 5. Gagal → rollback: hapus transaksi optimistic
+        _transactions = _transactions.where((t) => t.id != tempId).toList();
+        _updateSummaryOptimistic(oldTx: optimisticTx); // Rollback summary
+        await CacheService.deleteTransaction(tempId);
+        notifyListeners();
+      }
       rethrow; // lempar ke UI untuk tampil snackbar error
     }
   }

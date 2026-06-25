@@ -285,7 +285,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
                   // ── Transaction list ──
                   Expanded(
-                    child: provider.isLoading && filtered.isEmpty
+                    child: provider.isFreshLoading
                         ? _buildSkeleton()
                         : filtered.isEmpty
                             ? _EmptyState(isSearch: _searchQuery.isNotEmpty)

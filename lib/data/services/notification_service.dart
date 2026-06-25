@@ -32,7 +32,7 @@ class NotificationService {
   static Future<void> sendTestNotification() async {
     await _plugin.show(
       9999, // ID khusus untuk test
-      'Waktunya Bayar Tagihan 🔔',
+      'Waktunya Bayar Tagihan ',
       'Tagihan Wifi Indihome kamu jatuh tempo besok. Yuk bayar sekarang biar tenang!',
       _details(),
     );
@@ -48,8 +48,8 @@ class NotificationService {
         importance: Importance.max,
         priority: Priority.high,
         showWhen: true,
-        icon: '@drawable/ic_notification', // ✅ icon monochrome khusus notifikasi
-        color: Color(0xFF694EDA),          // ✅ warna aksen ungu Monefy
+        icon: '@drawable/ic_notification', // icon monochrome khusus notifikasi
+        color: Color(0xFF694EDA),          // warna aksen ungu Monefy
       ),
     );
   }
@@ -100,7 +100,7 @@ class NotificationService {
     // H-2
     await _schedule(
       id: _idH2(billId),
-      title: 'Halo! Ada Tagihan Mendatang 👋',
+      title: 'Halo! Ada Tagihan Mendatang ',
       body: 'Jangan lupa, tagihan $billName kamu akan jatuh tempo dalam 2 hari ya.',
       scheduledDate: h2Date,
       repeat: repeatH2H1H0,
@@ -109,7 +109,7 @@ class NotificationService {
     // H-1
     await _schedule(
       id: _idH1(billId),
-      title: 'Waktunya Bayar Tagihan 🔔',
+      title: 'Waktunya Bayar Tagihan ',
       body: 'Tagihan $billName kamu jatuh tempo besok. Yuk bayar sekarang biar tenang!',
       scheduledDate: h1Date,
       repeat: repeatH2H1H0,
@@ -118,7 +118,7 @@ class NotificationService {
     // H-0
     await _schedule(
       id: _idH0(billId),
-      title: 'Jatuh Tempo Hari Ini 🚨',
+      title: 'Jatuh Tempo Hari Ini ',
       body: 'Hari ini batas akhir pembayaran $billName. Yuk segera diselesaikan!',
       scheduledDate: h0Date,
       repeat: repeatH2H1H0,
@@ -150,7 +150,7 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       _idOverdue(billId),
-      'Ups, Ada Tagihan Terlewat 😅',
+      'Ups, Ada Tagihan Terlewat ',
       'Tagihan $billName kamu sudah lewat jatuh tempo. Yuk segera bayar agar tenang!',
       wibDate,
       _details(),

@@ -2,7 +2,7 @@
 <!--
   Network Security Config untuk development lokal.
   Mengizinkan HTTP cleartext ke IP server backend lokal.
-  ⚠️ Untuk production/Play Store: hapus domain-config ini dan pakai HTTPS.
+  Untuk production/Play Store: hapus domain-config ini dan pakai HTTPS.
 -->
 <network-security-config>
     <!-- Izinkan HTTP ke semua IP lokal (192.168.x.x dan 10.x.x.x) -->

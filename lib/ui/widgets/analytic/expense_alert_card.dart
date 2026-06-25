@@ -6,10 +6,10 @@ import '../../../core/utils/sentiment_helper.dart';
 ///
 /// Logika warna **terbalik** antara Income dan Expense
 /// (menggunakan shared [sentimentHelper]):
-///   • Expense naik  → 🔴 BURUK (pengeluaran bertambah)
-///   • Expense turun → 🟢 BAGUS (pengeluaran berkurang)
-///   • Income naik   → 🟢 BAGUS (pemasukan bertambah)
-///   • Income turun  → 🔴 BURUK (pemasukan berkurang)
+///   • Expense naik  → BURUK (pengeluaran bertambah)
+///   • Expense turun → BAGUS (pengeluaran berkurang)
+///   • Income naik   → BAGUS (pemasukan bertambah)
+///   • Income turun  → BURUK (pemasukan berkurang)
 class ExpenseAlertCard extends StatelessWidget {
   final double changePercent;
 

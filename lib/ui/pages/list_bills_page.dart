@@ -42,7 +42,7 @@ class _ListBillsPageState extends State<ListBillsPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Reminder sent. Check your notification bar 🔔'),
+        content: Text('Reminder sent. Check your notification bar '),
         backgroundColor: AppColors.primaryPurple,
         behavior: SnackBarBehavior.floating,
       ),
@@ -119,21 +119,36 @@ class _ListBillsPageState extends State<ListBillsPage> {
 class _HeaderButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+  final bool showTouchEffect;
 
-  const _HeaderButton({required this.icon, required this.onTap});
+  const _HeaderButton({
+    required this.icon,
+    required this.onTap,
+    this.showTouchEffect = true,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final iconContent = Padding(
+      padding: const EdgeInsets.all(11),
+      child: Icon(icon, color: AppColors.panelWhite, size: 28),
+    );
+
+    if (!showTouchEffect) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: iconContent,
+      );
+    }
+
     return Material(
       color: Colors.transparent,
       shape: const CircleBorder(),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(11),
-          child: Icon(icon, color: AppColors.panelWhite, size: 28),
-        ),
+        child: iconContent,
       ),
     );
   }
@@ -191,6 +206,7 @@ class _BillsHero extends StatelessWidget {
                 _HeaderButton(
                   icon: Icons.notifications_active_rounded,
                   onTap: onNotificationTap,
+                  showTouchEffect: false,
                 ),
               ],
             ),

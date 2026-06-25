@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/saving_provider.dart';
-import '../../widgets/loading_spinner.dart'; // ✅ TAMBAHAN
+import '../../widgets/loading_spinner.dart'; // TAMBAHAN
 import '../bills/bills_input.dart';
 
 void showSavingDetailModal(BuildContext context, Map<String, dynamic> item) {
@@ -33,7 +33,7 @@ void showSavingDetailModal(BuildContext context, Map<String, dynamic> item) {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
               ),
 
-              /// 🔥 PERBAIKAN 1: TAMBAH SCROLL (BIAR GAK OVERFLOW)
+              /// PERBAIKAN 1: TAMBAH SCROLL (BIAR GAK OVERFLOW)
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -173,7 +173,7 @@ void showSavingDetailModal(BuildContext context, Map<String, dynamic> item) {
                             return;
                           }
 
-                          /// 🔥 PERBAIKAN 2: TAMBAH LOADING
+                          /// PERBAIKAN 2: TAMBAH LOADING
                           showDialog(
                             context: context,
                             barrierDismissible: false,
@@ -209,7 +209,7 @@ void showSavingDetailModal(BuildContext context, Map<String, dynamic> item) {
                           ),
                         ),
                         onPressed: () async {
-                          /// 🔥 PERBAIKAN 3: LOADING DELETE
+                          /// PERBAIKAN 3: LOADING DELETE
                           showDialog(
                             context: context,
                             barrierDismissible: false,

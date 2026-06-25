@@ -49,7 +49,7 @@ class WalletModel {
 
     return WalletModel(
       id: json['id'].toString(),
-      name: json['name_wallet']?.toString() ?? '',   // ✅ sesuai backend
+      name: json['name_wallet']?.toString() ?? '',   // sesuai backend
       balance: double.tryParse(json['balance'].toString()) ?? 0.0,
       category: _categoryFromString(categoryStr),
       theme: WalletTheme.all[themeIndex.clamp(0, WalletTheme.all.length - 1)],
@@ -59,7 +59,7 @@ class WalletModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name_wallet': name,       // ✅ backend expect 'name_wallet'
+      'name_wallet': name,       // backend expect 'name_wallet'
       'balance': balance,
       'category': _categoryToString(category),
       'theme_index': WalletTheme.all.indexOf(theme),

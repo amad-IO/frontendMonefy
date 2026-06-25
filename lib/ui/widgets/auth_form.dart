@@ -10,7 +10,7 @@ class AuthForm extends StatefulWidget {
 
   final GlobalKey<FormState> formKey;
 
-  final TextEditingController? usernameController; // ✅ OPTIONAL
+  final TextEditingController? usernameController; // OPTIONAL
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final TextEditingController? confirmPasswordController;
@@ -23,7 +23,7 @@ class AuthForm extends StatefulWidget {
     required this.title,
     required this.buttonText,
     required this.formKey,
-    this.usernameController, // ✅ TIDAK WAJIB
+    this.usernameController, // TIDAK WAJIB
     required this.emailController,
     required this.passwordController,
     this.confirmPasswordController,

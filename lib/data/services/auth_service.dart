@@ -37,7 +37,7 @@ class AuthService {
       await prefs.setString('token', auth.token);
 
       debugPrint('Auth: token saved for ${request.email}');
-      debugPrint('Auth: avatar from login = ${auth.avatar}'); // 👈 cek avatar
+      debugPrint('Auth: avatar from login = ${auth.avatar}'); // cek avatar
 
       return auth;
     } else {

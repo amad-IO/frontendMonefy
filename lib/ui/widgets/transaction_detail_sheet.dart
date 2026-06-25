@@ -17,7 +17,7 @@ import '../pages/add_page.dart';
 /// Background menggunakan SVG kontur.
 ///
 /// Fitur:
-/// - Tombol Delete (🗑) di header kanan atas → ConfirmDialog
+/// - Tombol Delete () di header kanan atas → ConfirmDialog
 /// - Tombol Edit full-width di footer → buka AddPage mode edit
 ///
 /// Cara pakai:
@@ -239,7 +239,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                     ),
                   ),
 
-                  // Tombol Delete (🗑) di kanan atas
+                  // Tombol Delete () di kanan atas
                   _isDeleting
                       ? const SizedBox(
                           width: 24,

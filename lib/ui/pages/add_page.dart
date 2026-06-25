@@ -5,7 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/models/transaction_model.dart';
 import '../../data/models/wallet_model.dart';
 import '../../providers/wallet_provider.dart';
-import '../../providers/add_page_controller.dart'; // ✅ Import Controller Baru
+import '../../providers/add_page_controller.dart'; // Import Controller Baru
 
 import '../components/wallet_selector_popup.dart';
 import '../widgets/add_page/add_button_panel.dart';
@@ -35,7 +35,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // ✅ Inisialisasi controller di initState
+    // Inisialisasi controller di initState
     _controller = AddPageController(
       editTransaction: widget.editTransaction,
       billData: widget.billData,
@@ -46,7 +46,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    _controller.dispose(); // ✅ Dispose controller
+    _controller.dispose(); // Dispose controller
     super.dispose();
   }
 
@@ -78,7 +78,7 @@ class _AddPageState extends State<AddPage> with SingleTickerProviderStateMixin {
         .map(_toWalletOption)
         .toList();
 
-    // ✅ Bungkus halaman dengan ChangeNotifierProvider.value agar UI mendengarkan perubahan di Controller
+    // Bungkus halaman dengan ChangeNotifierProvider.value agar UI mendengarkan perubahan di Controller
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<AddPageController>(

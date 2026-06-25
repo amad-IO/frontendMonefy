@@ -42,7 +42,7 @@ class AuthProvider with ChangeNotifier {
       _email    = savedEmail ?? '';
       _avatarUrl = savedAvatar; // langsung dari cache — instan
       notifyListeners();
-      debugPrint('🟢 Auto-login: token restored');
+      debugPrint('Auto-login: token restored');
 
       // Background sync: ambil data profil terbaru dari server
       fetchProfile(savedToken).ignore();
@@ -73,7 +73,7 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('avatarUrl', _avatarUrl!);
       }
 
-      debugPrint('🟢 Login success: $_username');
+      debugPrint('Login success: $_username');
     } catch (e) {
       rethrow;
     } finally {
@@ -106,7 +106,7 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('avatarUrl', _avatarUrl!);
       }
 
-      debugPrint('🟢 SignUp success: $_username');
+      debugPrint('SignUp success: $_username');
     } catch (e) {
       rethrow;
     } finally {
@@ -133,7 +133,7 @@ class AuthProvider with ChangeNotifier {
     // Hapus semua cache Hive agar data tidak bocor ke user lain
     await CacheService.clearAll();
 
-    debugPrint('🔴 Logout: token + cache cleared');
+    debugPrint('Logout: token + cache cleared');
     notifyListeners();
   }
 
@@ -161,7 +161,7 @@ class AuthProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ fetchProfile error: $e');
+      debugPrint('fetchProfile error: $e');
     }
   }
 
@@ -192,12 +192,12 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('avatarUrl', url);
 
-      debugPrint('✅ Avatar updated: $url');
+      debugPrint('Avatar updated: $url');
     } catch (e) {
       // ③ Gagal: kembalikan foto sebelumnya
       _avatarUrl       = previousUrl;
       _localAvatarFile = previousFile;
-      debugPrint('❌ Avatar upload failed: $e');
+      debugPrint('Avatar upload failed: $e');
       rethrow; // biarkan UI tampilkan snackbar
     } finally {
       _isUploadingAvatar = false;

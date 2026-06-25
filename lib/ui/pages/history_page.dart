@@ -20,7 +20,7 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  // ✅ Default 'all' agar langsung tampil semua transaksi
+  // Default 'all' agar langsung tampil semua transaksi
   TransactionFilter _activeFilter = TransactionFilter.all;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';

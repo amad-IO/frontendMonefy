@@ -302,7 +302,7 @@ class _TransactionSuccessWidgetState extends State<TransactionSuccessWidget>
                     );
                   }),
 
-                  // Bintang ✦ (3 bintang mengelilingi lingkaran)
+                  // Bintang (3 icon mengelilingi lingkaran)
                   ...[
                     Offset(-circleR * 0.85, -circleR * 0.5),
                     Offset(circleR * 0.85, -circleR * 0.5),
@@ -313,12 +313,10 @@ class _TransactionSuccessWidgetState extends State<TransactionSuccessWidget>
                           opacity: _starOpacity.value.clamp(0.0, 1.0),
                           child: Transform.scale(
                             scale: _starScale.value,
-                            child: Text(
-                              '✦',
-                              style: TextStyle(
-                                fontSize: s * 0.08,
-                                color: AppColors.coinGold,
-                              ),
+                            child: Icon(
+                              Icons.star_rounded,
+                              size: s * 0.08,
+                              color: AppColors.coinGold,
                             ),
                           ),
                         ),

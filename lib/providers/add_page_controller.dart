@@ -229,7 +229,7 @@ class AddPageController extends ChangeNotifier {
       final typeLabel = result.isIncome ? 'Income' : 'Expense';
       _showSnackBar(
         context,
-        '📄 ${result.merchantName} · $typeLabel · ${result.category}',
+        '${result.merchantName} · $typeLabel · ${result.category}',
         AppColors.primaryPurple,
         Icons.auto_awesome,
       );

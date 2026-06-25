@@ -68,7 +68,7 @@ class _CreateWalletPageState extends State<CreateWalletPage> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Wallet berhasil ditambahkan!'),
+          content: Text('Wallet berhasil ditambahkan!'),
           backgroundColor: Colors.green,
         ),
       );

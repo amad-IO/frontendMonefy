@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../components/wallet_selector_popup.dart'; // ✅ cukup ini
+import '../../components/wallet_selector_popup.dart'; // cukup ini
 
 class InputRow extends StatelessWidget {
   final TextEditingController titleController;
@@ -116,7 +116,7 @@ class InputRow extends StatelessWidget {
                 (1 - walletShakeController.value);
 
             return Transform.translate(
-              offset: Offset(shake.toDouble(), 0), // ✅ FIX num → double
+              offset: Offset(shake.toDouble(), 0), // FIX num → double
               child: child,
             );
           },

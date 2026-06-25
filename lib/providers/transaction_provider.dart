@@ -126,7 +126,7 @@ class TransactionProvider extends ChangeNotifier {
       await CacheService.saveTransactions(fresh); // update cache
     } catch (e) {
       _error = e.toString();
-      debugPrint('❌ loadTransactions error: $e');
+      debugPrint('loadTransactions error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -142,7 +142,7 @@ class TransactionProvider extends ChangeNotifier {
       _backendSummary = await _dashService.getSummary(token);
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ loadSummary error: $e');
+      debugPrint('loadSummary error: $e');
     } finally {
       _isSummaryLoading = false;
       notifyListeners();

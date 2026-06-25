@@ -96,7 +96,7 @@ class BillProvider with ChangeNotifier {
       bills = fresh;
       await CacheService.saveBills(fresh);
     } catch (e) {
-      debugPrint('❌ _fetchFromServer bills error: $e');
+      debugPrint('_fetchFromServer bills error: $e');
     } finally {
       isLoading = false;
       notifyListeners();
@@ -109,7 +109,7 @@ class BillProvider with ChangeNotifier {
   /// Jalankan scheduling di background tanpa block UI.
   void _scheduleNotifsInBackground() {
     Future(() => _evaluateAndScheduleAll()).catchError((e) {
-      debugPrint('❌ Notif scheduling error: $e');
+      debugPrint('Notif scheduling error: $e');
     });
   }
 
@@ -160,7 +160,7 @@ class BillProvider with ChangeNotifier {
       // Background refresh untuk dapat ID asli dari server
       _fetchFromServer(token);
     } catch (e) {
-      debugPrint('❌ addBill error: $e');
+      debugPrint('addBill error: $e');
     }
   }
 
@@ -195,7 +195,7 @@ class BillProvider with ChangeNotifier {
       // Rollback jika gagal
       bills = oldBills;
       notifyListeners();
-      debugPrint('❌ updateBill error: $e');
+      debugPrint('updateBill error: $e');
     }
   }
 
@@ -227,7 +227,7 @@ class BillProvider with ChangeNotifier {
       bills = bills.map((b) => b.id == id ? bill : b).toList();
       await CacheService.updateBill(bill);
       notifyListeners();
-      debugPrint('❌ payBill error: $e');
+      debugPrint('payBill error: $e');
     }
   }
 
@@ -250,7 +250,7 @@ class BillProvider with ChangeNotifier {
       bills = oldBills;
       await CacheService.saveBills(oldBills);
       notifyListeners();
-      debugPrint('❌ deleteBill error: $e');
+      debugPrint('deleteBill error: $e');
     }
   }
 }

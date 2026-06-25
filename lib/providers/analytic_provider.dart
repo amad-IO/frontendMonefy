@@ -142,7 +142,7 @@ class AnalyticProvider extends ChangeNotifier {
     } catch (e) {
       if (!_isCurrentRequest(key, generation)) return;
       _error = e.toString();
-      debugPrint('❌ AnalyticProvider fetch error: $e');
+      debugPrint('AnalyticProvider fetch error: $e');
     } finally {
       if (_isCurrentRequest(key, generation)) {
         _isLoading = false;

@@ -39,7 +39,7 @@ class AnalyticService {
       if (trend == 'weekly') 'week': week.toString(),
     });
 
-    debugPrint('📊 Fetch analytic: $trend $year/$month week=$week');
+    debugPrint('Fetch analytic: $trend $year/$month week=$week');
 
     final responses = await Future.wait([
       http.get(summaryUri, headers: headers),

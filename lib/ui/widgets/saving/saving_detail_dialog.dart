@@ -88,7 +88,7 @@ class SavingDetailDialog extends StatelessWidget {
                 Row(
                   children: [
 
-                    /// ✏EDIT
+                    /// EDIT
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -104,7 +104,7 @@ class SavingDetailDialog extends StatelessWidget {
 
                     const SizedBox(width: 10),
 
-                    /// 🗑DELETE
+                    /// DELETE
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
